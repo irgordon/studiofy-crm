@@ -1,6 +1,5 @@
 <?php
 class Studiofy_Core {
-    protected $loader;
     protected $plugin_name = 'studiofy-crm';
     protected $version = STUDIOFY_VERSION;
 
@@ -14,7 +13,7 @@ class Studiofy_Core {
         require_once STUDIOFY_PATH . 'admin/class-studiofy-settings.php';
         
         $plugin_admin = new Studiofy_Admin( $this->plugin_name, $this->version );
-        $plugin_settings = new Studiofy_Settings(); // Auto-registers via constructor
+        new Studiofy_Settings(); // Init Settings
 
         add_action( 'admin_menu', array( $plugin_admin, 'add_plugin_admin_menu' ) );
         add_action( 'admin_enqueue_scripts', array( $plugin_admin, 'enqueue_styles' ) );
@@ -23,11 +22,11 @@ class Studiofy_Core {
         // Dashboard Widget
         add_action( 'wp_dashboard_setup', array( $plugin_admin, 'add_dashboard_widgets' ) );
         
-        // Async Job Hook
+        // Async Job Hook (Background Processing)
         add_action( 'studiofy_async_generate_invoice', array( $plugin_admin, 'execute_invoice_job' ) );
         
-        // Admin Post Actions
-        add_action( 'admin_post_studiofy_save_contract', array( $plugin_admin, 'process_save_contract' ) );
+        // Form Handlers
+        add_action( 'admin_post_studiofy_process_invoice', array( $plugin_admin, 'process_generate_invoice' ) );
     }
 
     private function define_public_hooks() {
