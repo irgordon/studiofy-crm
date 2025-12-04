@@ -23,7 +23,6 @@ class Studiofy_Admin {
 			return;
 		}
 
-		// 3. Load Main Admin Assets
 		if ( file_exists( STUDIOFY_PATH . 'admin/css/studiofy-admin.css' ) ) {
 			wp_enqueue_style( $this->plugin_name, STUDIOFY_URL . 'admin/css/studiofy-admin.css', array(), $this->version );
 		}
@@ -32,10 +31,15 @@ class Studiofy_Admin {
 			wp_enqueue_script( $this->plugin_name . '-admin', STUDIOFY_URL . 'admin/js/studiofy-admin.js', array( 'jquery' ), $this->version, true );
 		}
 		
-		// 4. Load Form Builder (Only on Sessions)
 		if ( $post && 'studiofy_session' === $post->post_type ) {
 			if ( file_exists( STUDIOFY_PATH . 'admin/js/studiofy-form-builder.js' ) ) {
 				wp_enqueue_script( $this->plugin_name . '-builder', STUDIOFY_URL . 'admin/js/studiofy-form-builder.js', array( 'jquery', 'jquery-ui-sortable' ), $this->version, true );
+			}
+		}
+		
+		if ( $post && 'studiofy_contract' === $post->post_type ) {
+			if ( file_exists( STUDIOFY_PATH . 'admin/js/studiofy-contract-builder.js' ) ) {
+				wp_enqueue_script( $this->plugin_name . '-contract', STUDIOFY_URL . 'admin/js/studiofy-contract-builder.js', array( 'jquery', 'jquery-ui-sortable' ), $this->version, true );
 			}
 		}
 	}
@@ -69,11 +73,11 @@ class Studiofy_Admin {
 		if ( class_exists( 'Studiofy_Settings' ) ) {
 			(new Studiofy_Settings())->render_page();
 		} else {
-			echo '<div class="error"><p>Settings class missing.</p></div>';
+			echo '<div class="error"><p>Settings Class not loaded.</p></div>';
 		}
 	}
 
 	public function execute_invoice_job( array $args ): void {
-		// Async Logic
+		// Async logic
 	}
 }
