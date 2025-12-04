@@ -4,12 +4,28 @@ if ( ! class_exists( 'WP_List_Table' ) ) {
 }
 
 class Studiofy_Client_List_Table extends WP_List_Table {
-	public function prepare_items(): void {
+
+	/**
+	 * Prepare the items for the table to process
+	 */
+	public function prepare_items() {
 		$this->_column_headers = array( $this->get_columns(), array(), array() );
 		$this->items           = $this->get_data();
+		
+		// Optional: Add pagination setup here if needed later
+		// $total_items = count($this->items);
+		// $per_page = 20;
+		// $this->set_pagination_args( array(
+		//    'total_items' => $total_items,
+		//    'per_page'    => $per_page,
+		//    'total_pages' => ceil( $total_items / $per_page )
+		// ) );
 	}
 
-	public function get_columns(): array {
+	/**
+	 * Define the columns that are going to be used in the table
+	 */
+	public function get_columns() {
 		return array(
 			'name'   => __( 'Name', 'studiofy-crm' ),
 			'email'  => __( 'Email', 'studiofy-crm' ),
@@ -17,16 +33,37 @@ class Studiofy_Client_List_Table extends WP_List_Table {
 		);
 	}
 
-	private function get_data(): array {
+	/**
+	 * Retrieve client data from the database
+	 */
+	private function get_data() {
 		global $wpdb;
+		// Fetch data as an associative array
 		return $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}studiofy_clients ORDER BY created_at DESC", ARRAY_A );
 	}
 
-	public function column_default( object|array $item, string $column_name ): string {
-		return esc_html( (string) $item[ $column_name ] );
+	/**
+	 * Default Column Render
+	 * FIXED: Removed type hints to match WP_List_Table::column_default($item, $column_name)
+	 */
+	public function column_default( $item, $column_name ) {
+		// Ensure $item is an array before accessing
+		if ( is_array( $item ) && isset( $item[ $column_name ] ) ) {
+			return esc_html( (string) $item[ $column_name ] );
+		}
+		return ''; 
 	}
 
-	public function column_status( array $item ): string {
-		return '<span class="studiofy-badge status-' . esc_attr( $item['status'] ) . '">' . esc_html( ucfirst( $item['status'] ) ) . '</span>';
+	/**
+	 * Render the Status column with Badges
+	 * FIXED: Removed type hints to match generic call structure
+	 */
+	public function column_status( $item ) {
+		$status = isset( $item['status'] ) ? $item['status'] : '';
+		return sprintf(
+			'<span class="studiofy-badge status-%s">%s</span>',
+			esc_attr( $status ),
+			esc_html( ucfirst( $status ) )
+		);
 	}
 }
