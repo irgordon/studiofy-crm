@@ -1,12 +1,12 @@
 {
-    "name": "your-name/studiofy-crm",
-    "description": "Professional Photography Studio CRM for WordPress",
+    "name": "irgordon/studiofy-crm",
+    "description": "A Professional Photography Studio CRM for WordPress",
     "type": "wordpress-plugin",
     "license": "GPL-3.0-or-later",
     "authors": [
         {
             "name": "Ian R. Gordon",
-            "email": "ian@siangordon.app"
+            "email": "ian@iangordon.app"
         }
     ],
     "require": {
