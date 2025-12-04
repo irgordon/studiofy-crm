@@ -11,28 +11,26 @@ class Studiofy_Admin {
 	}
 
 	public function enqueue_scripts( string $hook ): void {
-		// Load Media Uploader for Gallery CPT
 		global $post;
-		if ( $post && 'studiofy_gallery' === $post->post_type ) {
-			wp_enqueue_media();
-		}
+		// Media Uploader
+		if ( $post && 'studiofy_gallery' === $post->post_type ) wp_enqueue_media();
 
-		// Only load CSS/JS on Studiofy pages
-		if ( false === strpos( $hook, 'studiofy' ) ) {
+		// Only load on Studiofy pages
+		// Fix: Check for both 'studiofy' AND specific post types in hook
+		if ( false === strpos( $hook, 'studiofy' ) && false === strpos( $hook, 'post.php' ) ) {
 			return;
 		}
 
 		wp_enqueue_style( $this->plugin_name, STUDIOFY_URL . 'admin/css/studiofy-admin.css', array(), $this->version );
 		wp_enqueue_script( $this->plugin_name . '-admin', STUDIOFY_URL . 'admin/js/studiofy-admin.js', array( 'jquery' ), $this->version, true );
 		
-		// Load Form Builder on Session CPT
 		if ( $post && 'studiofy_session' === $post->post_type ) {
 			wp_enqueue_script( $this->plugin_name . '-builder', STUDIOFY_URL . 'admin/js/studiofy-form-builder.js', array( 'jquery', 'jquery-ui-sortable' ), $this->version, true );
 		}
 	}
 
 	public function add_plugin_admin_menu(): void {
-		// FIX: changed 'manage_studiofy_crm' to 'manage_options'
+		// 1. Main Dashboard (Parent)
 		add_menu_page( 
 			'Studiofy', 
 			'Studiofy', 
@@ -42,29 +40,32 @@ class Studiofy_Admin {
 			'dashicons-camera', 
 			6 
 		);
+
+		// 2. Settings Submenu
+		// Note: The URL generated will be admin.php?page=studiofy-settings
+		add_submenu_page( 
+			'studiofy-dashboard', 
+			'Settings', 
+			'Settings', 
+			'manage_options', 
+			'studiofy-settings', 
+			array( $this, 'render_settings' ) 
+		);
 	}
 
 	public function render_dashboard(): void {
-		?>
-		<div class="wrap">
-			<h1>Studiofy Dashboard</h1>
-			<div class="card" style="max-width: 600px; padding: 20px; margin-top: 20px;">
-				<h2>Welcome Back</h2>
-				<p>Select a module to begin:</p>
-				<hr>
-				<p>
-					<a href="edit.php?post_type=studiofy_project" class="button button-primary">Manage Projects</a>
-					<a href="edit.php?post_type=studiofy_lead" class="button">Leads</a>
-					<a href="edit.php?post_type=studiofy_invoice" class="button">Invoices</a>
-					<a href="admin.php?page=studiofy-settings" class="button">Settings</a>
-				</p>
-			</div>
-		</div>
-		<?php
+		echo '<div class="wrap"><h1>Studiofy Dashboard</h1><p>Select a module from the menu.</p></div>';
+	}
+
+	// Wrapper to call settings class render, ensures context is correct
+	public function render_settings(): void {
+		// We instantiate the settings class only when needed to keep memory low
+		require_once STUDIOFY_PATH . 'admin/class-studiofy-settings.php';
+		$settings = new Studiofy_Settings();
+		$settings->render_page(); 
 	}
 
 	public function execute_invoice_job( array $args ): void {
-		require_once STUDIOFY_PATH . 'includes/integrations/class-studiofy-square-api.php';
-		// Logic to call Square API...
+		// ... existing async logic ...
 	}
 }
