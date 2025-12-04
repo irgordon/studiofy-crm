@@ -1,11 +1,12 @@
 <?php
 class Studiofy_Activator {
-    public static function activate() {
-        global $wpdb;
-        $charset_collate = $wpdb->get_charset_collate();
-        
-        // 1. Clients Table
-        $sql[] = "CREATE TABLE {$wpdb->prefix}studiofy_clients (
+	public static function activate() {
+		global $wpdb;
+		$charset_collate = $wpdb->get_charset_collate();
+		$sql             = array();
+
+		// 1. Clients Table.
+		$sql[] = "CREATE TABLE {$wpdb->prefix}studiofy_clients (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             name tinytext NOT NULL,
             email varchar(100) NOT NULL,
@@ -16,8 +17,8 @@ class Studiofy_Activator {
             KEY email (email)
         ) $charset_collate;";
 
-        // 2. Client Meta (EAV)
-        $sql[] = "CREATE TABLE {$wpdb->prefix}studiofy_clientmeta (
+		// 2. Client Meta (EAV).
+		$sql[] = "CREATE TABLE {$wpdb->prefix}studiofy_clientmeta (
             meta_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
             studiofy_client_id mediumint(9) NOT NULL,
             meta_key varchar(255) DEFAULT '',
@@ -27,8 +28,8 @@ class Studiofy_Activator {
             KEY meta_key (meta_key(191))
         ) $charset_collate;";
 
-        // 3. Invoices
-        $sql[] = "CREATE TABLE {$wpdb->prefix}studiofy_invoices (
+		// 3. Invoices.
+		$sql[] = "CREATE TABLE {$wpdb->prefix}studiofy_invoices (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             client_id mediumint(9) NOT NULL,
             square_invoice_id varchar(100),
@@ -41,8 +42,8 @@ class Studiofy_Activator {
             PRIMARY KEY  (id)
         ) $charset_collate;";
 
-        // 4. Contracts
-        $sql[] = "CREATE TABLE {$wpdb->prefix}studiofy_contracts (
+		// 4. Contracts.
+		$sql[] = "CREATE TABLE {$wpdb->prefix}studiofy_contracts (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             access_token varchar(64),
             client_id mediumint(9) NOT NULL,
@@ -55,9 +56,9 @@ class Studiofy_Activator {
             PRIMARY KEY  (id),
             KEY access_token (access_token)
         ) $charset_collate;";
-        
-        // 5. Bookings
-        $sql[] = "CREATE TABLE {$wpdb->prefix}studiofy_bookings (
+
+		// 5. Bookings.
+		$sql[] = "CREATE TABLE {$wpdb->prefix}studiofy_bookings (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             client_id mediumint(9) NOT NULL,
             google_event_id varchar(255) DEFAULT '',
@@ -70,20 +71,22 @@ class Studiofy_Activator {
             KEY client_id (client_id)
         ) $charset_collate;";
 
-        require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-        foreach($sql as $query) dbDelta( $query );
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		foreach ( $sql as $query ) {
+			dbDelta( $query );
+		}
 
-        // Add Capabilities
-        $role = get_role( 'administrator' );
-        if ( $role ) {
-            $role->add_cap( 'view_studiofy_crm' );
-            $role->add_cap( 'edit_studiofy_client' );
-            $role->add_cap( 'manage_studiofy_settings' );
-            $role->add_cap( 'manage_studiofy_invoices' );
-            $role->add_cap( 'manage_studiofy_contracts' );
-        }
+		// Add Capabilities.
+		$role = get_role( 'administrator' );
+		if ( $role ) {
+			$role->add_cap( 'view_studiofy_crm' );
+			$role->add_cap( 'edit_studiofy_client' );
+			$role->add_cap( 'manage_studiofy_settings' );
+			$role->add_cap( 'manage_studiofy_invoices' );
+			$role->add_cap( 'manage_studiofy_contracts' );
+		}
 
-        // Welcome Flag
-        set_transient( 'studiofy_activation_redirect', true, 60 );
-    }
+		// Welcome Flag.
+		set_transient( 'studiofy_activation_redirect', true, 60 );
+	}
 }
