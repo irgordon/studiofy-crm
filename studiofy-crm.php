@@ -2,8 +2,8 @@
 /**
  * Plugin Name:       Studiofy CRM
  * Plugin URI:        https://iangordon.app/studiofy-crm
- * Description:       Native CRM for Photographers using Custom Post Types and WP HTTP API.
- * Version:           3.0.0
+ * Description:       Professional Studio Management: Projects, Galleries, Contracts, Invoicing, and Custom Forms.
+ * Version:           2.0.0
  * Author:            Ian R. Gordon
  * License:           GPL-3.0
  * Text Domain:       studiofy-crm
@@ -17,11 +17,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'STUDIOFY_VERSION', '3.0.0' );
+define( 'STUDIOFY_VERSION', '2.0.0' );
 define( 'STUDIOFY_PATH', plugin_dir_path( __FILE__ ) );
 define( 'STUDIOFY_URL', plugin_dir_url( __FILE__ ) );
 
-// Core Includes.
 require_once STUDIOFY_PATH . 'includes/class-studiofy-core.php';
 require_once STUDIOFY_PATH . 'includes/class-studiofy-activator.php';
 require_once STUDIOFY_PATH . 'includes/class-studiofy-deactivator.php';
