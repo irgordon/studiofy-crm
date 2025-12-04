@@ -1,11 +1,13 @@
 <?php
+
+declare(strict_types=1);
+
 class Studiofy_Activator {
-	public static function activate() {
+	public static function activate(): void {
 		global $wpdb;
 		$charset_collate = $wpdb->get_charset_collate();
 		$sql             = array();
 
-		// 1. Clients Table.
 		$sql[] = "CREATE TABLE {$wpdb->prefix}studiofy_clients (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             name tinytext NOT NULL,
@@ -17,7 +19,6 @@ class Studiofy_Activator {
             KEY email (email)
         ) $charset_collate;";
 
-		// 2. Client Meta (EAV).
 		$sql[] = "CREATE TABLE {$wpdb->prefix}studiofy_clientmeta (
             meta_id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
             studiofy_client_id mediumint(9) NOT NULL,
@@ -28,7 +29,6 @@ class Studiofy_Activator {
             KEY meta_key (meta_key(191))
         ) $charset_collate;";
 
-		// 3. Invoices.
 		$sql[] = "CREATE TABLE {$wpdb->prefix}studiofy_invoices (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             client_id mediumint(9) NOT NULL,
@@ -42,7 +42,6 @@ class Studiofy_Activator {
             PRIMARY KEY  (id)
         ) $charset_collate;";
 
-		// 4. Contracts.
 		$sql[] = "CREATE TABLE {$wpdb->prefix}studiofy_contracts (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             access_token varchar(64),
@@ -57,7 +56,6 @@ class Studiofy_Activator {
             KEY access_token (access_token)
         ) $charset_collate;";
 
-		// 5. Bookings.
 		$sql[] = "CREATE TABLE {$wpdb->prefix}studiofy_bookings (
             id mediumint(9) NOT NULL AUTO_INCREMENT,
             client_id mediumint(9) NOT NULL,
@@ -76,9 +74,8 @@ class Studiofy_Activator {
 			dbDelta( $query );
 		}
 
-		// Add Capabilities.
 		$role = get_role( 'administrator' );
-		if ( $role ) {
+		if ( $role instanceof WP_Role ) {
 			$role->add_cap( 'view_studiofy_crm' );
 			$role->add_cap( 'edit_studiofy_client' );
 			$role->add_cap( 'manage_studiofy_settings' );
@@ -86,7 +83,6 @@ class Studiofy_Activator {
 			$role->add_cap( 'manage_studiofy_contracts' );
 		}
 
-		// Welcome Flag.
 		set_transient( 'studiofy_activation_redirect', true, 60 );
 	}
 }
