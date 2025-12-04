@@ -7,6 +7,7 @@ class Studiofy_Activator {
 		$charset = $wpdb->get_charset_collate();
 		$sql = array();
 
+		// 1. Clients
 		$sql[] = "CREATE TABLE {$wpdb->prefix}studiofy_clients (
 			id mediumint(9) NOT NULL AUTO_INCREMENT,
 			name tinytext NOT NULL,
@@ -17,16 +18,7 @@ class Studiofy_Activator {
 			PRIMARY KEY  (id)
 		) $charset;";
 
-		$sql[] = "CREATE TABLE {$wpdb->prefix}studiofy_entries (
-			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-			form_id bigint(20) NOT NULL,
-			entry_data longtext NOT NULL,
-			source_url varchar(255),
-			created_at datetime DEFAULT CURRENT_TIMESTAMP,
-			PRIMARY KEY  (id),
-			KEY form_id (form_id)
-		) $charset;";
-
+		// 2. Messages
 		$sql[] = "CREATE TABLE {$wpdb->prefix}studiofy_messages (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			client_id mediumint(9) NOT NULL,
@@ -34,9 +26,23 @@ class Studiofy_Activator {
 			subject text NOT NULL,
 			message longtext NOT NULL,
 			sent_at datetime DEFAULT CURRENT_TIMESTAMP,
-			PRIMARY KEY  (id)
+			PRIMARY KEY  (id),
+			KEY client_id (client_id)
 		) $charset;";
 
+		// 3. Form Entries
+		$sql[] = "CREATE TABLE {$wpdb->prefix}studiofy_entries (
+			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+			form_id bigint(20) NOT NULL,
+			entry_data longtext NOT NULL,
+			source_url varchar(255),
+			ip_address varchar(50),
+			created_at datetime DEFAULT CURRENT_TIMESTAMP,
+			PRIMARY KEY  (id),
+			KEY form_id (form_id)
+		) $charset;";
+
+		// 4. API Logs
 		$sql[] = "CREATE TABLE {$wpdb->prefix}studiofy_api_logs (
 			id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
 			service varchar(50) NOT NULL,
@@ -47,7 +53,13 @@ class Studiofy_Activator {
 		) $charset;";
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-		foreach ( $sql as $q ) dbDelta( $q );
+		foreach ( $sql as $q ) {
+			dbDelta( $q );
+		}
+
+		// FIX: Removed the custom role modification. 
+		// We will rely on standard 'manage_options' for stability.
+		
 		flush_rewrite_rules();
 	}
 }
