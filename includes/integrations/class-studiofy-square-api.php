@@ -1,48 +1,36 @@
 <?php
-
-declare(strict_types=1);
-
-use Square\SquareClient;
-use Square\Environment;
+declare( strict_types=1 );
 
 class Studiofy_Square_API {
-	private ?SquareClient $client = null;
-	private string $location_id;
+	private string $access_token;
+	private string $base_url;
 
 	public function __construct() {
-		require_once STUDIOFY_PATH . 'includes/utils/class-encryption.php';
-		$enc     = new Studiofy_Encryption();
-		$options = get_option( 'studiofy_settings', array() );
+		require_once STUDIOFY_PATH . 'includes/utils/class-studiofy-encryption.php';
+		$enc = new Studiofy_Encryption();
+		$opts = get_option( 'studiofy_settings', array() );
 
-		$token             = ! empty( $options['square_access_token'] ) ? $enc->decrypt( $options['square_access_token'] ) : '';
-		$this->location_id = $options['square_location_id'] ?? '';
-
-		$env_setting = $options['square_environment'] ?? 'sandbox';
-		$env         = ( 'production' === $env_setting ) ? Environment::PRODUCTION : Environment::SANDBOX;
-
-		if ( ! empty( $token ) ) {
-			$this->client = new SquareClient(
-				array(
-					'accessToken' => $token,
-					'environment' => $env,
-				)
-			);
-		}
+		$this->access_token = ! empty( $opts['square_access_token'] ) ? $enc->decrypt( $opts['square_access_token'] ) : '';
+		$is_prod = ( isset( $opts['square_environment'] ) && 'production' === $opts['square_environment'] );
+		$this->base_url = $is_prod ? 'https://connect.squareup.com/v2' : 'https://connect.squareupsandbox.com/v2';
 	}
 
-	public function generate_invoice( array $client_data, array $booking_data, float $amount, string $due_date ): array|WP_Error {
-		if ( ! $this->client ) {
-			return new WP_Error( 'config_error', __( 'Square API not configured.', 'studiofy-crm' ) );
-		}
+	public function create_invoice( array $data ) {
+		if ( empty( $this->access_token ) ) return new WP_Error( 'config', 'Missing Token' );
 
-		// Mocked for release safety / example without hitting real API logic errors.
-		try {
-			return array(
-				'id'  => 'inv_' . uniqid(),
-				'url' => 'https://square.link/u/' . uniqid(),
-			);
-		} catch ( Exception $e ) {
-			return new WP_Error( 'api_error', $e->getMessage() );
-		}
+		$response = wp_remote_post( $this->base_url . '/invoices', array(
+			'method' => 'POST',
+			'body' => wp_json_encode( $data ),
+			'headers' => array(
+				'Authorization' => 'Bearer ' . $this->access_token,
+				'Content-Type' => 'application/json',
+				'Square-Version' => '2023-10-20'
+			),
+			'timeout' => 45
+		) );
+
+		if ( is_wp_error( $response ) ) return $response;
+		
+		return json_decode( wp_remote_retrieve_body( $response ), true );
 	}
 }
