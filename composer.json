@@ -1,0 +1,22 @@
+{
+    "name": "your-name/studiofy-crm",
+    "description": "Professional Photography Studio CRM for WordPress",
+    "type": "wordpress-plugin",
+    "license": "GPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "Ian R. Gordon",
+            "email": "ian@siangordon.app"
+        }
+    ],
+    "require": {
+        "php": ">=7.4",
+        "square/square": "^30.0",
+        "google/apiclient": "^2.15"
+    },
+    "autoload": {
+        "psr-4": {
+            "Studiofy\\": "includes/"
+        }
+    }
+}
