@@ -7,33 +7,25 @@ class Studiofy_CPT_Registrar {
 	}
 
 	public function register_post_types(): void {
-		$menu_slug = 'studiofy-dashboard';
+		$slug = 'studiofy-dashboard';
+		$types = array(
+			'studiofy_project'  => array( 'Project', 'Projects', 'dashicons-portfolio' ),
+			'studiofy_lead'     => array( 'Lead', 'Leads', 'dashicons-filter' ),
+			'studiofy_invoice'  => array( 'Invoice', 'Invoices', 'dashicons-money-alt' ),
+			'studiofy_contract' => array( 'Contract', 'Contracts', 'dashicons-media-document' ),
+			'studiofy_session'  => array( 'Session', 'Sessions', 'dashicons-calendar-alt' ),
+			'studiofy_gallery'  => array( 'Gallery', 'Galleries', 'dashicons-images-alt2' ),
+		);
 
-		register_post_type( 'studiofy_project', array(
-			'labels' => array( 'name' => __( 'Projects', 'studiofy-crm' ), 'singular_name' => __( 'Project', 'studiofy-crm' ) ),
-			'public' => false,
-			'show_ui' => true,
-			'show_in_menu' => $menu_slug,
-			'supports' => array( 'title', 'editor' ),
-			'menu_icon' => 'dashicons-portfolio',
-		) );
-
-		register_post_type( 'studiofy_invoice', array(
-			'labels' => array( 'name' => __( 'Invoices', 'studiofy-crm' ), 'singular_name' => __( 'Invoice', 'studiofy-crm' ) ),
-			'public' => true,
-			'show_ui' => true,
-			'show_in_menu' => $menu_slug,
-			'supports' => array( 'title' ),
-			'menu_icon' => 'dashicons-money-alt',
-		) );
-
-		register_post_type( 'studiofy_contract', array(
-			'labels' => array( 'name' => __( 'Contracts', 'studiofy-crm' ), 'singular_name' => __( 'Contract', 'studiofy-crm' ) ),
-			'public' => true,
-			'show_ui' => true,
-			'show_in_menu' => $menu_slug,
-			'supports' => array( 'title', 'editor' ),
-			'menu_icon' => 'dashicons-media-document',
-		) );
+		foreach ( $types as $key => $data ) {
+			register_post_type( $key, array(
+				'labels' => array( 'name' => $data[1], 'singular_name' => $data[0] ),
+				'public' => in_array( $key, array( 'studiofy_invoice', 'studiofy_contract', 'studiofy_gallery' ) ),
+				'show_ui' => true,
+				'show_in_menu' => $slug,
+				'supports' => array( 'title', 'editor', 'thumbnail' ),
+				'menu_icon' => $data[2],
+			) );
+		}
 	}
 }
