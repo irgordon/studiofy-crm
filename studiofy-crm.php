@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'STUDIOFY_VERSION', '5.1.0' );
+define( 'STUDIOFY_VERSION', '3.1.0' );
 define( 'STUDIOFY_PATH', plugin_dir_path( __FILE__ ) );
 define( 'STUDIOFY_URL', plugin_dir_url( __FILE__ ) );
 
