@@ -16,7 +16,9 @@ class Studiofy_Admin {
 			return;
 		}
 		// Assuming CSS/JS files exist
-		wp_enqueue_style( $this->plugin_name, STUDIOFY_URL . 'admin/css/studiofy-admin.css', array(), $this->version );
+		if ( file_exists( STUDIOFY_PATH . 'admin/css/studiofy-admin.css' ) ) {
+			wp_enqueue_style( $this->plugin_name, STUDIOFY_URL . 'admin/css/studiofy-admin.css', array(), $this->version );
+		}
 	}
 
 	public function add_plugin_admin_menu(): void {
@@ -25,7 +27,7 @@ class Studiofy_Admin {
 	}
 
 	public function render_dashboard(): void {
-		echo '<div class="wrap"><h1>Studiofy Dashboard</h1></div>';
+		echo '<div class="wrap"><h1>Studiofy Dashboard</h1><p>Welcome to Studiofy CRM v5.1.</p></div>';
 	}
 
 	public function render_settings(): void {
