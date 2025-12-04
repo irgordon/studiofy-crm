@@ -1,13 +1,16 @@
 <?php
+
+declare(strict_types=1);
+
 class Studiofy_Encryption {
-	private $method = 'AES-256-CBC';
-	private $key;
+	private string $method = 'AES-256-CBC';
+	private string $key;
 
 	public function __construct() {
 		$this->key = defined( 'AUTH_KEY' ) ? AUTH_KEY : 'studiofy-fallback-salt';
 	}
 
-	public function encrypt( $data ) {
+	public function encrypt( string $data ): string {
 		if ( empty( $data ) ) {
 			return '';
 		}
@@ -16,7 +19,7 @@ class Studiofy_Encryption {
 		return base64_encode( $encrypted . '::' . $iv );
 	}
 
-	public function decrypt( $data ) {
+	public function decrypt( string $data ): string {
 		if ( empty( $data ) ) {
 			return '';
 		}
