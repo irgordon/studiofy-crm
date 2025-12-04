@@ -8,6 +8,7 @@ class Studiofy_Encryption {
     }
 
     public function encrypt( $data ) {
+        if( empty( $data ) ) return '';
         $iv = openssl_random_pseudo_bytes( openssl_cipher_iv_length( $this->method ) );
         $encrypted = openssl_encrypt( $data, $this->method, $this->key, 0, $iv );
         return base64_encode( $encrypted . '::' . $iv );
