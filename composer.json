@@ -1,12 +1,12 @@
 {
-    "name": "irgordon/studiofy-crm",
-    "description": "A Professional Photography Studio CRM for WordPress",
+    "name": "ianrgordon/studiofy-crm",
+    "description": "Professional Photography Studio CRM for WordPress",
     "type": "wordpress-plugin",
     "license": "GPL-3.0-or-later",
     "authors": [
         {
             "name": "Ian R. Gordon",
-            "email": "ian@iangordon.app"
+            "email": "ian@studiofycrm.com"
         }
     ],
     "require": {
@@ -18,5 +18,18 @@
         "psr-4": {
             "Studiofy\\": "includes/"
         }
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "Google\\Task\\Composer::cleanup"
+        ],
+        "post-update-cmd": [
+            "Google\\Task\\Composer::cleanup"
+        ]
+    },
+    "extra": {
+        "google/apiclient-services": [
+            "Calendar"
+        ]
     }
 }
