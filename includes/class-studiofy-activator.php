@@ -4,7 +4,7 @@
  *
  * @package    Studiofy_CRM
  * @subpackage Studiofy_CRM/includes
- * @version    5.1.0
+ * @version    5.1.1
  */
 
 declare( strict_types=1 );
