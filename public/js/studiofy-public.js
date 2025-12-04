@@ -1,8 +1,7 @@
 jQuery(document).ready(function($) {
     var canvas = document.getElementById('signature-pad');
     if(!canvas) return;
-    
-    // Adjust canvas for retina displays
+
     function resizeCanvas() {
         var ratio =  Math.max(window.devicePixelRatio || 1, 1);
         canvas.width = canvas.offsetWidth * ratio;
@@ -13,11 +12,11 @@ jQuery(document).ready(function($) {
     resizeCanvas();
 
     var pad = new SignaturePad(canvas);
-    
+
     $('#save-sig').click(function(e) {
         e.preventDefault();
         if(pad.isEmpty()) return alert('Please sign first.');
-        
+
         var btn = $(this);
         btn.text('Signing...').prop('disabled', true);
 
