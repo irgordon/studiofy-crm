@@ -55,6 +55,20 @@ class Studiofy_Activator {
             PRIMARY KEY  (id),
             KEY access_token (access_token)
         ) $charset_collate;";
+        
+        // 5. Bookings
+        $sql[] = "CREATE TABLE {$wpdb->prefix}studiofy_bookings (
+            id mediumint(9) NOT NULL AUTO_INCREMENT,
+            client_id mediumint(9) NOT NULL,
+            google_event_id varchar(255) DEFAULT '',
+            start_date datetime NOT NULL,
+            end_date datetime NOT NULL,
+            title text NOT NULL,
+            status varchar(50) DEFAULT 'scheduled',
+            created_at datetime DEFAULT '0000-00-00 00:00:00' NOT NULL,
+            PRIMARY KEY  (id),
+            KEY client_id (client_id)
+        ) $charset_collate;";
 
         require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
         foreach($sql as $query) dbDelta( $query );
@@ -65,6 +79,8 @@ class Studiofy_Activator {
             $role->add_cap( 'view_studiofy_crm' );
             $role->add_cap( 'edit_studiofy_client' );
             $role->add_cap( 'manage_studiofy_settings' );
+            $role->add_cap( 'manage_studiofy_invoices' );
+            $role->add_cap( 'manage_studiofy_contracts' );
         }
 
         // Welcome Flag
