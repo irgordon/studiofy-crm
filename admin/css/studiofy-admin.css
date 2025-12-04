@@ -1,2 +1,1 @@
-.studiofy-badge { padding: 5px 10px; border-radius: 4px; background: #eee; }
-.studiofy-dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.field-row { border: 1px solid #ccc; border-radius: 4px; }
