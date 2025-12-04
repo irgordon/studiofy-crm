@@ -1,0 +1,3 @@
+.studiofy-dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.studiofy-card { background: #fff; padding: 20px; border: 1px solid #ccd0d4; box-shadow: 0 1px 1px rgba(0,0,0,.04); }
+.studiofy-card h3 { margin: 0; font-size: 2em; }
