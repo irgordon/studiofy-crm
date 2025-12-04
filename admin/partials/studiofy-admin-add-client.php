@@ -5,8 +5,8 @@ if ( isset( $_POST['submit_client'] ) ) {
 	$wpdb->insert(
 		$wpdb->prefix . 'studiofy_clients',
 		array(
-			'name'       => sanitize_text_field( $_POST['name'] ),
-			'email'      => sanitize_email( $_POST['email'] ),
+			'name'       => sanitize_text_field( $_POST['name'] ?? '' ),
+			'email'      => sanitize_email( $_POST['email'] ?? '' ),
 			'status'     => 'lead',
 			'created_at' => current_time( 'mysql' ),
 		)
