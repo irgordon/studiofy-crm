@@ -21,6 +21,6 @@ class Studiofy_Client_List_Table extends WP_List_Table {
     }
     
     public function column_status( $item ) {
-        return '<span class="studiofy-badge status-'.esc_attr($item['status']).'">'.esc_html(ucfirst($item['status'])).'</span>';
+        return '<span style="background:#e5f6fd; color:#0c8dbf; padding:3px 8px; border-radius:10px;">'.esc_html(ucfirst($item['status'])).'</span>';
     }
 }
