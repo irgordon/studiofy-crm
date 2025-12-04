@@ -31,5 +31,10 @@
         "google/apiclient-services": [
             "Calendar"
         ]
+    },
+    "config": {
+        "platform": {
+            "php": "8.0"
+        }
     }
 }
