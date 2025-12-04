@@ -3,7 +3,6 @@ use Google\Client;
 use Google\Service\Calendar;
 
 class Studiofy_Google_Calendar {
-
     private $client;
     private $encryption;
     
@@ -17,15 +16,12 @@ class Studiofy_Google_Calendar {
         $options = get_option( 'studiofy_settings' );
         
         $this->client = new Client();
-        $this->client->setApplicationName( 'Studiofy CRM User Install' );
+        $this->client->setApplicationName( 'Studiofy CRM' );
         $this->client->setScopes( Calendar::CALENDAR_EVENTS );
         $this->client->setAccessType( 'offline' );
         $this->client->setPrompt( 'select_account consent' );
 
-        // Pull Dynamic Keys
         $client_id = isset( $options['google_client_id'] ) ? $options['google_client_id'] : '';
-        
-        // Decrypt Secret
         $encrypted_secret = isset( $options['google_client_secret'] ) ? $options['google_client_secret'] : '';
         $client_secret = $this->encryption->decrypt( $encrypted_secret );
 
@@ -36,5 +32,13 @@ class Studiofy_Google_Calendar {
         }
     }
     
-    // ... (Rest of logic: is_connected, get_auth_url, etc. remains the same) ...
+    public function get_auth_url() {
+        return $this->client->createAuthUrl();
+    }
+
+    public function is_connected() {
+        // Logic to check stored access token presence
+        $token = get_option('studiofy_google_token');
+        return !empty($token);
+    }
 }
