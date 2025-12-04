@@ -16,7 +16,7 @@ class Studiofy_Core {
 		if ( file_exists( STUDIOFY_PATH . 'admin/class-studiofy-admin.php' ) ) {
 			require_once STUDIOFY_PATH . 'admin/class-studiofy-admin.php';
 		} else {
-			// Stop execution gracefully if file is missing
+			// Stop execution gracefully if file is missing to prevent WSOD
 			add_action( 'admin_notices', function() {
 				echo '<div class="notice notice-error"><p>Critical Error: admin/class-studiofy-admin.php is missing.</p></div>';
 			});
@@ -30,7 +30,7 @@ class Studiofy_Core {
 			'includes/class-studiofy-cpt-registrar.php',
 			'includes/modules/class-studiofy-contracts.php',
 			'includes/modules/class-studiofy-forms.php',
-			'includes/modules/class-studiofy-kanban.php' // Only if you kept the Kanban module
+			// 'includes/modules/class-studiofy-kanban.php' // Uncomment if you are using the Kanban module
 		];
 
 		foreach ( $files as $file ) {
@@ -43,11 +43,11 @@ class Studiofy_Core {
 		if ( class_exists( 'Studiofy_Contracts' ) ) (new Studiofy_Contracts())->init();
 		if ( class_exists( 'Studiofy_CPT_Registrar' ) ) (new Studiofy_CPT_Registrar())->init();
 		if ( class_exists( 'Studiofy_Metaboxes' ) ) (new Studiofy_Metaboxes())->init();
-		if ( class_exists( 'Studiofy_Kanban' ) ) (new Studiofy_Kanban())->init(); // Optional
-
+		
 		$forms = class_exists( 'Studiofy_Forms_Engine' ) ? new Studiofy_Forms_Engine() : null;
 
 		// 4. Instantiate Admin Class (SAFE CHECK)
+		// This block wraps the instantiation to ensure the class actually exists in memory now
 		if ( class_exists( 'Studiofy_Admin' ) ) {
 			$plugin_admin = new Studiofy_Admin( $this->plugin_name, $this->version );
 			
