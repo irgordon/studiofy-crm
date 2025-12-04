@@ -1,6 +1,6 @@
 # Studiofy CRM
 
-![PHP Version](https://img.shields.io/badge/php-%3E%3D7.4-blue)
+![PHP Version](https://img.shields.io/badge/php-%3E%3D8.0-blue)
 ![License](https://img.shields.io/badge/license-GPLv3-green)
 ![WordPress](https://img.shields.io/badge/WordPress-%3E%3D5.8-blue)
 ![Version](https://img.shields.io/badge/version-1.0.0-orange)
