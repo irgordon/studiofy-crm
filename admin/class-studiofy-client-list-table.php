@@ -3,67 +3,122 @@ if ( ! class_exists( 'WP_List_Table' ) ) {
 	require_once ABSPATH . 'wp-admin/includes/class-wp-list-table.php';
 }
 
-class Studiofy_Client_List_Table extends WP_List_Table {
+class Studiofy_Project_List_Table extends WP_List_Table {
 
-	/**
-	 * Prepare the items for the table to process
-	 */
-	public function prepare_items() {
-		$this->_column_headers = array( $this->get_columns(), array(), array() );
-		$this->items           = $this->get_data();
-		
-		// Optional: Add pagination setup here if needed later
-		// $total_items = count($this->items);
-		// $per_page = 20;
-		// $this->set_pagination_args( array(
-		//    'total_items' => $total_items,
-		//    'per_page'    => $per_page,
-		//    'total_pages' => ceil( $total_items / $per_page )
-		// ) );
+	public function __construct() {
+		parent::__construct( array(
+			'singular' => 'project',
+			'plural'   => 'projects',
+			'ajax'     => false,
+		) );
 	}
 
-	/**
-	 * Define the columns that are going to be used in the table
-	 */
 	public function get_columns() {
 		return array(
-			'name'   => __( 'Name', 'studiofy-crm' ),
-			'email'  => __( 'Email', 'studiofy-crm' ),
-			'status' => __( 'Status', 'studiofy-crm' ),
+			'cb'             => '<input type="checkbox" />',
+			'title'          => __( 'Project Name', 'studiofy-crm' ),
+			'client'         => __( 'Client', 'studiofy-crm' ),
+			'type'           => __( 'Type', 'studiofy-crm' ),
+			'status'         => __( 'Status', 'studiofy-crm' ),
+			'phase'          => __( 'Phase', 'studiofy-crm' ),
+			'invoice_id'     => __( 'Invoice ID', 'studiofy-crm' ),
+			'invoice_status' => __( 'Inv. Status', 'studiofy-crm' ),
 		);
 	}
 
-	/**
-	 * Retrieve client data from the database
-	 */
-	private function get_data() {
-		global $wpdb;
-		// Fetch data as an associative array
-		return $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}studiofy_clients ORDER BY created_at DESC", ARRAY_A );
+	protected function get_sortable_columns() {
+		return array(
+			'title'  => array( 'title', false ),
+			'status' => array( 'status', false ),
+			'type'   => array( 'type', false ),
+		);
 	}
 
-	/**
-	 * Default Column Render
-	 * FIXED: Removed type hints to match WP_List_Table::column_default($item, $column_name)
-	 */
-	public function column_default( $item, $column_name ) {
-		// Ensure $item is an array before accessing
-		if ( is_array( $item ) && isset( $item[ $column_name ] ) ) {
-			return esc_html( (string) $item[ $column_name ] );
+	protected function column_cb( $item ) {
+		return sprintf( '<input type="checkbox" name="bulk_delete[]" value="%s" />', $item['ID'] );
+	}
+
+	protected function column_title( $item ) {
+		$edit_url = get_edit_post_link( $item['ID'] );
+		$actions  = array(
+			'edit'  => sprintf( '<a href="%s">%s</a>', esc_url( $edit_url ), __( 'Edit', 'studiofy-crm' ) ),
+			'trash' => sprintf( '<a href="%s" class="submitdelete">%s</a>', get_delete_post_link( $item['ID'] ), __( 'Trash', 'studiofy-crm' ) ),
+		);
+		return sprintf( '<strong><a class="row-title" href="%1$s">%2$s</a></strong>%3$s', esc_url( $edit_url ), esc_html( $item['post_title'] ), $this->row_actions( $actions ) );
+	}
+
+	protected function column_default( $item, $column_name ) {
+		switch ( $column_name ) {
+			case 'client':
+				$cid = get_post_meta( $item['ID'], '_studiofy_client_id', true );
+				if ( $cid ) {
+					global $wpdb;
+					$client = $wpdb->get_row( $wpdb->prepare( "SELECT id, name FROM {$wpdb->prefix}studiofy_clients WHERE id=%d", $cid ) );
+					if ( $client ) {
+						// Link to Client Edit/Hub Page (Assuming you have a page for client details)
+						// For now, we link to the Lead edit page if a matching lead exists, or just show name
+						return sprintf( '<strong>%s</strong>', esc_html( $client->name ) );
+					}
+				}
+				return '—';
+
+			case 'type':
+				return esc_html( get_post_meta( $item['ID'], '_studiofy_project_type', true ) );
+
+			case 'status':
+				$st = get_post_meta( $item['ID'], '_studiofy_status', true );
+				return sprintf( '<span class="studiofy-pill status-%s">%s</span>', sanitize_html_class( strtolower( $st ) ), esc_html( $st ) );
+
+			case 'phase':
+				return esc_html( get_post_meta( $item['ID'], '_studiofy_phase', true ) );
+
+			case 'invoice_id':
+				$inv_post_id = get_post_meta( $item['ID'], '_studiofy_linked_invoice_id', true );
+				if ( $inv_post_id ) {
+					return sprintf( '<a href="%s">#%s</a>', get_edit_post_link( $inv_post_id ), esc_html( get_the_title( $inv_post_id ) ) );
+				}
+				return '—';
+
+			case 'invoice_status':
+				$inv_post_id = get_post_meta( $item['ID'], '_studiofy_linked_invoice_id', true );
+				if ( $inv_post_id ) {
+					$st = get_post_meta( $inv_post_id, '_studiofy_status', true );
+					// Billed, Deposit Paid, Installments, Cancelled, Refunded
+					$color = 'grey';
+					if ( 'Paid' === $st || 'Paid In Full' === $st ) $color = 'green';
+					if ( 'Partial' === $st || 'Deposit Paid' === $st ) $color = 'orange';
+					if ( 'Overdue' === $st ) $color = 'red';
+					
+					return sprintf( '<span style="color:%s; font-weight:bold;">%s</span>', $color, esc_html( $st ) );
+				}
+				return '—';
+
+			default:
+				return print_r( $item, true );
 		}
-		return ''; 
 	}
 
-	/**
-	 * Render the Status column with Badges
-	 * FIXED: Removed type hints to match generic call structure
-	 */
-	public function column_status( $item ) {
-		$status = isset( $item['status'] ) ? $item['status'] : '';
-		return sprintf(
-			'<span class="studiofy-badge status-%s">%s</span>',
-			esc_attr( $status ),
-			esc_html( ucfirst( $status ) )
+	public function prepare_items() {
+		$per_page = 20;
+		$current_page = $this->get_pagenum();
+		
+		$args = array(
+			'post_type'      => 'studiofy_project',
+			'posts_per_page' => $per_page,
+			'paged'          => $current_page,
+			'post_status'    => 'any',
 		);
+
+		if ( ! empty( $_REQUEST['s'] ) ) {
+			$args['s'] = sanitize_text_field( $_REQUEST['s'] );
+		}
+
+		$query = new WP_Query( $args );
+		$this->items = $query->posts;
+		$this->set_pagination_args( array(
+			'total_items' => $query->found_posts,
+			'per_page'    => $per_page,
+			'total_pages' => $query->max_num_pages,
+		) );
 	}
 }
