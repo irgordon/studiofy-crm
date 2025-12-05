@@ -1,8 +1,8 @@
 <?php
 /**
- * Encryption Engine
+ * Encryption
  * @package Studiofy\Security
- * @version 2.0.4
+ * @version 2.0.7
  */
 
 declare(strict_types=1);
