@@ -1,8 +1,8 @@
 <?php
 /**
- * Customer Management
+ * Customer Controller
  * @package Studiofy\Admin
- * @version 2.0.6
+ * @version 2.0.7
  */
 
 declare(strict_types=1);
@@ -35,22 +35,15 @@ class CustomerController {
             switch ($_GET['msg']) {
                 case 'saved': $message = 'Customer created successfully.'; break;
                 case 'deleted': $message = 'Customer deleted.'; break;
-                case 'error': 
-                    $class = 'notice notice-error is-dismissible';
-                    $message = 'Error saving customer. Please check input.'; 
-                    break;
+                case 'error': $class = 'notice notice-error is-dismissible'; $message = 'Error saving customer.'; break;
             }
-            
-            if ($message) {
-                echo "<div class='$class'><p>$message</p></div>";
-            }
+            if ($message) echo "<div class='$class'><p>$message</p></div>";
         }
     }
 
     public function render_page(): void {
         global $wpdb;
         $table = $wpdb->prefix . 'studiofy_customers';
-        
         $search = isset($_REQUEST['s']) ? sanitize_text_field($_REQUEST['s']) : '';
         $orderby = $_GET['orderby'] ?? 'created_at';
         $order = strtoupper($_GET['order'] ?? 'DESC');
@@ -60,9 +53,7 @@ class CustomerController {
         if (!in_array($order, ['ASC', 'DESC'])) $order = 'DESC';
 
         $where = '';
-        if ($search) {
-            $where = $wpdb->prepare("WHERE first_name LIKE %s OR last_name LIKE %s OR email LIKE %s OR company LIKE %s", "%$search%", "%$search%", "%$search%", "%$search%");
-        }
+        if ($search) $where = $wpdb->prepare("WHERE first_name LIKE %s OR last_name LIKE %s OR email LIKE %s OR company LIKE %s", "%$search%", "%$search%", "%$search%", "%$search%");
 
         $items = $wpdb->get_results("SELECT *, (SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_projects WHERE customer_id = {$table}.id) as project_count, (SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_invoices WHERE customer_id = {$table}.id) as invoice_count FROM $table $where ORDER BY $orderby $order");
 
@@ -75,7 +66,7 @@ class CustomerController {
             <form method="get">
                 <input type="hidden" name="page" value="studiofy-customers" />
                 <p class="search-box">
-                    <label class="screen-reader-text" for="customer-search-input">Search Customers:</label>
+                    <label class="screen-reader-text" for="customer-search-input">Search:</label>
                     <input type="search" id="customer-search-input" name="s" value="<?php echo esc_attr($search); ?>">
                     <input type="submit" id="search-submit" class="button" value="Search Customers">
                 </p>
@@ -122,10 +113,7 @@ class CustomerController {
 
         <div id="modal-new-customer" class="studiofy-modal-overlay studiofy-hidden">
             <div class="studiofy-modal">
-                <div class="studiofy-modal-header">
-                    <h2>New Customer</h2>
-                    <button type="button" class="close-modal">&times;</button>
-                </div>
+                <div class="studiofy-modal-header"><h2>New Customer</h2><button class="close-modal">&times;</button></div>
                 <div class="studiofy-modal-body">
                     <form method="post" action="<?php echo admin_url('admin_post.php'); ?>" id="studiofy-customer-form">
                         <input type="hidden" name="action" value="studiofy_save_customer">
@@ -135,70 +123,45 @@ class CustomerController {
                             <div class="studiofy-col"><label>First Name *</label><input type="text" name="first_name" required class="widefat"></div>
                             <div class="studiofy-col"><label>Last Name *</label><input type="text" name="last_name" required class="widefat"></div>
                         </div>
-                        
                         <div class="studiofy-form-row">
                             <div class="studiofy-col"><label>Email *</label><input type="email" name="email" required class="widefat" placeholder="client@example.com"></div>
                             <div class="studiofy-col"><label>Phone</label><input type="tel" name="phone" class="widefat" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="123-456-7890"></div>
                         </div>
-                        
                         <div class="studiofy-form-row">
                             <div class="studiofy-col"><label>Company</label><input type="text" name="company" class="widefat"></div>
-                            <div class="studiofy-col"><label>Status</label>
-                                <select name="status" class="widefat">
-                                    <option value="Lead">Lead</option>
-                                    <option value="Active">Active</option>
-                                    <option value="Inactive">Inactive</option>
-                                </select>
-                            </div>
+                            <div class="studiofy-col"><label>Status</label><select name="status" class="widefat"><option value="Lead">Lead</option><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
                         </div>
-
                         <hr>
                         <h4>Address</h4>
-                        <div class="studiofy-form-row">
-                            <div class="studiofy-col"><label>Street Address</label><input type="text" name="addr_street" class="widefat" placeholder="123 Main St"></div>
-                        </div>
+                        <div class="studiofy-form-row"><div class="studiofy-col"><label>Street</label><input type="text" name="addr_street" class="widefat"></div></div>
                         <div class="studiofy-form-row">
                             <div class="studiofy-col"><label>City</label><input type="text" name="addr_city" class="widefat"></div>
                             <div class="studiofy-col"><label>State</label><input type="text" name="addr_state" class="widefat" maxlength="2" placeholder="NY"></div>
-                            <div class="studiofy-col"><label>Zip Code</label><input type="text" name="addr_zip" class="widefat" pattern="[0-9]{5}" placeholder="12345"></div>
+                            <div class="studiofy-col"><label>Zip</label><input type="text" name="addr_zip" class="widefat" pattern="[0-9]{5}"></div>
                         </div>
                         <hr>
-
                         <div class="studiofy-form-row"><label>Notes</label><textarea name="notes" rows="3" class="widefat"></textarea></div>
-                        
-                        <div class="studiofy-form-actions">
-                            <button type="button" class="button close-modal">Cancel</button>
-                            <button type="submit" class="button button-primary">Create Customer</button>
-                        </div>
+                        <div class="studiofy-form-actions"><button type="button" class="button close-modal">Cancel</button> <button type="submit" class="button button-primary">Create Customer</button></div>
                     </form>
                 </div>
             </div>
         </div>
+        <script>
+            jQuery(document).ready(function($){
+                $('#btn-new-customer').click(function(e){ e.preventDefault(); $('#modal-new-customer').removeClass('studiofy-hidden'); });
+                $('.close-modal').click(function(e){ e.preventDefault(); $('#modal-new-customer').addClass('studiofy-hidden'); });
+            });
+        </script>
         <?php
     }
 
     public function handle_save(): void {
-        // 1. Verify Nonce
-        if (!isset($_POST['studiofy_nonce']) || !wp_verify_nonce($_POST['studiofy_nonce'], 'save_customer')) {
-            wp_die('Security check failed');
-        }
-
-        // 2. Check Permissions
-        if (!current_user_can('manage_options')) {
-            wp_die('Unauthorized');
-        }
+        if (!isset($_POST['studiofy_nonce']) || !wp_verify_nonce($_POST['studiofy_nonce'], 'save_customer')) wp_die('Security check failed');
+        if (!current_user_can('manage_options')) wp_die('Unauthorized');
         
         global $wpdb;
-        
-        // 3. Concat Address
-        $address = implode(', ', array_filter([
-            sanitize_text_field($_POST['addr_street']),
-            sanitize_text_field($_POST['addr_city']),
-            sanitize_text_field($_POST['addr_state']),
-            sanitize_text_field($_POST['addr_zip'])
-        ]));
+        $address = implode(', ', array_filter([sanitize_text_field($_POST['addr_street']), sanitize_text_field($_POST['addr_city']), sanitize_text_field($_POST['addr_state']), sanitize_text_field($_POST['addr_zip'])]));
 
-        // 4. Insert
         $result = $wpdb->insert($wpdb->prefix.'studiofy_customers', [
             'first_name' => sanitize_text_field($_POST['first_name']),
             'last_name' => sanitize_text_field($_POST['last_name']),
@@ -210,25 +173,15 @@ class CustomerController {
             'status' => sanitize_text_field($_POST['status'])
         ]);
 
-        if ($result === false) {
-            wp_die('Database Error: ' . $wpdb->last_error);
-        }
-        
-        // 5. Redirect
-        wp_redirect(admin_url('admin.php?page=studiofy-customers&msg=saved'));
-        exit;
+        if ($result === false) wp_die('Database Error: ' . $wpdb->last_error);
+        wp_redirect(admin_url('admin.php?page=studiofy-customers&msg=saved')); exit;
     }
 
     public function handle_delete(): void {
-        if (!current_user_can('manage_options')) {
-            wp_die('Unauthorized');
-        }
+        if (!current_user_can('manage_options')) wp_die('Unauthorized');
         check_admin_referer('delete_customer_' . $_GET['id']);
-        
         global $wpdb;
         $wpdb->delete($wpdb->prefix . 'studiofy_customers', ['id' => (int) $_GET['id']]);
-        
-        wp_redirect(admin_url('admin.php?page=studiofy-customers&msg=deleted'));
-        exit;
+        wp_redirect(admin_url('admin.php?page=studiofy-customers&msg=deleted')); exit;
     }
 }
