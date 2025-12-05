@@ -2,7 +2,7 @@
 /**
  * Activator
  * @package Studiofy\Core
- * @version 2.0.5
+ * @version 2.0.7
  */
 
 declare(strict_types=1);
@@ -19,7 +19,6 @@ class Activator {
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         $charset_collate = $wpdb->get_charset_collate();
 
-        // Renamed Clients to Customers
         $tables = [
             'studiofy_customers' => "CREATE TABLE {$wpdb->prefix}studiofy_customers (
                 id mediumint(9) NOT NULL AUTO_INCREMENT,
@@ -39,7 +38,7 @@ class Activator {
             'studiofy_invoices' => "CREATE TABLE {$wpdb->prefix}studiofy_invoices (
                 id mediumint(9) NOT NULL AUTO_INCREMENT,
                 invoice_number varchar(50) NULL,
-                customer_id mediumint(9) NOT NULL, -- Renamed from client_id
+                customer_id mediumint(9) NOT NULL,
                 project_id mediumint(9) NULL,
                 title varchar(255) NOT NULL,
                 amount decimal(10,2) NOT NULL,
@@ -58,7 +57,7 @@ class Activator {
 
             'studiofy_projects' => "CREATE TABLE {$wpdb->prefix}studiofy_projects (
                 id mediumint(9) NOT NULL AUTO_INCREMENT,
-                customer_id mediumint(9) NOT NULL, -- Renamed from client_id
+                customer_id mediumint(9) NOT NULL,
                 title varchar(255) NOT NULL,
                 status varchar(50) DEFAULT 'todo' NOT NULL,
                 budget decimal(10,2) NULL,
@@ -69,7 +68,7 @@ class Activator {
 
             'studiofy_contracts' => "CREATE TABLE {$wpdb->prefix}studiofy_contracts (
                 id mediumint(9) NOT NULL AUTO_INCREMENT,
-                customer_id mediumint(9) NOT NULL, -- Renamed from client_id
+                customer_id mediumint(9) NOT NULL,
                 project_id mediumint(9) NULL,
                 title varchar(255) NOT NULL,
                 amount decimal(10,2) DEFAULT 0.00,
@@ -93,8 +92,6 @@ class Activator {
                 notes longtext NULL,
                 booking_date date NOT NULL,
                 booking_time time NOT NULL,
-                end_date date NULL,
-                end_time time NULL,
                 status varchar(20) DEFAULT 'Scheduled' NOT NULL,
                 created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
                 PRIMARY KEY (id),
