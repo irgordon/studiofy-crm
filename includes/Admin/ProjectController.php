@@ -1,8 +1,8 @@
 <?php
 /**
- * Kanban Controller
+ * Project Controller
  * @package Studiofy\Admin
- * @version 2.0.1
+ * @version 2.0.4
  */
 
 declare(strict_types=1);
@@ -13,9 +13,7 @@ use function Studiofy\studiofy_get_asset_version;
 
 class ProjectController {
 
-    public function init(): void {
-        // Init logic
-    }
+    public function init(): void {}
 
     public function render_kanban_board(): void {
         wp_enqueue_script('jquery-ui-sortable');
@@ -35,9 +33,8 @@ class ProjectController {
     private function render_html(): void {
         $projects = $this->get_projects_by_status();
         ?>
-        <div class="wrap">
-            <h1 class="wp-heading-inline">Project Management</h1>
-            <hr class="wp-header-end">
+        <div class="wrap studiofy-dark-theme">
+            <h1>Projects</h1>
             <div class="studiofy-kanban-board">
                 <?php foreach(['todo', 'in_progress', 'future'] as $status): ?>
                 <div class="studiofy-column" data-status="<?php echo $status; ?>">
@@ -62,7 +59,11 @@ class ProjectController {
         $table = $wpdb->prefix . 'studiofy_projects';
         $results = $wpdb->get_results("SELECT * FROM $table ORDER BY created_at DESC");
         $sorted = ['todo' => [], 'in_progress' => [], 'future' => []];
-        foreach ($results as $row) if (isset($sorted[$row->status])) $sorted[$row->status][] = $row;
+        foreach ($results as $row) {
+            if (isset($sorted[$row->status])) {
+                $sorted[$row->status][] = $row;
+            }
+        }
         return $sorted;
     }
 }
