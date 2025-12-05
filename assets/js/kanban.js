@@ -1,7 +1,7 @@
 /**
  * Studiofy Kanban Board
  * @package Studiofy
- * @version 2.0.4
+ * @version 2.0.7
  */
 jQuery(document).ready(function($) {
     
@@ -17,23 +17,19 @@ jQuery(document).ready(function($) {
             var projectId = ui.item.data('id');
             var newStatus = ui.item.closest('.studiofy-column').data('status');
 
-            $.ajax({
-                url: studiofySettings.root + 'studiofy/v1/projects/update-status',
+            wp.apiFetch({
+                path: '/studiofy/v1/projects/update-status',
                 method: 'POST',
-                beforeSend: function ( xhr ) {
-                    xhr.setRequestHeader( 'X-WP-Nonce', studiofySettings.nonce );
-                },
+                headers: { 'X-WP-Nonce': studiofySettings.nonce },
                 data: {
                     id: projectId,
                     status: newStatus
-                },
-                success: function(response) {
-                    console.log('Status updated');
-                },
-                error: function(err) {
-                    alert('Error updating status');
-                    $(this).sortable('cancel');
                 }
+            }).then(response => {
+                console.log('Status updated');
+            }).catch(error => {
+                alert('Error updating status');
+                $(this).sortable('cancel');
             });
         }
     }).disableSelection();
