@@ -1,0 +1,57 @@
+.studiofy-scheduler {
+    border: 1px solid #ddd;
+    padding: 20px;
+    border-radius: 8px;
+    background: #fff;
+    max-width: 400px;
+}
+
+.studiofy-scheduler-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.studiofy-month-nav button {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.studiofy-calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    margin-bottom: 20px;
+}
+
+.studiofy-calendar-day {
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    border-radius: 4px;
+    background: #f9f9f9;
+}
+.studiofy-calendar-day:hover:not(.disabled) { background: #eee; }
+.studiofy-calendar-day.selected { color: white; } /* Bg set by Elementor Control */
+.studiofy-calendar-day.disabled { color: #ccc; cursor: default; }
+.studiofy-calendar-day.empty { background: none; cursor: default; }
+
+.studiofy-time-slots { margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; }
+.slots-container { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.studiofy-time-slot {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    background: white;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.studiofy-booking-form { margin-top: 15px; display: flex; flex-direction: column; gap: 10px; }
+.studiofy-booking-form input { padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+.studiofy-booking-form button { padding: 10px; background: #333; color: white; border: none; cursor: pointer; }
+
+.hidden { display: none; }
