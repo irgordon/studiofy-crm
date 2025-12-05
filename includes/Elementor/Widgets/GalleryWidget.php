@@ -2,7 +2,7 @@
 /**
  * Gallery Widget
  * @package Studiofy\Elementor\Widgets
- * @version 2.0.0
+ * @version 2.0.1
  */
 declare(strict_types=1);
 namespace Studiofy\Elementor\Widgets;
@@ -32,16 +32,29 @@ class GalleryWidget extends Widget_Base {
         $folder_id = $settings['folder_id'];
         if (!$folder_id) return;
         
+        // Performance: Check Transient Cache
+        $cache_key = 'studiofy_gallery_html_' . $folder_id . '_' . $settings['mode'];
+        $cached_output = get_transient($cache_key);
+
+        if (false !== $cached_output && !is_user_logged_in()) { // Only serve cache to non-admins
+             echo $cached_output;
+             echo "<script>window.studiofyGallery = window.studiofyGallery || {}; window.studiofyGallery.current_id = {$folder_id};</script>";
+             return;
+        }
+
         $args = ['post_type' => 'attachment', 'posts_per_page' => -1, 'tax_query' => [['taxonomy' => 'studiofy_folder', 'field' => 'term_id', 'terms' => $folder_id]]];
         $query = new \WP_Query($args);
         $watermarker = new \Studiofy\Media\Watermarker();
         
+        ob_start();
         echo '<form id="studiofy-proofing-form" class="studiofy-gallery-wrapper"><div class="studiofy-grid">';
         while ($query->have_posts()) {
             $query->the_post();
             $id = get_the_ID();
             $src = ($settings['mode'] === 'proofing') ? $watermarker->apply_watermark($id) : wp_get_attachment_image_url($id, 'medium_large');
             if(!$src) $src = wp_get_attachment_image_url($id, 'medium');
+            
+            // Escaped Output
             echo '<div class="studiofy-item"><img src="'.esc_url($src).'">';
             if ($settings['mode'] === 'proofing') echo '<input type="checkbox" name="selected_photos[]" value="'.$id.'">';
             echo '</div>';
@@ -49,6 +62,13 @@ class GalleryWidget extends Widget_Base {
         echo '</div>';
         if ($settings['mode'] === 'proofing') echo '<button type="submit" class="elementor-button">Submit Selections</button>';
         echo '</form>';
+        
+        $output = ob_get_clean();
+        
+        // Save to Transient for 1 hour
+        set_transient($cache_key, $output, 3600);
+        
+        echo $output;
         echo "<script>window.studiofyGallery = window.studiofyGallery || {}; window.studiofyGallery.current_id = {$folder_id};</script>";
         wp_reset_postdata();
     }
