@@ -1,5 +1,12 @@
 <?php
+/**
+ * Encryption Engine
+ * @package Studiofy\Security
+ * @version 2.0.4
+ */
+
 declare(strict_types=1);
+
 namespace Studiofy\Security;
 
 class Encryption {
