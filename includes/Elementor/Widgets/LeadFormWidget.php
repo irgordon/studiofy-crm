@@ -2,7 +2,7 @@
 /**
  * Lead Form Widget
  * @package Studiofy\Elementor\Widgets
- * @version 2.0.4
+ * @version 2.0.5
  */
 
 declare(strict_types=1);
@@ -79,7 +79,8 @@ class LeadFormWidget extends Widget_Base {
                 btn.text('Sending...');
 
                 $.ajax({
-                    url: '<?php echo esc_url_raw(rest_url("studiofy/v1/clients")); ?>',
+                    // Updated endpoint to /customers
+                    url: '<?php echo esc_url_raw(rest_url("studiofy/v1/customers")); ?>',
                     method: 'POST',
                     beforeSend: function(xhr) {
                         xhr.setRequestHeader('X-WP-Nonce', '<?php echo wp_create_nonce("wp_rest"); ?>');
