@@ -2,7 +2,7 @@
 /**
  * Booking API Routes
  * @package Studiofy\Api
- * @version 2.0.4
+ * @version 2.0.5
  */
 
 declare(strict_types=1);
@@ -56,18 +56,24 @@ class BookingRoutes {
         $params = $request->get_json_params();
         $table = $wpdb->prefix . 'studiofy_bookings';
 
+        // Check if user is an existing customer
+        $email = sanitize_email($params['email']);
+        $customer_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}studiofy_customers WHERE email = %s", $email));
+
         $exists = $wpdb->get_var($wpdb->prepare("SELECT id FROM $table WHERE booking_date = %s AND booking_time = %s AND status != 'cancelled'", $params['date'], $params['time']));
         if ($exists) {
             return new WP_REST_Response(['success' => false, 'message' => 'Slot taken'], 409);
         }
 
         $wpdb->insert($table, [
+            'customer_id' => $customer_id, // Link if exists
             'guest_name' => sanitize_text_field($params['name']),
-            'guest_email' => sanitize_email($params['email']),
+            'guest_email' => $email,
             'service_type' => sanitize_text_field($params['service']),
             'booking_date' => $params['date'],
             'booking_time' => $params['time'],
-            'status' => 'pending'
+            'title' => sanitize_text_field($params['name']) . ' - ' . sanitize_text_field($params['service']),
+            'status' => 'Scheduled'
         ]);
 
         return new WP_REST_Response(['success' => true], 200);
