@@ -2,7 +2,7 @@
 /**
  * Admin Menu Controller
  * @package Studiofy\Admin
- * @version 2.0.5
+ * @version 2.0.7
  */
 
 declare(strict_types=1);
@@ -61,10 +61,11 @@ class Menu {
             studiofy_get_asset_version('assets/css/admin.css')
         );
 
+        // WP 6.9 Modernization: Use wp-api-fetch instead of raw AJAX
         wp_enqueue_script(
             'studiofy-admin-js', 
             STUDIOFY_URL . 'assets/js/admin.js', 
-            ['jquery', 'jquery-ui-sortable', 'wp-color-picker'], 
+            ['jquery', 'jquery-ui-sortable', 'wp-color-picker', 'wp-api-fetch'], 
             studiofy_get_asset_version('assets/js/admin.js'), 
             true
         );
@@ -72,13 +73,8 @@ class Menu {
 
     public function register_menu_pages(): void {
         add_menu_page(
-            'Studiofy CRM', 
-            'Studiofy CRM', 
-            'manage_options', 
-            'studiofy-dashboard', 
-            [$this->dashboardController, 'render_page'], 
-            'dashicons-camera', 
-            6
+            'Studiofy CRM', 'Studiofy CRM', 'manage_options', 
+            'studiofy-dashboard', [$this->dashboardController, 'render_page'], 'dashicons-camera', 6
         );
 
         add_submenu_page('studiofy-dashboard', 'Dashboard', 'Dashboard', 'manage_options', 'studiofy-dashboard', [$this->dashboardController, 'render_page']);
