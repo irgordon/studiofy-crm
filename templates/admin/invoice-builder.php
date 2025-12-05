@@ -1,4 +1,4 @@
-<div class="wrap studiofy-dark-theme">
+<div class="wrap">
     <h1>New Invoice</h1>
     <form method="post" action="<?php echo admin_url('admin_post.php'); ?>">
         <input type="hidden" name="action" value="studiofy_save_invoice">
@@ -14,10 +14,10 @@
                 </div>
             </div>
             <div class="studiofy-form-row">
-                <div class="studiofy-col"><label>Client *</label>
-                    <select name="client_id" required class="widefat">
-                        <option value="">Select a client</option>
-                        <?php foreach($clients as $c) echo "<option value='{$c->id}'>{$c->first_name} {$c->last_name}</option>"; ?>
+                <div class="studiofy-col"><label>Customer *</label>
+                    <select name="customer_id" required class="widefat">
+                        <option value="">Select a customer</option>
+                        <?php foreach($customers as $c) echo "<option value='{$c->id}'>{$c->first_name} {$c->last_name}</option>"; ?>
                     </select>
                 </div>
                 <div class="studiofy-col"><label>Project</label>
