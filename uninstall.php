@@ -1,4 +1,9 @@
 <?php
+/**
+ * Uninstall Logic
+ * @package Studiofy
+ * @version 2.0.0
+ */
 if (!defined('WP_UNINSTALL_PLUGIN')) exit;
 
 global $wpdb;
