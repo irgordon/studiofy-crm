@@ -1,24 +1,20 @@
 /**
  * Studiofy Admin Core
  * @package Studiofy
- * @version 2.0.4
+ * @version 2.0.5
  */
 jQuery(document).ready(function($){
-    // Color Picker
-    $('.studiofy-color-field').wpColorPicker();
+    // Modals
+    function setupModal(triggerId, modalId) {
+        $(triggerId).click(function(e){ e.preventDefault(); $(modalId).removeClass('studiofy-hidden'); });
+        $(modalId + ' .close-modal').click(function(e){ e.preventDefault(); $(modalId).addClass('studiofy-hidden'); });
+    }
+    setupModal('#btn-new-customer', '#modal-new-customer');
+    setupModal('#btn-new-appt', '#modal-new-appt');
 
-    // Media Uploader
-    $('.studiofy-upload-btn').click(function(e) {
-        e.preventDefault();
-        var button = $(this);
-        var targetId = button.data('target');
-        var custom_uploader = wp.media({
-            title: 'Select Image',
-            button: { text: 'Use this image' },
-            multiple: false
-        }).on('select', function() {
-            var attachment = custom_uploader.state().get('selection').first().toJSON();
-            $(targetId).val(attachment.url);
-        }).open();
-    });
+    // WP Color Picker
+    $('.studiofy-color-field').wpColorPicker();
+    
+    // Delete Confirmation
+    $('.delete-link').click(function(){ return confirm('Are you sure you want to delete this item?'); });
 });
