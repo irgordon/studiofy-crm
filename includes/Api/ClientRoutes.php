@@ -1,8 +1,8 @@
 <?php
 /**
- * Client REST API
+ * Client API Routes
  * @package Studiofy\Api
- * @version 2.0.1
+ * @version 2.0.4
  */
 
 declare(strict_types=1);
@@ -12,6 +12,7 @@ namespace Studiofy\Api;
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_REST_Server;
+use Studiofy\Security\Encryption;
 
 class ClientRoutes {
 
@@ -32,17 +33,18 @@ class ClientRoutes {
         global $wpdb;
         $params = $request->get_json_params();
         $email = sanitize_email($params['email']);
+        $encryption = new Encryption();
 
         if ($wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}studiofy_clients WHERE email = %s", $email))) {
             return new WP_REST_Response(['success' => false, 'message' => 'Email exists'], 409);
         }
 
         $wpdb->insert($wpdb->prefix . 'studiofy_clients', [
-            'status' => 'lead',
+            'status' => 'Lead',
             'first_name' => sanitize_text_field($params['first_name'] ?? ''),
             'last_name' => sanitize_text_field($params['last_name'] ?? ''),
             'email' => $email,
-            'phone' => sanitize_text_field($params['phone'] ?? ''),
+            'phone' => $encryption->encrypt(sanitize_text_field($params['phone'] ?? '')),
             'created_at' => current_time('mysql')
         ]);
 
