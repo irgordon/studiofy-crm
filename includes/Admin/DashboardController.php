@@ -2,7 +2,7 @@
 /**
  * Dashboard Controller
  * @package Studiofy\Admin
- * @version 2.0.6
+ * @version 2.0.7
  */
 
 declare(strict_types=1);
@@ -14,7 +14,6 @@ class DashboardController {
     public function render_page(): void {
         global $wpdb;
         
-        // Use Transients for Performance (1 Hour Cache)
         $stats = get_transient('studiofy_dashboard_stats');
         
         if (false === $stats) {
@@ -34,33 +33,22 @@ class DashboardController {
             
             <div class="studiofy-dashboard-grid">
                 <div class="studiofy-stat-card">
-                    <div class="stat-icon-wrapper">
-                        <span class="dashicons dashicons-admin-users"></span>
-                    </div>
+                    <div class="stat-icon-wrapper"><span class="dashicons dashicons-admin-users"></span></div>
                     <div class="stat-label">Active Customers</div>
                     <div class="stat-value"><?php echo esc_html($stats['customers']); ?></div>
                 </div>
-                
                 <div class="studiofy-stat-card">
-                    <div class="stat-icon-wrapper">
-                        <span class="dashicons dashicons-portfolio"></span>
-                    </div>
+                    <div class="stat-icon-wrapper"><span class="dashicons dashicons-portfolio"></span></div>
                     <div class="stat-label">Active Projects</div>
                     <div class="stat-value"><?php echo esc_html($stats['projects']); ?></div>
                 </div>
-
                 <div class="studiofy-stat-card">
-                    <div class="stat-icon-wrapper">
-                        <span class="dashicons dashicons-calendar-alt"></span>
-                    </div>
+                    <div class="stat-icon-wrapper"><span class="dashicons dashicons-calendar-alt"></span></div>
                     <div class="stat-label">Appointments</div>
                     <div class="stat-value"><?php echo esc_html($stats['appts']); ?></div>
                 </div>
-
                 <div class="studiofy-stat-card">
-                    <div class="stat-icon-wrapper">
-                        <span class="dashicons dashicons-media-spreadsheet"></span>
-                    </div>
+                    <div class="stat-icon-wrapper"><span class="dashicons dashicons-media-spreadsheet"></span></div>
                     <div class="stat-label">Pending Invoices</div>
                     <div class="stat-value"><?php echo esc_html($stats['invoices']); ?></div>
                 </div>
