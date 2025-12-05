@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Studiofy CRM
  * Description: A professional Elementor Addon for Photographers. Includes Kanban, Contracts, Proofing Galleries, and Square Invoicing.
- * Version: 2.0.0
+ * Version: 2.0.1
  * Author: Ian R. Gordon
  * Author URI: https://iangordon.app
  * Text Domain: studiofy
@@ -10,7 +10,7 @@
  * Requires PHP: 8.1
  * Elementor tested up to: 3.25.0
  * @package Studiofy
- * @version 2.0.0
+ * @version 2.0.1
  */
 
 declare(strict_types=1);
@@ -19,8 +19,8 @@ namespace Studiofy;
 
 if (!defined('ABSPATH')) exit;
 
-define('STUDIOFY_VERSION', '2.0.0');
-define('STUDIOFY_DB_VERSION', '2.0');
+define('STUDIOFY_VERSION', '2.0.1');
+define('STUDIOFY_DB_VERSION', '2.1'); // Bumped for potential schema sync
 define('STUDIOFY_PATH', plugin_dir_path(__FILE__));
 define('STUDIOFY_URL', plugin_dir_url(__FILE__));
 
@@ -52,11 +52,9 @@ register_deactivation_hook(__FILE__, [Core\Deactivator::class, 'deactivate']);
 function run_studiofy(): void {
     if (version_compare(PHP_VERSION, '8.1', '<')) return;
 
-    // Load Core Engine
     $plugin = new Core\Plugin();
     $plugin->run();
 
-    // Load Elementor Addon
     add_action('plugins_loaded', function() {
         if (did_action('elementor/loaded')) {
             \Studiofy\Elementor\Addon::instance();
