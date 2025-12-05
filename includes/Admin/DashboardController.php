@@ -1,8 +1,8 @@
 <?php
 /**
- * Dashboard UI
+ * Dashboard Controller
  * @package Studiofy\Admin
- * @version 2.0.4
+ * @version 2.0.5
  */
 
 declare(strict_types=1);
@@ -14,21 +14,21 @@ class DashboardController {
     public function render_page(): void {
         global $wpdb;
         
-        // Use Transients for Performance
+        // Use Transients for Performance (1 Hour Cache)
         $stats = get_transient('studiofy_dashboard_stats');
         
         if (false === $stats) {
             $stats = [
-                'clients' => $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_clients WHERE status='Active'"),
-                'projects' => $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_projects WHERE status='in_progress'"),
-                'appts' => $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_bookings WHERE status='pending'"),
-                'invoices' => $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_invoices WHERE status='Draft'")
+                'customers' => $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_customers WHERE status='Active'"),
+                'projects'  => $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_projects WHERE status='in_progress'"),
+                'appts'     => $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_bookings WHERE status='Scheduled'"),
+                'invoices'  => $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_invoices WHERE status='Draft'")
             ];
-            set_transient('studiofy_dashboard_stats', $stats, 3600); // 1 Hour Cache
+            set_transient('studiofy_dashboard_stats', $stats, 3600); 
         }
         
         ?>
-        <div class="wrap studiofy-dark-theme">
+        <div class="wrap">
             <h1>Dashboard</h1>
             <p>Welcome back! Here's what's happening with your business.</p>
             
@@ -36,8 +36,8 @@ class DashboardController {
                 <div class="studiofy-stat-card">
                     <div class="stat-icon dashicons dashicons-admin-users"></div>
                     <div class="stat-info">
-                        <span class="stat-label">Active Clients</span>
-                        <span class="stat-value"><?php echo esc_html($stats['clients']); ?></span>
+                        <span class="stat-label">Active Customers</span>
+                        <span class="stat-value"><?php echo esc_html($stats['customers']); ?></span>
                     </div>
                 </div>
                 <div class="studiofy-stat-card">
@@ -64,15 +64,17 @@ class DashboardController {
             </div>
 
             <div class="studiofy-dashboard-panels">
-                <div class="studiofy-panel">
-                    <h2>Revenue Overview</h2>
-                    <p style="font-size: 24px; font-weight: bold;">$0.00</p>
-                    <p class="description">Total Revenue (Paid Invoices)</p>
+                <div class="postbox">
+                    <h2 class="hndle">Revenue Overview</h2>
+                    <div class="inside">
+                        <p style="font-size: 24px; font-weight: bold;">$0.00</p>
+                        <p class="description">Total Revenue (Paid Invoices)</p>
+                    </div>
                 </div>
-                <div class="studiofy-panel">
-                    <h2>Quick Actions</h2>
-                    <div class="action-buttons">
-                        <button class="button button-primary" onclick="location.href='?page=studiofy-clients'">+ New Client</button>
+                <div class="postbox">
+                    <h2 class="hndle">Quick Actions</h2>
+                    <div class="inside action-buttons">
+                        <button class="button button-primary" onclick="location.href='?page=studiofy-customers'">+ New Customer</button>
                         <button class="button" onclick="location.href='?page=studiofy-projects'">+ New Project</button>
                         <button class="button" onclick="location.href='?page=studiofy-invoices&action=create'">+ New Invoice</button>
                         <button class="button" onclick="location.href='?page=studiofy-contracts&action=create'">+ New Contract</button>
