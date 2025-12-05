@@ -1,9 +1,8 @@
 <?php
 /**
- * Booking REST API
- * Handles Availability Checks and Slot Booking.
+ * Booking API
  * @package Studiofy\Api
- * @version 2.0.0
+ * @version 2.0.1
  */
 
 declare(strict_types=1);
