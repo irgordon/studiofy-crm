@@ -17,44 +17,66 @@ declare(strict_types=1);
 
 namespace Studiofy;
 
-if (!defined('ABSPATH')) exit;
+if (!defined('ABSPATH')) {
+    exit;
+}
 
+// Global Version Control
 define('STUDIOFY_VERSION', '2.0.1');
-define('STUDIOFY_DB_VERSION', '2.1'); // Bumped for potential schema sync
+define('STUDIOFY_DB_VERSION', '2.1');
 define('STUDIOFY_PATH', plugin_dir_path(__FILE__));
 define('STUDIOFY_URL', plugin_dir_url(__FILE__));
 
 /**
- * Versioning Helper
- * Returns filemtime in debug mode, or STUDIOFY_VERSION in prod.
+ * Smart Versioning Helper
+ * Returns file modification time in Dev mode (for instant cache busting)
+ * Returns STUDIOFY_VERSION in Production mode (for stability)
  */
 function studiofy_get_asset_version(string $file_path): string {
     if (defined('WP_DEBUG') && WP_DEBUG) {
         $file = STUDIOFY_PATH . $file_path;
-        return file_exists($file) ? (string) filemtime($file) : STUDIOFY_VERSION;
+        if (file_exists($file)) {
+            return (string) filemtime($file);
+        }
     }
     return STUDIOFY_VERSION;
 }
 
+// PSR-4 Autoloader
 spl_autoload_register(function (string $class) {
     $prefix = 'Studiofy\\';
     $base_dir = STUDIOFY_PATH . 'includes/';
     $len = strlen($prefix);
-    if (strncmp($prefix, $class, $len) !== 0) return;
+
+    if (strncmp($prefix, $class, $len) !== 0) {
+        return;
+    }
+
     $relative_class = substr($class, $len);
     $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
-    if (file_exists($file)) require $file;
+
+    if (file_exists($file)) {
+        require $file;
+    }
 });
 
+// Lifecycle Hooks
 register_activation_hook(__FILE__, [Core\Activator::class, 'activate']);
 register_deactivation_hook(__FILE__, [Core\Deactivator::class, 'deactivate']);
 
+// Safe Boot
 function run_studiofy(): void {
-    if (version_compare(PHP_VERSION, '8.1', '<')) return;
-
+    if (version_compare(PHP_VERSION, '8.1', '<')) {
+        add_action('admin_notices', function() {
+            echo '<div class="notice notice-error"><p>Studiofy CRM requires PHP 8.1+. Please upgrade your server.</p></div>';
+        });
+        return;
+    }
+    
     $plugin = new Core\Plugin();
     $plugin->run();
 
+    // Elementor Hook
     add_action('plugins_loaded', function() {
         if (did_action('elementor/loaded')) {
             \Studiofy\Elementor\Addon::instance();
