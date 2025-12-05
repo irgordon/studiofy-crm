@@ -2,7 +2,7 @@
 /**
  * Main Controller
  * @package Studiofy\Core
- * @version 2.0.5
+ * @version 2.0.7
  */
 
 declare(strict_types=1);
@@ -11,7 +11,7 @@ namespace Studiofy\Core;
 
 use Studiofy\Admin\Menu;
 use Studiofy\Admin\GalleryController;
-use Studiofy\Api\CustomerRoutes; // Renamed
+use Studiofy\Api\CustomerRoutes;
 use Studiofy\Api\BookingRoutes;
 use Studiofy\Api\KanbanRoutes;
 use Studiofy\Api\ProjectEndpoints;
