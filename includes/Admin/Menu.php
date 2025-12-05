@@ -1,9 +1,18 @@
 <?php
+/**
+ * Admin Menu Controller
+ * @package Studiofy\Admin
+ * @version 2.0.4
+ */
+
 declare(strict_types=1);
+
 namespace Studiofy\Admin;
+
 use function Studiofy\studiofy_get_asset_version;
 
 class Menu {
+
     private Settings $settings;
     private DashboardController $dashboardController;
     private ProjectController $projectController;
@@ -37,14 +46,42 @@ class Menu {
     }
 
     public function enqueue_styles($hook): void {
-        if (strpos($hook, 'studiofy') === false) return;
+        // Only load on Studiofy pages
+        if (strpos($hook, 'studiofy') === false) {
+            return;
+        }
+
         wp_enqueue_style('dashicons');
-        wp_enqueue_style('studiofy-admin-css', STUDIOFY_URL . 'assets/css/admin.css', [], studiofy_get_asset_version('assets/css/admin.css'));
-        wp_enqueue_script('studiofy-admin-js', STUDIOFY_URL . 'assets/js/admin.js', ['jquery', 'jquery-ui-sortable'], studiofy_get_asset_version('assets/js/admin.js'), true);
+        wp_enqueue_style('wp-color-picker');
+        wp_enqueue_media();
+
+        wp_enqueue_style(
+            'studiofy-admin-css', 
+            STUDIOFY_URL . 'assets/css/admin.css', 
+            [], 
+            studiofy_get_asset_version('assets/css/admin.css')
+        );
+
+        wp_enqueue_script(
+            'studiofy-admin-js', 
+            STUDIOFY_URL . 'assets/js/admin.js', 
+            ['jquery', 'jquery-ui-sortable', 'wp-color-picker'], 
+            studiofy_get_asset_version('assets/js/admin.js'), 
+            true
+        );
     }
 
     public function register_menu_pages(): void {
-        add_menu_page('Studiofy CRM', 'Studiofy CRM', 'manage_options', 'studiofy-dashboard', [$this->dashboardController, 'render_page'], 'dashicons-camera', 6);
+        add_menu_page(
+            'Studiofy CRM', 
+            'Studiofy CRM', 
+            'manage_options', 
+            'studiofy-dashboard', 
+            [$this->dashboardController, 'render_page'], 
+            'dashicons-camera', 
+            6
+        );
+
         add_submenu_page('studiofy-dashboard', 'Dashboard', 'Dashboard', 'manage_options', 'studiofy-dashboard', [$this->dashboardController, 'render_page']);
         add_submenu_page('studiofy-dashboard', 'Clients', 'Clients', 'manage_options', 'studiofy-clients', [$this->clientController, 'render_page']);
         add_submenu_page('studiofy-dashboard', 'Projects', 'Projects', 'manage_options', 'studiofy-projects', [$this->projectController, 'render_kanban_board']);
