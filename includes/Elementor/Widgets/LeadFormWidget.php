@@ -2,7 +2,7 @@
 /**
  * Lead Form Widget
  * @package Studiofy\Elementor\Widgets
- * @version 2.0.0
+ * @version 2.0.1
  */
 declare(strict_types=1);
 namespace Studiofy\Elementor\Widgets;
@@ -36,6 +36,5 @@ class LeadFormWidget extends Widget_Base {
             echo '<input type="'.esc_attr($field['field_type']).'" name="'.esc_attr($field['db_mapping']).'" class="elementor-field">';
         }
         echo '<button type="submit" class="elementor-button">Send</button></form>';
-        // JS logic in LeadFormWidget step previously
     }
 }
