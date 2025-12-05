@@ -2,7 +2,7 @@
 /**
  * Uninstall Logic
  * @package Studiofy
- * @version 2.0.5
+ * @version 2.0.7
  */
 
 if (!defined('WP_UNINSTALL_PLUGIN')) {
@@ -12,7 +12,7 @@ if (!defined('WP_UNINSTALL_PLUGIN')) {
 global $wpdb;
 
 $tables = [
-    'studiofy_customers', // Renamed from clients
+    'studiofy_customers',
     'studiofy_projects',
     'studiofy_milestones',
     'studiofy_tasks',
