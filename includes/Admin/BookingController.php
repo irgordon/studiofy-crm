@@ -2,7 +2,7 @@
 /**
  * Booking Controller
  * @package Studiofy\Admin
- * @version 2.0.5
+ * @version 2.0.7
  */
 
 declare(strict_types=1);
@@ -18,22 +18,16 @@ class BookingController {
     public function render_page(): void {
         global $wpdb;
         
-        // Month Navigation Logic
         $current_month = isset($_GET['month']) ? (int)$_GET['month'] : (int)date('m');
         $current_year  = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
         
-        // Calculate Next/Prev
-        $next_month = $current_month + 1;
-        $next_year = $current_year;
+        $next_month = $current_month + 1; $next_year = $current_year;
         if ($next_month > 12) { $next_month = 1; $next_year++; }
         
-        $prev_month = $current_month - 1;
-        $prev_year = $current_year;
+        $prev_month = $current_month - 1; $prev_year = $current_year;
         if ($prev_month < 1) { $prev_month = 12; $prev_year--; }
 
         $month_name = date('F Y', mktime(0, 0, 0, $current_month, 1, $current_year));
-        
-        // Get customers for dropdown
         $customers = $wpdb->get_results("SELECT id, first_name, last_name FROM {$wpdb->prefix}studiofy_customers");
 
         ?>
@@ -52,20 +46,14 @@ class BookingController {
                     <?php 
                     $days_in_month = cal_days_in_month(CAL_GREGORIAN, $current_month, $current_year);
                     $first_day_idx = date('w', mktime(0, 0, 0, $current_month, 1, $current_year));
-                    
-                    // Empty slots
                     for($i=0; $i<$first_day_idx; $i++) echo "<div class='calendar-day empty'></div>";
                     
-                    // Days
                     for($i=1; $i<=$days_in_month; $i++) {
                         $date_str = "$current_year-" . str_pad((string)$current_month, 2, '0', STR_PAD_LEFT) . "-" . str_pad((string)$i, 2, '0', STR_PAD_LEFT);
-                        // Fetch bookings for this day
                         $bookings = $wpdb->get_results($wpdb->prepare("SELECT title FROM {$wpdb->prefix}studiofy_bookings WHERE booking_date = %s", $date_str));
                         
                         echo "<div class='calendar-day'><span class='day-num'>$i</span>";
-                        foreach($bookings as $b) {
-                            echo "<div class='calendar-event'>" . esc_html($b->title) . "</div>";
-                        }
+                        foreach($bookings as $b) echo "<div class='calendar-event'>" . esc_html($b->title) . "</div>";
                         echo "</div>";
                     }
                     ?>
@@ -81,9 +69,9 @@ class BookingController {
                     <?php wp_nonce_field('save_booking', 'studiofy_nonce'); ?>
                     
                     <div class="studiofy-form-row"><label>Title *</label><input type="text" name="title" required class="widefat"></div>
-                    <div class="studiofy-form-row"><label>Client *</label>
+                    <div class="studiofy-form-row"><label>Customer *</label>
                         <select name="customer_id" required class="widefat">
-                            <option value="">Select a client</option>
+                            <option value="">Select a customer</option>
                             <?php foreach($customers as $c) echo "<option value='{$c->id}'>{$c->first_name} {$c->last_name}</option>"; ?>
                         </select>
                     </div>
