@@ -2,7 +2,7 @@
 /**
  * Invoice API Routes
  * @package Studiofy\Api
- * @version 2.0.4
+ * @version 2.0.5
  */
 
 declare(strict_types=1);
@@ -40,7 +40,8 @@ class InvoiceRoutes {
         global $wpdb;
         $params = $request->get_json_params();
         
-        $schema = ['project_id' => 'int', 'client_id' => 'int', 'title' => 'string', 'amount' => 'float', 'due_date' => 'date', 'currency' => 'string'];
+        // Update schema to look for customer_id
+        $schema = ['project_id' => 'int', 'customer_id' => 'int', 'title' => 'string', 'amount' => 'float', 'due_date' => 'date', 'currency' => 'string'];
         $valid_data = SchemaValidator::validate($params, $schema);
 
         $gateway = new SquareGateway();
@@ -53,7 +54,7 @@ class InvoiceRoutes {
         $table = $wpdb->prefix . 'studiofy_invoices';
         $wpdb->insert($table, [
             'project_id' => $valid_data['project_id'],
-            'client_id' => $valid_data['client_id'],
+            'customer_id' => $valid_data['customer_id'], // Refactored
             'external_id' => $square_result['id'],
             'order_id' => $square_result['order_id'],
             'title' => $valid_data['title'],
