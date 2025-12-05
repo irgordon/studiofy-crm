@@ -2,12 +2,12 @@
 /**
  * Plugin Name: Studiofy CRM
  * Description: High-performance CRM for Photographers. Manage Customers, Projects, and Bookings.
- * Version: 2.0.5
+ * Version: 2.0.6
  * Author: Ian R. Gordon
  * Text Domain: studiofy
  * Requires PHP: 8.1
  * @package Studiofy
- * @version 2.0.5
+ * @version 2.0.6
  */
 
 declare(strict_types=1);
@@ -18,8 +18,8 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('STUDIOFY_VERSION', '2.0.5');
-define('STUDIOFY_DB_VERSION', '2.5'); // Schema update for Clients -> Customers
+define('STUDIOFY_VERSION', '2.0.6');
+define('STUDIOFY_DB_VERSION', '2.6');
 define('STUDIOFY_PATH', plugin_dir_path(__FILE__));
 define('STUDIOFY_URL', plugin_dir_url(__FILE__));
 
