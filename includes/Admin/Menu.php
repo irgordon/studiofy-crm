@@ -2,7 +2,7 @@
 /**
  * Admin Menu Controller
  * @package Studiofy\Admin
- * @version 2.0.4
+ * @version 2.0.5
  */
 
 declare(strict_types=1);
@@ -18,7 +18,7 @@ class Menu {
     private ProjectController $projectController;
     private ContractController $contractController;
     private InvoiceController $invoiceController;
-    private ClientController $clientController;
+    private CustomerController $customerController;
     private BookingController $bookingController;
 
     public function __construct() {
@@ -27,7 +27,7 @@ class Menu {
         $this->projectController = new ProjectController();
         $this->contractController = new ContractController();
         $this->invoiceController = new InvoiceController();
-        $this->clientController = new ClientController();
+        $this->customerController = new CustomerController();
         $this->bookingController = new BookingController();
     }
 
@@ -39,14 +39,13 @@ class Menu {
         $this->projectController->init();
         $this->contractController->init();
         $this->invoiceController->init();
-        $this->clientController->init();
+        $this->customerController->init();
         $this->bookingController->init();
         
         add_filter('admin_footer_text', [$this, 'render_footer_version']);
     }
 
     public function enqueue_styles($hook): void {
-        // Only load on Studiofy pages
         if (strpos($hook, 'studiofy') === false) {
             return;
         }
@@ -83,8 +82,8 @@ class Menu {
         );
 
         add_submenu_page('studiofy-dashboard', 'Dashboard', 'Dashboard', 'manage_options', 'studiofy-dashboard', [$this->dashboardController, 'render_page']);
-        add_submenu_page('studiofy-dashboard', 'Clients', 'Clients', 'manage_options', 'studiofy-clients', [$this->clientController, 'render_page']);
-        add_submenu_page('studiofy-dashboard', 'Projects', 'Projects', 'manage_options', 'studiofy-projects', [$this->projectController, 'render_kanban_board']);
+        add_submenu_page('studiofy-dashboard', 'Customers', 'Customers', 'manage_options', 'studiofy-customers', [$this->customerController, 'render_page']);
+        add_submenu_page('studiofy-dashboard', 'Projects', 'Projects', 'manage_options', 'studiofy-projects', [$this->projectController, 'render_page']);
         add_submenu_page('studiofy-dashboard', 'Contracts', 'Contracts', 'manage_options', 'studiofy-contracts', [$this->contractController, 'render_page']);
         add_submenu_page('studiofy-dashboard', 'Invoices', 'Invoices', 'manage_options', 'studiofy-invoices', [$this->invoiceController, 'render_page']);
         add_submenu_page('studiofy-dashboard', 'Appointments', 'Appointments', 'manage_options', 'studiofy-appointments', [$this->bookingController, 'render_page']);
