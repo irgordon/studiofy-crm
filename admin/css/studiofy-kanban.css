@@ -1,6 +1,0 @@
-.studiofy-kanban-wrapper{display:flex;gap:20px;overflow-x:auto;padding:20px 0}
-.kanban-column{background:#f0f0f1;width:300px;min-width:300px;border-radius:6px;display:flex;flex-direction:column}
-.column-header{padding:15px;background:#fff;border-bottom:1px solid #ccc;font-weight:bold;border-radius:6px 6px 0 0}
-.kanban-dropzone{padding:10px;min-height:200px}
-.kanban-card{background:#fff;padding:10px;margin-bottom:10px;border:1px solid #ccc;border-radius:4px;cursor:grab}
-.kanban-placeholder{border:1px dashed #2271b1;height:50px;margin-bottom:10px}
