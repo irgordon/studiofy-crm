@@ -2,7 +2,7 @@
 /**
  * Activator
  * @package Studiofy\Core
- * @version 2.0.4
+ * @version 2.0.5
  */
 
 declare(strict_types=1);
@@ -19,8 +19,9 @@ class Activator {
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         $charset_collate = $wpdb->get_charset_collate();
 
+        // Renamed Clients to Customers
         $tables = [
-            'studiofy_clients' => "CREATE TABLE {$wpdb->prefix}studiofy_clients (
+            'studiofy_customers' => "CREATE TABLE {$wpdb->prefix}studiofy_customers (
                 id mediumint(9) NOT NULL AUTO_INCREMENT,
                 status varchar(20) DEFAULT 'Lead' NOT NULL,
                 first_name varchar(100) NOT NULL,
@@ -30,9 +31,6 @@ class Activator {
                 company varchar(150) NULL,
                 address text NULL,
                 notes longtext NULL,
-                social_media text NULL,
-                custom_field_1 text NULL,
-                custom_field_2 text NULL,
                 created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
                 PRIMARY KEY (id),
                 KEY email (email)
@@ -41,7 +39,7 @@ class Activator {
             'studiofy_invoices' => "CREATE TABLE {$wpdb->prefix}studiofy_invoices (
                 id mediumint(9) NOT NULL AUTO_INCREMENT,
                 invoice_number varchar(50) NULL,
-                client_id mediumint(9) NOT NULL,
+                customer_id mediumint(9) NOT NULL, -- Renamed from client_id
                 project_id mediumint(9) NULL,
                 title varchar(255) NOT NULL,
                 amount decimal(10,2) NOT NULL,
@@ -60,7 +58,7 @@ class Activator {
 
             'studiofy_projects' => "CREATE TABLE {$wpdb->prefix}studiofy_projects (
                 id mediumint(9) NOT NULL AUTO_INCREMENT,
-                client_id mediumint(9) NOT NULL,
+                customer_id mediumint(9) NOT NULL, -- Renamed from client_id
                 title varchar(255) NOT NULL,
                 status varchar(50) DEFAULT 'todo' NOT NULL,
                 budget decimal(10,2) NULL,
@@ -71,7 +69,7 @@ class Activator {
 
             'studiofy_contracts' => "CREATE TABLE {$wpdb->prefix}studiofy_contracts (
                 id mediumint(9) NOT NULL AUTO_INCREMENT,
-                client_id mediumint(9) NOT NULL,
+                customer_id mediumint(9) NOT NULL, -- Renamed from client_id
                 project_id mediumint(9) NULL,
                 title varchar(255) NOT NULL,
                 amount decimal(10,2) DEFAULT 0.00,
@@ -87,12 +85,17 @@ class Activator {
 
             'studiofy_bookings' => "CREATE TABLE {$wpdb->prefix}studiofy_bookings (
                 id mediumint(9) NOT NULL AUTO_INCREMENT,
+                customer_id mediumint(9) NULL,
                 guest_name varchar(100) NULL,
                 guest_email varchar(100) NULL,
-                service_type varchar(100) NOT NULL,
+                title varchar(255) NOT NULL,
+                location varchar(255) NULL,
+                notes longtext NULL,
                 booking_date date NOT NULL,
                 booking_time time NOT NULL,
-                status varchar(20) DEFAULT 'pending' NOT NULL,
+                end_date date NULL,
+                end_time time NULL,
+                status varchar(20) DEFAULT 'Scheduled' NOT NULL,
                 created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
                 PRIMARY KEY (id),
                 KEY date_time (booking_date, booking_time)
