@@ -2,7 +2,7 @@
 /**
  * Project Details API Routes
  * @package Studiofy\Api
- * @version 2.0.4
+ * @version 2.0.5
  */
 
 declare(strict_types=1);
