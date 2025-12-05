@@ -2,7 +2,7 @@
 /**
  * Project Controller
  * @package Studiofy\Admin
- * @version 2.0.5
+ * @version 2.0.7
  */
 
 declare(strict_types=1);
@@ -13,9 +13,7 @@ use function Studiofy\studiofy_get_asset_version;
 
 class ProjectController {
 
-    public function init(): void {
-        // Init logic
-    }
+    public function init(): void {}
 
     public function render_page(): void {
         $this->render_kanban_board();
@@ -23,8 +21,8 @@ class ProjectController {
 
     public function render_kanban_board(): void {
         wp_enqueue_script('jquery-ui-sortable');
-        wp_enqueue_script('studiofy-kanban', STUDIOFY_URL . 'assets/js/kanban.js', ['jquery', 'jquery-ui-sortable'], studiofy_get_asset_version('assets/js/kanban.js'), true);
-        wp_enqueue_script('studiofy-modal-js', STUDIOFY_URL . 'assets/js/project-modal.js', ['jquery'], studiofy_get_asset_version('assets/js/project-modal.js'), true);
+        wp_enqueue_script('studiofy-kanban', STUDIOFY_URL . 'assets/js/kanban.js', ['jquery', 'jquery-ui-sortable', 'wp-api-fetch'], studiofy_get_asset_version('assets/js/kanban.js'), true);
+        wp_enqueue_script('studiofy-modal-js', STUDIOFY_URL . 'assets/js/project-modal.js', ['jquery', 'wp-api-fetch'], studiofy_get_asset_version('assets/js/project-modal.js'), true);
         wp_enqueue_style('studiofy-modal-css', STUDIOFY_URL . 'assets/css/modal.css', [], studiofy_get_asset_version('assets/css/modal.css'));
 
         wp_localize_script('studiofy-kanban', 'studiofySettings', [
@@ -76,10 +74,7 @@ class ProjectController {
                     <?php foreach ($projects[$status] as $project): ?>
                         <div class="studiofy-card" data-id="<?php echo esc_attr($project->id); ?>">
                             <div class="studiofy-card-header"><strong><?php echo esc_html($project->title); ?></strong></div>
-                            <div class="studiofy-card-body">
-                                <p><?php echo esc_html($project->budget ? '$'.$project->budget : ''); ?></p>
-                                <small>Customer ID: <?php echo esc_html($project->customer_id); ?></small>
-                            </div>
+                            <div class="studiofy-card-body"><p><?php echo esc_html($project->budget ? '$'.$project->budget : ''); ?></p></div>
                             <div class="studiofy-card-actions"><button class="button button-small" onclick="StudiofyKanban.editProject(<?php echo $project->id; ?>)">Manage</button></div>
                         </div>
                     <?php endforeach; ?>
@@ -94,7 +89,6 @@ class ProjectController {
         global $wpdb;
         $table = $wpdb->prefix . 'studiofy_projects';
         $results = $wpdb->get_results("SELECT * FROM $table ORDER BY created_at DESC");
-        
         $sorted = ['todo' => [], 'in_progress' => [], 'future' => []];
         foreach ($results as $row) {
             if (isset($sorted[$row->status])) {
