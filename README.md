@@ -1,18 +1,24 @@
-# Studiofy CRM (Elementor Edition)
+# Studiofy CRM
 
-**Version:** 2.0.1
+**Version:** 2.0.3
 **Requires PHP:** 8.1+
 **Requires WordPress:** 6.6+
 **Requires Elementor:** 3.0+
 **Author:** Ian R. Gordon
 
-## Updates in v2.0.1
-* **Performance:** Added transient caching to Gallery Widgets to reduce database load.
-* **API:** Dynamic environment switching for Square API (Sandbox/Production).
-* **Security:** Enhanced attribute escaping in Booking and Form widgets.
-* **Maintenance:** Global version bump and dependency checks.
+## Overview
+Studiofy CRM is a complete business management suite for photographers. It features a modern, dark-themed UI, encrypted client data storage, and visual project management.
+
+## Features
+* **Dashboard:** Real-time business overview with revenue tracking.
+* **Clients:** Secure database with encryption for sensitive contact info.
+* **Projects:** Kanban workflow management.
+* **Invoices:** Square-integrated billing with PDF generation.
+* **Contracts:** Digital signatures.
+* **Appointments:** Visual calendar for session booking.
+* **Elementor Widgets:** Frontend lead forms, galleries, and schedulers.
 
 ## Installation
 1.  Upload `studiofy-crm` to `/wp-content/plugins/`.
-2.  Activate via WordPress Plugins menu.
-3.  Go to **Studiofy CRM > Settings** to configure API keys.
+2.  Activate via WordPress.
+3.  Navigate to **Studiofy CRM > Settings** to configure API keys.
