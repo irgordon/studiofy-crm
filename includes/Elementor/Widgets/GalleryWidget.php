@@ -1,9 +1,8 @@
 <?php
 /**
- * Studiofy Gallery Widget
- * Visual Proofing Gallery for Elementor.
+ * Gallery Widget
  * @package Studiofy\Elementor\Widgets
- * @version 2.0.1
+ * @version 2.0.4
  */
 
 declare(strict_types=1);
@@ -52,7 +51,7 @@ class GalleryWidget extends Widget_Base {
             return;
         }
 
-        // Performance: Transient Cache for HTML output
+        // Transient Cache
         $cache_key = 'studiofy_gallery_html_' . $folder_id . '_' . $mode;
         $cached_output = get_transient($cache_key);
 
@@ -110,13 +109,9 @@ class GalleryWidget extends Widget_Base {
         }
         
         $output = ob_get_clean();
-        
-        // Cache for 1 Hour
         set_transient($cache_key, $output, 3600);
-        
         echo $output;
         echo "<script>window.studiofyGallery = window.studiofyGallery || {}; window.studiofyGallery.current_id = {$folder_id};</script>";
-        
         wp_reset_postdata();
     }
 }
