@@ -1,66 +1,60 @@
 <?php
 /**
- * Plugin Name:       Studiofy CRM
- * Plugin URI:        https://iangordon.app/studiofy-crm
- * Description:       Complete Studio Management: Projects, Galleries, Contracts, Invoicing, and Custom Forms.
- * Version:           5.3.0
- * Author:            Ian R. Gordon
- * License:           GPL-3.0
- * Text Domain:       studiofy-crm
- * Requires at least: 6.4
- * Requires PHP:      8.0
+ * Plugin Name: Studiofy CRM
+ * Description: A professional Elementor Addon for Photographers. Includes Kanban, Contracts, Proofing Galleries, and Square Invoicing.
+ * Version: 2.0.0
+ * Author: Ian R. Gordon
+ * Author URI: https://iangordon.app
+ * Text Domain: studiofy
+ * Requires at least: 6.6
+ * Requires PHP: 8.1
+ * Elementor tested up to: 3.25.0
+ * @package Studiofy
+ * @version 2.0.0
  */
 
-declare( strict_types=1 );
+declare(strict_types=1);
 
-if ( ! defined( 'ABSPATH' ) ) {
-	exit;
+namespace Studiofy;
+
+if (!defined('ABSPATH')) exit;
+
+define('STUDIOFY_VERSION', '2.0.0');
+define('STUDIOFY_DB_VERSION', '2.0');
+define('STUDIOFY_PATH', plugin_dir_path(__FILE__));
+define('STUDIOFY_URL', plugin_dir_url(__FILE__));
+
+function studiofy_get_asset_version(string $file_path): string {
+    if (defined('WP_DEBUG') && WP_DEBUG) {
+        $file = STUDIOFY_PATH . $file_path;
+        return file_exists($file) ? (string) filemtime($file) : STUDIOFY_VERSION;
+    }
+    return STUDIOFY_VERSION;
 }
 
-// Define Constants
-define( 'STUDIOFY_VERSION', '5.3.0' );
-define( 'STUDIOFY_PATH', plugin_dir_path( __FILE__ ) );
-define( 'STUDIOFY_URL', plugin_dir_url( __FILE__ ) );
+spl_autoload_register(function (string $class) {
+    $prefix = 'Studiofy\\';
+    $base_dir = STUDIOFY_PATH . 'includes/';
+    $len = strlen($prefix);
+    if (strncmp($prefix, $class, $len) !== 0) return;
+    $relative_class = substr($class, $len);
+    $file = $base_dir . str_replace('\\', '/', $relative_class) . '.php';
+    if (file_exists($file)) require $file;
+});
 
-// Core Includes
-require_once STUDIOFY_PATH . 'includes/class-studiofy-core.php';
-require_once STUDIOFY_PATH . 'includes/class-studiofy-activator.php';
-require_once STUDIOFY_PATH . 'includes/class-studiofy-deactivator.php';
+register_activation_hook(__FILE__, [Core\Activator::class, 'activate']);
+register_deactivation_hook(__FILE__, [Core\Deactivator::class, 'deactivate']);
 
-/**
- * Main execution function.
- */
-function run_studiofy_crm(): void {
-	$plugin = new Studiofy_Core();
-	$plugin->run();
+function run_studiofy(): void {
+    if (version_compare(PHP_VERSION, '8.1', '<')) return;
+
+    $plugin = new Core\Plugin();
+    $plugin->run();
+
+    add_action('plugins_loaded', function() {
+        if (did_action('elementor/loaded')) {
+            \Studiofy\Elementor\Addon::instance();
+        }
+    });
 }
-run_studiofy_crm();
-
-/**
- * Silent Activation Wrapper
- * * This captures and discards any "Unexpected Output" (white space or PHP warnings 
- * from other plugins) that might occur during the activation process, preventing 
- * the "Headers already sent" error.
- */
-function studiofy_activate_silently(): void {
-	// Start output buffering
-	ob_start();
-	
-	try {
-		// Run the actual database creation logic
-		Studiofy_Activator::activate();
-	} catch ( Throwable $e ) {
-		// Log errors silently to debug.log instead of crashing the screen
-		error_log( 'Studiofy Activation Error: ' . $e->getMessage() );
-	}
-	
-	// Discard whatever was printed to the screen
-	ob_end_clean();
-}
-
-/**
- * Register Hooks
- * Note: We pass the function name string for the silent activator
- */
-register_activation_hook( __FILE__, 'studiofy_activate_silently' );
-register_deactivation_hook( __FILE__, array( 'Studiofy_Deactivator', 'deactivate' ) );
+run_studiofy();
