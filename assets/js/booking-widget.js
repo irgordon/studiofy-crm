@@ -1,12 +1,11 @@
 /**
  * Studiofy Booking Widget
  * @package Studiofy
- * @version 2.0.4
+ * @version 2.0.7
  */
 jQuery(document).ready(function($) {
     $('.studiofy-scheduler').each(function() {
         const container = $(this);
-        const ApiRoot = studiofySettings.root + 'studiofy/v1/';
         const allowedDays = container.data('days');
         
         let currentDate = new Date();
@@ -85,25 +84,22 @@ jQuery(document).ready(function($) {
 
             btn.text('Booking...');
 
-            $.ajax({
-                url: ApiRoot + 'bookings',
+            wp.apiFetch({
+                path: '/studiofy/v1/bookings',
                 method: 'POST',
-                beforeSend: function(xhr) { xhr.setRequestHeader('X-WP-Nonce', studiofySettings.nonce); },
-                contentType: 'application/json',
-                data: JSON.stringify({
+                headers: { 'X-WP-Nonce': studiofySettings.nonce },
+                data: {
                     date: selectedDate,
                     time: selectedTime,
                     service: container.data('service'),
                     name: name,
                     email: email
-                }),
-                success: function() {
-                    container.html('<div class="studiofy-success-msg">Booking Requested! We will contact you shortly.</div>');
-                },
-                error: function() {
-                    alert('Slot unavailable or error occurred.');
-                    btn.text('Confirm Booking');
                 }
+            }).then(response => {
+                container.html('<div class="studiofy-success-msg">Booking Requested! We will contact you shortly.</div>');
+            }).catch(error => {
+                alert('Slot unavailable or error occurred.');
+                btn.text('Confirm Booking');
             });
         });
 
