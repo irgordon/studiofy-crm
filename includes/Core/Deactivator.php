@@ -2,7 +2,7 @@
 /**
  * Deactivator
  * @package Studiofy\Core
- * @version 2.0.5
+ * @version 2.0.7
  */
 
 declare(strict_types=1);
