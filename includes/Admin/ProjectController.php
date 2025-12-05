@@ -13,7 +13,9 @@ use function Studiofy\studiofy_get_asset_version;
 
 class ProjectController {
 
-    public function init(): void {}
+    public function init(): void {
+        // Init logic
+    }
 
     public function render_page(): void {
         $this->render_kanban_board();
@@ -53,7 +55,7 @@ class ProjectController {
                     <div class="empty-icon dashicons dashicons-grid-view"></div>
                     <h2>No projects yet</h2>
                     <p>Create your first project to start tracking work, deadlines, and budgets.</p>
-                    <button class="button button-primary button-large" onclick="document.getElementById('btn-create-project').click()">Create Project</button>
+                    <button class="button button-primary button-large">Create Project</button>
                 </div>
             <?php else: 
                 $this->render_kanban_html();
@@ -74,7 +76,10 @@ class ProjectController {
                     <?php foreach ($projects[$status] as $project): ?>
                         <div class="studiofy-card" data-id="<?php echo esc_attr($project->id); ?>">
                             <div class="studiofy-card-header"><strong><?php echo esc_html($project->title); ?></strong></div>
-                            <div class="studiofy-card-body"><p><?php echo esc_html($project->budget ? '$'.$project->budget : ''); ?></p></div>
+                            <div class="studiofy-card-body">
+                                <p><?php echo esc_html($project->budget ? '$'.$project->budget : ''); ?></p>
+                                <small>Customer ID: <?php echo esc_html($project->customer_id); ?></small>
+                            </div>
                             <div class="studiofy-card-actions"><button class="button button-small" onclick="StudiofyKanban.editProject(<?php echo $project->id; ?>)">Manage</button></div>
                         </div>
                     <?php endforeach; ?>
@@ -89,6 +94,7 @@ class ProjectController {
         global $wpdb;
         $table = $wpdb->prefix . 'studiofy_projects';
         $results = $wpdb->get_results("SELECT * FROM $table ORDER BY created_at DESC");
+        
         $sorted = ['todo' => [], 'in_progress' => [], 'future' => []];
         foreach ($results as $row) {
             if (isset($sorted[$row->status])) {
