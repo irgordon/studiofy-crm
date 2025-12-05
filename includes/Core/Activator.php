@@ -1,4 +1,9 @@
 <?php
+/**
+ * Activator
+ * @package Studiofy\Core
+ * @version 2.0.0
+ */
 declare(strict_types=1);
 namespace Studiofy\Core;
 
@@ -46,8 +51,7 @@ class Activator {
                 created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
                 PRIMARY KEY (id)
             ) $charset_collate;",
-            
-            // ... (Tables for milestones, tasks, contracts, invoices, gallery_selections are assumed identical to v1.0, just ensure they are included here) ...
+
              'studiofy_milestones' => "CREATE TABLE {$wpdb->prefix}studiofy_milestones (id mediumint(9) NOT NULL AUTO_INCREMENT, project_id mediumint(9) NOT NULL, name varchar(255) NOT NULL, is_completed boolean DEFAULT 0, created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL, PRIMARY KEY (id)) $charset_collate;",
              'studiofy_tasks' => "CREATE TABLE {$wpdb->prefix}studiofy_tasks (id mediumint(9) NOT NULL AUTO_INCREMENT, milestone_id mediumint(9) NOT NULL, title varchar(255) NOT NULL, checklist_json longtext NULL, status varchar(20) DEFAULT 'pending', created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL, PRIMARY KEY (id)) $charset_collate;",
              'studiofy_contracts' => "CREATE TABLE {$wpdb->prefix}studiofy_contracts (id mediumint(9) NOT NULL AUTO_INCREMENT, client_id mediumint(9) NOT NULL, project_id mediumint(9) NOT NULL, title varchar(255) NOT NULL, amount decimal(10,2) DEFAULT 0.00, body_content longtext NOT NULL, signature_data longtext NULL, signed_name varchar(100) NULL, status varchar(20) DEFAULT 'draft' NOT NULL, created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL, PRIMARY KEY (id)) $charset_collate;",
