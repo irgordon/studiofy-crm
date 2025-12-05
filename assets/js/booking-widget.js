@@ -1,5 +1,6 @@
 /**
- * Studiofy Scheduler Widget Logic
+ * Studiofy Booking Widget
+ * @package Studiofy
  * @version 2.0.0
  */
 jQuery(document).ready(function($) {
