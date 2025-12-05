@@ -1,4 +1,190 @@
 /**
- * Studiofy Admin CSS
- * @version 2.0.0
+ * Studiofy Admin CSS (Dark Theme)
+ * @package Studiofy
+ * @version 2.0.4
  */
+
+/* Layout & Dark Mode Overrides */
+.studiofy-dark-theme {
+    background: #0f1115;
+    color: #fff;
+    padding: 20px;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+.studiofy-dark-theme h1 {
+    color: #fff;
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.studiofy-dark-theme a { color: #4f94d4; }
+
+/* Panels */
+.studiofy-panel {
+    background: #1e1e1e;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #333;
+}
+
+/* Dashboard Grid */
+.studiofy-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.studiofy-stat-card {
+    background: #1e1e1e;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.studiofy-stat-card .stat-value {
+    font-size: 32px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.studiofy-stat-card .stat-label {
+    font-size: 12px;
+    color: #888;
+    text-transform: uppercase;
+    margin-top: 5px;
+}
+
+/* Tables */
+.studiofy-dark-theme .wp-list-table {
+    background: transparent;
+    border: none;
+}
+
+.studiofy-dark-theme .wp-list-table th {
+    background: #252525;
+    color: #ccc;
+    border-bottom: 1px solid #333;
+}
+
+.studiofy-dark-theme .wp-list-table td {
+    background: #1e1e1e;
+    color: #ddd;
+    border-bottom: 1px solid #333;
+}
+
+.studiofy-dark-theme .wp-list-table tr:hover td {
+    background: #2a2a2a;
+}
+
+/* Inputs */
+.studiofy-dark-theme input[type="text"],
+.studiofy-dark-theme input[type="email"],
+.studiofy-dark-theme input[type="number"],
+.studiofy-dark-theme input[type="date"],
+.studiofy-dark-theme select,
+.studiofy-dark-theme textarea {
+    background: #2a2a2a !important;
+    border: 1px solid #444 !important;
+    color: #fff !important;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+/* Forms */
+.studiofy-form-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+.studiofy-col {
+    flex: 1;
+}
+
+.studiofy-col label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: #ccc;
+}
+
+/* Badges */
+.studiofy-badge {
+    padding: 2px 8px;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 11px;
+    font-weight: bold;
+    background: #444;
+}
+
+.studiofy-badge.active { background: #46b450; }
+.studiofy-badge.lead { background: #2271b1; }
+.studiofy-badge.sent { background: #e3a300; color: #000; }
+
+/* Empty State */
+.studiofy-empty-state {
+    text-align: center;
+    padding: 50px;
+    background: #1e1e1e;
+    border-radius: 8px;
+    color: #888;
+    border: 1px dashed #444;
+}
+
+/* Modal */
+.studiofy-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.studiofy-modal {
+    background: #1e1e1e;
+    padding: 0;
+    width: 600px;
+    max-width: 90%;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    color: #fff;
+}
+
+.studiofy-modal-header {
+    padding: 15px 20px;
+    background: #252525;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #333;
+}
+
+.studiofy-modal-body {
+    padding: 20px;
+}
+
+.studiofy-hidden {
+    display: none !important;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+}
