@@ -1,9 +1,8 @@
 <?php
 /**
  * Square Gateway
- * Handles interaction with Square V2 API.
  * @package Studiofy\Gateways
- * @version 2.0.1
+ * @version 2.0.4
  */
 
 declare(strict_types=1);
@@ -23,7 +22,6 @@ class SquareGateway {
         $this->access_token = $options['square_access_token'] ?? '';
         $this->location_id = $options['square_location_id'] ?? '';
         
-        // Dynamic Environment Switching
         $env = $options['square_env'] ?? 'sandbox'; 
         
         if ($env === 'production') {
@@ -34,7 +32,9 @@ class SquareGateway {
     }
 
     public function create_invoice(array $data): array|WP_Error {
-        if (empty($this->access_token)) return new WP_Error('auth_error', 'Square Access Token missing.');
+        if (empty($this->access_token)) {
+            return new WP_Error('auth_error', 'Square Access Token missing.');
+        }
 
         // 1. Create Order
         $order_body = [
@@ -102,7 +102,7 @@ class SquareGateway {
                 'Content-Type' => 'application/json',
                 'Square-Version' => '2023-10-20'
             ],
-            'timeout' => 15, // Fail fast to prevent WSOD
+            'timeout' => 15, // Fail fast
             'blocking' => true
         ];
 
