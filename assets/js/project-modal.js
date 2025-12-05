@@ -1,10 +1,9 @@
 /**
  * Studiofy Project Modal
  * @package Studiofy
- * @version 2.0.4
+ * @version 2.0.7
  */
 jQuery(document).ready(function($) {
-    const ApiRoot = studiofySettings.root + 'studiofy/v1/';
     
     window.StudiofyModal = {
         open: function(id) {
@@ -19,12 +18,13 @@ jQuery(document).ready(function($) {
     });
 
     function loadProjectDetails(id) {
-        $.ajax({
-            url: ApiRoot + 'projects/' + id + '/details',
-            beforeSend: function(xhr) { xhr.setRequestHeader('X-WP-Nonce', studiofySettings.nonce); },
-            success: function(milestones) {
-                renderMilestones(milestones);
-            }
+        wp.apiFetch({
+            path: '/studiofy/v1/projects/' + id + '/details',
+            headers: { 'X-WP-Nonce': studiofySettings.nonce }
+        }).then(milestones => {
+            renderMilestones(milestones);
+        }).catch(err => {
+            console.error(err);
         });
     }
 
