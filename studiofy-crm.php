@@ -1,9 +1,10 @@
 <?php
 /**
  * Plugin Name: Studiofy CRM
- * Description: A professional Elementor Addon for Photographers.
+ * Description: A professional Elementor Addon for Photographers. Includes Kanban, Contracts, Proofing Galleries, and Square Invoicing.
  * Version: 2.0.0
  * Author: Ian R. Gordon
+ * Author URI: https://iangordon.app
  * Text Domain: studiofy
  * Requires at least: 6.6
  * Requires PHP: 8.1
@@ -25,7 +26,7 @@ define('STUDIOFY_URL', plugin_dir_url(__FILE__));
 
 /**
  * Versioning Helper
- * returns filemtime in debug mode, or STUDIOFY_VERSION in prod.
+ * Returns filemtime in debug mode, or STUDIOFY_VERSION in prod.
  */
 function studiofy_get_asset_version(string $file_path): string {
     if (defined('WP_DEBUG') && WP_DEBUG) {
@@ -50,8 +51,12 @@ register_deactivation_hook(__FILE__, [Core\Deactivator::class, 'deactivate']);
 
 function run_studiofy(): void {
     if (version_compare(PHP_VERSION, '8.1', '<')) return;
+
+    // Load Core Engine
     $plugin = new Core\Plugin();
     $plugin->run();
+
+    // Load Elementor Addon
     add_action('plugins_loaded', function() {
         if (did_action('elementor/loaded')) {
             \Studiofy\Elementor\Addon::instance();
