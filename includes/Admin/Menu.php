@@ -1,14 +1,18 @@
 <?php
 /**
- * Admin Menu
+ * Admin Menu Controller
  * @package Studiofy\Admin
  * @version 2.0.1
  */
+
 declare(strict_types=1);
+
 namespace Studiofy\Admin;
+
 use function Studiofy\studiofy_get_asset_version;
 
 class Menu {
+
     private Settings $settings;
     private ProjectController $projectController;
     private ContractController $contractController;
@@ -33,6 +37,7 @@ class Menu {
         $this->contractController->init();
         $this->invoiceController->init();
         $this->clientController->init();
+
         add_filter('admin_footer_text', [$this, 'render_footer_version']);
     }
 
@@ -46,8 +51,10 @@ class Menu {
 
     public function enqueue_styles($hook): void {
         if (strpos($hook, 'studiofy') === false) return;
+
         wp_enqueue_style('wp-color-picker');
         wp_enqueue_media();
+
         wp_enqueue_style('studiofy-admin-css', STUDIOFY_URL . 'assets/css/admin.css', ['wp-color-picker'], studiofy_get_asset_version('assets/css/admin.css'));
         wp_enqueue_script('studiofy-admin-js', STUDIOFY_URL . 'assets/js/admin.js', ['jquery', 'wp-color-picker'], studiofy_get_asset_version('assets/js/admin.js'), true);
     }
