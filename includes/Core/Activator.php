@@ -2,7 +2,7 @@
 /**
  * Activator
  * @package Studiofy\Core
- * @version 2.0.0
+ * @version 2.0.1
  */
 declare(strict_types=1);
 namespace Studiofy\Core;
@@ -10,6 +10,7 @@ namespace Studiofy\Core;
 class Activator {
     public static function activate(): void {
         if (!current_user_can('activate_plugins')) return;
+        
         global $wpdb;
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         $charset_collate = $wpdb->get_charset_collate();
@@ -61,7 +62,9 @@ class Activator {
 
         foreach ($tables as $sql) dbDelta($sql);
 
-        add_option('studiofy_do_activation_redirect', true);
-        add_option('studiofy_db_version', STUDIOFY_DB_VERSION);
+        if(!get_option('studiofy_db_version')) {
+            add_option('studiofy_do_activation_redirect', true);
+        }
+        update_option('studiofy_db_version', STUDIOFY_DB_VERSION);
     }
 }
