@@ -1,9 +1,4 @@
 <?php
-/**
- * Main Controller
- * @package Studiofy\Core
- * @version 2.0.1
- */
 declare(strict_types=1);
 namespace Studiofy\Core;
 
@@ -20,8 +15,6 @@ class Plugin {
     public function run(): void {
         (new Menu())->init();
         (new GalleryController())->init();
-        
-        // Init APIs
         (new ClientRoutes())->init();
         (new BookingRoutes())->init();
         (new KanbanRoutes())->init();
