@@ -1,4 +1,9 @@
 <?php
+/**
+ * Client API
+ * @package Studiofy\Api
+ * @version 2.0.0
+ */
 declare(strict_types=1);
 namespace Studiofy\Api;
 use WP_REST_Request;
@@ -19,21 +24,15 @@ class ClientRoutes {
         global $wpdb;
         $params = $request->get_json_params();
         $email = sanitize_email($params['email']);
-        
         if ($wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}studiofy_clients WHERE email = %s", $email))) {
-            return new WP_REST_Response(['success' => false, 'message' => 'Email already registered.'], 409);
+            return new WP_REST_Response(['success' => false, 'message' => 'Exists'], 409);
         }
-
         $wpdb->insert($wpdb->prefix.'studiofy_clients', [
             'status' => 'lead',
             'first_name' => sanitize_text_field($params['first_name']??''),
-            'last_name' => sanitize_text_field($params['last_name']??''),
             'email' => $email,
-            'phone' => sanitize_text_field($params['phone']??''),
-            'custom_field_1' => sanitize_text_field($params['custom_field_1']??''),
-            'custom_field_2' => sanitize_text_field($params['custom_field_2']??''),
             'created_at' => current_time('mysql')
         ]);
-        return new WP_REST_Response(['success' => true, 'id' => $wpdb->insert_id], 200);
+        return new WP_REST_Response(['success' => true], 200);
     }
 }
