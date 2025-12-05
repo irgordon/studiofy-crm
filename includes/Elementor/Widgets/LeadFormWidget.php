@@ -1,8 +1,8 @@
 <?php
 /**
- * Studiofy Lead Form Widget
+ * Lead Form Widget
  * @package Studiofy\Elementor\Widgets
- * @version 2.0.1
+ * @version 2.0.4
  */
 
 declare(strict_types=1);
