@@ -2,7 +2,7 @@
 /**
  * Booking Widget
  * @package Studiofy\Elementor\Widgets
- * @version 2.0.0
+ * @version 2.0.1
  */
 declare(strict_types=1);
 namespace Studiofy\Elementor\Widgets;
@@ -25,8 +25,11 @@ class BookingWidget extends Widget_Base {
 
     protected function render(): void {
         $settings = $this->get_settings_for_display();
-        echo '<div class="studiofy-scheduler" data-service="'.esc_attr($settings['service_name']).'" data-days="'.esc_attr(json_encode($settings['available_days'])).'">';
-        echo '<div class="studiofy-calendar-grid"></div>'; // Placeholder for JS
+        $days = json_encode($settings['available_days']);
+        
+        // Escaped Attributes
+        echo '<div class="studiofy-scheduler" data-service="'.esc_attr($settings['service_name']).'" data-days="'.esc_attr($days).'">';
+        echo '<div class="studiofy-calendar-grid"></div>';
         echo '<form class="studiofy-booking-form hidden"><input name="name" placeholder="Name"><input name="email" placeholder="Email"><button>Book</button></form>';
         echo '</div>';
     }
