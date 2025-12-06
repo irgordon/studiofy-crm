@@ -3,7 +3,7 @@
  * Demo Data Manager
  * Handles XML File Upload & Import.
  * @package Studiofy\Core
- * @version 2.2.5
+ * @version 2.2.6
  */
 
 declare(strict_types=1);
@@ -30,16 +30,12 @@ class DemoDataManager {
         }
 
         $file_tmp = $_FILES['demo_xml_file']['tmp_name'];
-        $file_type = mime_content_type($file_tmp);
-
-        // Basic XML check
-        if (strpos($file_type, 'xml') === false && $_FILES['demo_xml_file']['type'] !== 'text/xml') {
-            // Fallback check as mime type for XML varies
-            $content = file_get_contents($file_tmp);
-            if (substr($content, 0, 5) !== '<?xml') {
-                wp_redirect(admin_url('admin.php?page=studiofy-settings&msg=upload_error'));
-                exit;
-            }
+        
+        // Basic XML Check (MIME type can be unreliable on some servers, checking content header)
+        $content = file_get_contents($file_tmp);
+        if (strpos($content, '<?xml') === false && strpos($content, '<studiofy_demo>') === false) {
+             wp_redirect(admin_url('admin.php?page=studiofy-settings&msg=upload_error'));
+             exit;
         }
 
         $this->process_xml_file($file_tmp);
@@ -62,7 +58,6 @@ class DemoDataManager {
         global $wpdb;
         $enc = new Encryption();
         
-        // Suppress XML errors and handle manually
         libxml_use_internal_errors(true);
         $xml = simplexml_load_file($file_path);
 
