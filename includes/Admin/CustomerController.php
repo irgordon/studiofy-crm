@@ -2,7 +2,7 @@
 /**
  * Customer Controller
  * @package Studiofy\Admin
- * @version 2.1.5
+ * @version 2.2.18
  */
 
 declare(strict_types=1);
@@ -26,6 +26,18 @@ class CustomerController {
         add_action('admin_post_studiofy_delete_customer', [$this, 'handle_delete']);
         add_action('admin_post_studiofy_bulk_customer', [$this, 'handle_bulk']);
         add_action('admin_notices', [$this, 'display_notices']);
+        add_action('admin_enqueue_scripts', [$this, 'enqueue_maps']);
+    }
+
+    public function enqueue_maps(): void {
+        if (!isset($_GET['page']) || $_GET['page'] !== 'studiofy-customers') return;
+        
+        $options = get_option('studiofy_branding');
+        $key = $options['google_maps_key'] ?? '';
+        
+        if (!empty($key)) {
+            wp_enqueue_script('google-maps', 'https://maps.googleapis.com/maps/api/js?key=' . esc_attr($key) . '&libraries=places', [], null, true);
+        }
     }
 
     public function display_notices(): void {
@@ -34,6 +46,8 @@ class CustomerController {
             switch ($_GET['msg']) {
                 case 'saved': $msg = 'Customer saved successfully.'; break;
                 case 'deleted': $msg = 'Customer(s) deleted.'; break;
+                case 'nonce': $msg = 'Security check failed.'; break;
+                case 'error': $msg = 'Error saving customer. Check required fields.'; break;
             }
             if ($msg) echo "<div class='notice notice-success is-dismissible'><p>$msg</p></div>";
         }
@@ -48,6 +62,7 @@ class CustomerController {
         }
     }
 
+    // ... render_list same as v2.2.14 ...
     private function render_list(): void {
         global $wpdb;
         $table = $wpdb->prefix . 'studiofy_customers';
@@ -91,10 +106,10 @@ class CustomerController {
                     <thead>
                         <tr>
                             <td id="cb" class="manage-column column-cb check-column"><input type="checkbox"></td>
-                            <th class="manage-column sortable <?php echo strtolower($order); ?>"><?php echo $this->sort_link('Name', 'last_name'); ?></th>
+                            <th class="manage-column sortable"><?php echo $this->sort_link('Name', 'last_name'); ?></th>
                             <th class="manage-column">Contact</th>
                             <th class="manage-column">Company</th>
-                            <th class="manage-column sortable <?php echo strtolower($order); ?>"><?php echo $this->sort_link('Status', 'status'); ?></th>
+                            <th class="manage-column sortable"><?php echo $this->sort_link('Status', 'status'); ?></th>
                             <th class="manage-column">Stats</th>
                         </tr>
                     </thead>
@@ -143,21 +158,22 @@ class CustomerController {
             $data = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_customers WHERE id = %d", $id));
             if ($data) {
                 $data->phone = $this->encryption->decrypt($data->phone);
-                $data->address = $this->encryption->decrypt($data->address);
+                $decrypted_addr = $this->encryption->decrypt($data->address);
             }
         }
         
-        // Parse Address
-        $addr_parts = $data ? explode(', ', $data->address) : [];
+        // Parse Address from Comma Separated String
+        // Format expected: "Street, City, State, Zip"
+        $addr_parts = isset($decrypted_addr) ? array_map('trim', explode(',', $decrypted_addr)) : [];
+        // Fallback to handle cases with fewer commas
         $street = $addr_parts[0] ?? '';
-        $city = $addr_parts[1] ?? '';
-        $state = $addr_parts[2] ?? '';
-        $zip = $addr_parts[3] ?? '';
+        $city   = $addr_parts[1] ?? '';
+        $state  = $addr_parts[2] ?? '';
+        $zip    = $addr_parts[3] ?? '';
 
         $title = $is_clone ? "Clone Customer" : ($data ? "Edit Customer" : "Add New Customer");
         $btn_text = $is_clone ? "Create Clone" : ($data ? "Update Customer" : "Create Customer");
         
-        // If Clone, unset ID so it creates new
         if ($is_clone) {
             $data->id = ''; 
             $data->first_name .= ' (Clone)';
@@ -172,12 +188,12 @@ class CustomerController {
                 <?php if ($data && !$is_clone) echo '<input type="hidden" name="id" value="' . $data->id . '">'; ?>
                 
                 <table class="form-table">
-                    <tr><th scope="row"><label>First Name *</label></th><td><input type="text" name="first_name" class="regular-text" required value="<?php echo esc_attr($data->first_name ?? ''); ?>"></td></tr>
-                    <tr><th scope="row"><label>Last Name *</label></th><td><input type="text" name="last_name" class="regular-text" required value="<?php echo esc_attr($data->last_name ?? ''); ?>"></td></tr>
-                    <tr><th scope="row"><label>Email *</label></th><td><input type="email" name="email" class="regular-text" required value="<?php echo esc_attr($data->email ?? ''); ?>"></td></tr>
-                    <tr><th scope="row"><label>Phone</label></th><td><input type="tel" name="phone" id="phone" class="regular-text" value="<?php echo esc_attr($data->phone ?? ''); ?>"></td></tr>
-                    <tr><th scope="row"><label>Company</label></th><td><input type="text" name="company" class="regular-text" value="<?php echo esc_attr($data->company ?? ''); ?>"></td></tr>
-                    <tr><th scope="row"><label>Status</label></th><td><select name="status">
+                    <tr><th scope="row"><label for="first_name">First Name *</label></th><td><input type="text" name="first_name" id="first_name" class="regular-text" required value="<?php echo esc_attr($data->first_name ?? ''); ?>"></td></tr>
+                    <tr><th scope="row"><label for="last_name">Last Name *</label></th><td><input type="text" name="last_name" id="last_name" class="regular-text" required value="<?php echo esc_attr($data->last_name ?? ''); ?>"></td></tr>
+                    <tr><th scope="row"><label for="email">Email *</label></th><td><input type="email" name="email" id="email" class="regular-text" required value="<?php echo esc_attr($data->email ?? ''); ?>"></td></tr>
+                    <tr><th scope="row"><label for="phone">Phone</label></th><td><input type="tel" name="phone" id="phone" class="regular-text" value="<?php echo esc_attr($data->phone ?? ''); ?>"></td></tr>
+                    <tr><th scope="row"><label for="company">Company</label></th><td><input type="text" name="company" id="company" class="regular-text" value="<?php echo esc_attr($data->company ?? ''); ?>"></td></tr>
+                    <tr><th scope="row"><label for="status">Status</label></th><td><select name="status" id="status">
                         <option <?php selected($data->status ?? '', 'Lead'); ?>>Lead</option>
                         <option <?php selected($data->status ?? '', 'Active'); ?>>Active</option>
                         <option <?php selected($data->status ?? '', 'Inactive'); ?>>Inactive</option>
@@ -186,11 +202,11 @@ class CustomerController {
                 <hr>
                 <h3>Address</h3>
                 <table class="form-table">
-                    <tr><th scope="row"><label>Street</label></th><td><input type="text" name="addr_street" class="large-text" value="<?php echo esc_attr($street); ?>"></td></tr>
-                    <tr><th scope="row"><label>City/State/Zip</label></th><td>
-                        <input type="text" name="addr_city" placeholder="City" value="<?php echo esc_attr($city); ?>">
-                        <input type="text" name="addr_state" placeholder="State" maxlength="2" size="2" value="<?php echo esc_attr($state); ?>">
-                        <input type="text" name="addr_zip" id="addr_zip" placeholder="Zip" maxlength="5" size="5" value="<?php echo esc_attr($zip); ?>">
+                    <tr><th scope="row"><label for="addr_street">Street</label></th><td><input type="text" name="addr_street" id="addr_street" class="large-text" value="<?php echo esc_attr($street); ?>" placeholder="Start typing to search..."></td></tr>
+                    <tr><th scope="row"><label for="addr_city">City/State/Zip</label></th><td>
+                        <input type="text" name="addr_city" id="addr_city" placeholder="City" value="<?php echo esc_attr($city); ?>">
+                        <input type="text" name="addr_state" id="addr_state" placeholder="State" maxlength="2" size="2" value="<?php echo esc_attr($state); ?>">
+                        <input type="text" name="addr_zip" id="addr_zip" placeholder="Zip" maxlength="10" size="10" value="<?php echo esc_attr($zip); ?>">
                     </td></tr>
                 </table>
                 <hr>
@@ -205,7 +221,15 @@ class CustomerController {
         if (!current_user_can('manage_options')) wp_die('Unauthorized');
         
         global $wpdb;
-        $address = implode(', ', array_filter([$_POST['addr_street'], $_POST['addr_city'], $_POST['addr_state'], $_POST['addr_zip']]));
+        
+        // Concatenate address parts for storage
+        $address = implode(', ', array_filter([
+            sanitize_text_field($_POST['addr_street'] ?? ''),
+            sanitize_text_field($_POST['addr_city'] ?? ''),
+            sanitize_text_field($_POST['addr_state'] ?? ''),
+            sanitize_text_field($_POST['addr_zip'] ?? '')
+        ]));
+
         $data = [
             'first_name' => sanitize_text_field($_POST['first_name']),
             'last_name' => sanitize_text_field($_POST['last_name']),
