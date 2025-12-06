@@ -2,7 +2,7 @@
 /**
  * Admin Menu Controller
  * @package Studiofy\Admin
- * @version 2.1.8
+ * @version 2.1.10
  */
 
 declare(strict_types=1);
@@ -49,7 +49,9 @@ class Menu {
     }
 
     public function enqueue_styles($hook): void {
-        if (strpos($hook, 'studiofy') === false) return;
+        if (strpos($hook, 'studiofy') === false) {
+            return;
+        }
 
         wp_enqueue_style('dashicons');
         wp_enqueue_style('wp-color-picker');
@@ -62,7 +64,6 @@ class Menu {
             studiofy_get_asset_version('assets/css/admin.css')
         );
 
-        // Specific CSS for Gallery Explorer
         if (strpos($hook, 'studiofy-galleries') !== false) {
             wp_enqueue_style(
                 'studiofy-gallery-admin-css', 
@@ -75,12 +76,11 @@ class Menu {
         wp_enqueue_script(
             'studiofy-admin-js', 
             STUDIOFY_URL . 'assets/js/admin.js', 
-            ['jquery', 'jquery-ui-sortable', 'wp-color-picker'], 
+            ['jquery', 'jquery-ui-sortable', 'wp-color-picker', 'wp-api-fetch'], 
             studiofy_get_asset_version('assets/js/admin.js'), 
             true
         );
 
-        // Specific JS for Gallery Explorer
         if (strpos($hook, 'studiofy-galleries') !== false) {
             wp_enqueue_script(
                 'studiofy-gallery-admin-js', 
