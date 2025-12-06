@@ -2,7 +2,7 @@
 /**
  * Gallery Shortcode
  * @package Studiofy\Frontend
- * @version 2.1.11
+ * @version 2.2.1
  */
 
 declare(strict_types=1);
@@ -22,6 +22,12 @@ class GalleryShortcode {
     public function render($atts): string {
         $atts = shortcode_atts(['id' => 0], $atts);
         if (!$atts['id']) return '<p>Gallery ID not found.</p>';
+
+        $cache_key = 'studiofy_proof_html_' . $atts['id'];
+        $cached = get_transient($cache_key);
+        if ($cached && !is_user_logged_in()) {
+            return $cached;
+        }
 
         global $wpdb;
         $gallery = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_galleries WHERE id = %d", $atts['id']));
@@ -45,12 +51,11 @@ class GalleryShortcode {
             <form id="proofing-form">
                 <div class="studiofy-grid">
                     <?php foreach($files as $f): 
-                        // Only show images
                         if(!in_array(strtolower($f->file_type), ['jpg','jpeg','png'])) continue;
                         $src = $watermarker->apply_watermark($f->id); 
                     ?>
                         <div class="studiofy-item">
-                            <img src="<?php echo esc_url($src); ?>" loading="lazy">
+                            <img src="<?php echo esc_url($src); ?>" loading="lazy" decoding="async" alt="<?php echo esc_attr($f->file_name); ?>">
                             <div class="proof-actions">
                                 <label class="action-btn approve">
                                     <input type="radio" name="status[<?php echo $f->id; ?>]" value="approved">
@@ -71,7 +76,9 @@ class GalleryShortcode {
             </form>
         </div>
         <?php
-        return ob_get_clean();
+        $output = ob_get_clean();
+        set_transient($cache_key, $output, 3600); // Cache for 1 Hour
+        return $output;
     }
 
     public function handle_submit(): void {
@@ -79,7 +86,6 @@ class GalleryShortcode {
         $client = sanitize_text_field($_POST['client_name']);
         $selections = $_POST['status'] ?? [];
 
-        // Logic to save selections or email admin
         $message = "Client: $client\n\nSelections:\n";
         foreach($selections as $id => $status) {
             $message .= "Image ID #$id: $status\n";
