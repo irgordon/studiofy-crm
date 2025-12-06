@@ -2,7 +2,7 @@
 /**
  * Contract Controller
  * @package Studiofy\Admin
- * @version 2.0.8
+ * @version 2.1.2
  */
 
 declare(strict_types=1);
@@ -34,7 +34,6 @@ class ContractController {
     private function render_list(): void {
         global $wpdb;
         
-        // Search Logic
         $search = isset($_GET['s']) ? sanitize_text_field($_GET['s']) : '';
         $where = '';
         if ($search) {
@@ -48,14 +47,13 @@ class ContractController {
                 ORDER BY c.created_at DESC";
                 
         $rows = $wpdb->get_results($sql);
-        $count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_contracts"); // Total count for empty state check
+        $count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_contracts");
         
         echo '<div class="wrap">';
         echo '<h1 class="wp-heading-inline">Contracts</h1>';
         echo '<a href="?page=studiofy-contracts&action=create" class="page-title-action">New Contract</a>';
         echo '<hr class="wp-header-end">';
         
-        // Search Bar
         echo '<div class="studiofy-toolbar">';
         echo '<form method="get" action="">';
         echo '<input type="hidden" name="page" value="studiofy-contracts">';
@@ -64,15 +62,14 @@ class ContractController {
         echo '</div>';
 
         if ($count == 0 && empty($search)) {
-            // Empty State Matching Projects Layout
             echo '<div class="studiofy-empty-state">';
             echo '<div class="empty-icon dashicons dashicons-edit"></div>';
             echo '<h2>No contracts yet</h2>';
-            echo '<p>Create your first contract with digital signature capture. Generate professional PDFs and send to clients.</p>';
+            echo '<p>Create your first contract with digital signature capture.</p>';
             echo '<a href="?page=studiofy-contracts&action=create" class="button button-primary button-large">Create Contract</a>';
             echo '</div>';
         } elseif (empty($rows)) {
-            echo '<p>No contracts found matching your search.</p>';
+            echo '<p>No contracts found.</p>';
         } else {
             echo '<table class="wp-list-table widefat fixed striped">';
             echo '<thead><tr><th>Title</th><th>Customer</th><th>Status</th><th>Value</th><th>Actions</th></tr></thead><tbody>';
