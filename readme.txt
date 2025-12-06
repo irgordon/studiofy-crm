@@ -4,7 +4,7 @@ Tags: crm, photography, elementor, invoicing, scheduling, kanban, gallery, proof
 Requires at least: 6.6
 Tested up to: 6.7
 Requires PHP: 8.1
-Stable tag: 2.2.17
+Stable tag: 2.2.27
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -28,13 +28,13 @@ We believe in design freedom. Studiofy adds custom **Widgets** to Elementor, all
 * **Customer Management:** Securely store client details with AES-256 encryption.
 * **Project Kanban:** Visual workflow management (To Do / In Progress / Done) combined with a detailed list view.
 * **Invoicing:** Square API integration (Sandbox/Production support) with tax calculations and dynamic line items.
-* **Digital Contracts:** eSignature capture and PDF generation.
-* **File Management:** A dedicated "Windows Explorer" style interface for organizing client shoots, separate from the WP Media Library. Supports RAW files.
+* **Digital Contracts:** eSignature capture and PDF generation. Now supports Elementor for template design.
+* **File Management:** A dedicated "Windows Explorer" style interface for organizing client shoots. Supports RAW files via Chunked Uploads.
 
 ### ⚡ High-Speed Performance
 The latest updates introduce advanced optimization techniques:
 * **DOM Batching:** Zero-lag rendering for large gallery grids.
-* **Smart Caching:** Transient API caching reduces database load.
+* **Chunked Uploads:** Stream large files in 2MB chunks to bypass server limits.
 * **Lazy Loading:** Native browser optimization for image delivery.
 
 == Installation ==
@@ -66,6 +66,48 @@ Yes! The Gallery module supports RAW file uploads (.CR2, .NEF, .ARW) for storage
 6.  **Customer List** - Sortable, searchable client database.
 
 == Changelog ==
+
+= 2.2.27 =
+* **Fix:** Resolved 403 Forbidden error during chunked uploads by implementing a dedicated `upload_nonce`.
+* **Feature:** Added Frontend Proofing UI (Approve/Reject buttons) to Gallery Shortcode.
+* **Automation:** Submitting gallery proofing now auto-creates a "Review" task in the Project Kanban.
+
+= 2.2.26 =
+* **UI:** Overhauled Kanban Board to enforce horizontal scrolling layout matching visual designs.
+* **UI:** Redesigned Project Cards to include Task Count and Budget metadata.
+
+= 2.2.25 =
+* **Data:** Updated Demo Data XML with 60 randomized high-res images and 5 distinct galleries.
+* **Data:** Added detailed sub-tasks (Pre-production, Scouting) to Demo Projects.
+
+= 2.2.24 =
+* **Fix:** Fixed Gallery Shortcode registration logic (was missing init call).
+* **Frontend:** Added responsive CSS grid for Gallery Shortcode display.
+
+= 2.2.23 =
+* **Performance:** Implemented Chunked File Uploads (2MB slices) for handling large RAW files.
+* **Feature:** Added visual progress bar for uploads.
+* **Validation:** Enforced strict file type checking on the server side.
+
+= 2.2.22 =
+* **Cleanup:** Added `uninstall.php` for complete data removal (Dropping tables, deleting files) on plugin deletion.
+
+= 2.2.21 =
+* **Fix:** Renamed Contract CPT to `studiofy_doc` to comply with WordPress 20-char limit warning.
+
+= 2.2.20 =
+* **Feature:** Added "Contract Section" Elementor Widget.
+* **Architecture:** Registered `studiofy_doc` CPT to bridge Contracts with Elementor Editor.
+* **UI:** Added "Back to Contracts" navigation button.
+
+= 2.2.19 =
+* **Data:** Updated Demo Data Manager to parse and insert Tasks from XML.
+* **Fix:** Corrected address concatenation logic in Demo Importer.
+
+= 2.2.18 =
+* **Feature:** Added Google Maps API Key field to Settings.
+* **Feature:** Implemented Address Autocomplete on Customer Forms.
+* **Data:** Updated Demo XML schema to split address fields (Street, City, State, Zip).
 
 = 2.2.17 =
 * **Fix:** Resolved nested HTML form issue in Settings page preventing Demo Data import.
@@ -154,5 +196,5 @@ Yes! The Gallery module supports RAW file uploads (.CR2, .NEF, .ARW) for storage
 
 == Upgrade Notice ==
 
-= 2.2.17 =
-Cumulative update fixing Settings page forms, Gallery logic, and Accessibility compliance. Recommended for all users.
+= 2.2.27 =
+Major update featuring Client Proofing workflow and High-Performance File Uploads. Recommended for all users.
