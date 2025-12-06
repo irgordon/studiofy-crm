@@ -2,7 +2,7 @@
 /**
  * Contract Controller
  * @package Studiofy\Admin
- * @version 2.2.20
+ * @version 2.2.21
  */
 
 declare(strict_types=1);
@@ -71,10 +71,9 @@ class ContractController {
     private function render_builder(int $id): void {
         global $wpdb;
         $contract = ($id > 0) ? $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_contracts WHERE id = %d", $id)) : null;
-        $customers = $wpdb->get_results("SELECT id, first_name, last_name FROM {$wpdb->prefix}studiofy_customers");
-        $projects = $wpdb->get_results("SELECT id, title FROM {$wpdb->prefix}studiofy_projects");
+        $customers = $wpdb->get_results("SELECT id, first_name, last_name FROM {$wpdb->prefix}studiofy_customers ORDER BY last_name ASC");
+        $projects = $wpdb->get_results("SELECT id, title FROM {$wpdb->prefix}studiofy_projects ORDER BY created_at DESC");
         
-        // Elementor Link
         $elementor_url = '';
         if ($contract && $contract->linked_post_id) {
             $elementor_url = admin_url('post.php?post=' . $contract->linked_post_id . '&action=elementor');
@@ -88,7 +87,7 @@ class ContractController {
         $contract = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_contracts WHERE id = %d", $id));
         if (!$contract) { echo '<div class="notice notice-error"><p>Contract not found.</p></div>'; return; }
         
-        // Get Content: Prioritize Elementor, fallback to legacy
+        // Get Content: Elementor via linked post
         $content = $contract->body_content;
         if ($contract->linked_post_id && class_exists('\Elementor\Plugin')) {
             $elem_content = \Elementor\Plugin::instance()->frontend->get_builder_content_for_display($contract->linked_post_id);
@@ -100,7 +99,6 @@ class ContractController {
         wp_enqueue_script('studiofy-signature', STUDIOFY_URL . 'assets/js/signature-pad.js', [], studiofy_get_asset_version('assets/js/signature-pad.js'), true);
         wp_enqueue_style('studiofy-contract-css', STUDIOFY_URL . 'assets/css/contract.css', [], studiofy_get_asset_version('assets/css/contract.css'));
         
-        // Pass processed content to view
         $view_content = $content; 
         require_once STUDIOFY_PATH . 'templates/admin/contract-view.php';
     }
@@ -111,16 +109,15 @@ class ContractController {
         
         $linked_post_id = isset($_POST['linked_post_id']) ? (int)$_POST['linked_post_id'] : 0;
         
-        // If no linked post yet, create one for Elementor use
+        // Create/Update linked CPT
         if ($linked_post_id === 0) {
             $post_id = wp_insert_post([
                 'post_title' => 'Contract: ' . sanitize_text_field($_POST['title']),
-                'post_type'  => 'studiofy_contract_doc',
+                'post_type'  => 'studiofy_doc', // FIXED: Updated CPT Key
                 'post_status' => 'publish'
             ]);
             if ($post_id) $linked_post_id = $post_id;
         } else {
-            // Update existing post title
             wp_update_post([
                 'ID' => $linked_post_id,
                 'post_title' => 'Contract: ' . sanitize_text_field($_POST['title'])
@@ -135,7 +132,7 @@ class ContractController {
             'end_date' => sanitize_text_field($_POST['end_date']),
             'amount' => (float)$_POST['amount'],
             'status' => sanitize_text_field($_POST['status']),
-            'body_content' => '', // Legacy field cleared, now using CPT
+            'body_content' => '', 
             'linked_post_id' => $linked_post_id
         ];
 
@@ -147,7 +144,6 @@ class ContractController {
             $redirect_id = $wpdb->insert_id;
         }
         
-        // Redirect to Edit page to allow immediate Elementor launch
         wp_redirect(admin_url('admin.php?page=studiofy-contracts&action=edit&id=' . $redirect_id));
         exit;
     }
@@ -164,7 +160,6 @@ class ContractController {
         global $wpdb;
         $id = (int)$_GET['id'];
         
-        // Delete linked CPT
         $post_id = $wpdb->get_var($wpdb->prepare("SELECT linked_post_id FROM {$wpdb->prefix}studiofy_contracts WHERE id = %d", $id));
         if ($post_id) wp_delete_post($post_id, true);
         
