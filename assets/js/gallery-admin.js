@@ -1,115 +1,123 @@
 /**
  * Studiofy Gallery Explorer
  * @package Studiofy
- * @version 2.1.8
+ * @version 2.1.9
  */
 jQuery(document).ready(function($) {
     let currentGalleryId = 0;
+    let selectedFileId = 0;
 
     // 1. Folder Click
-    $('.folder-item').click(function() {
+    $('.folder-item').click(function(e) {
+        e.stopPropagation();
         $('.folder-item').removeClass('active');
         $(this).addClass('active');
+        
         currentGalleryId = $(this).data('id');
         $('#current-folder-label').text($(this).text().trim());
         $('#upload-gallery-id').val(currentGalleryId);
+        $('#btn-upload-media').prop('disabled', false);
         
         loadFiles(currentGalleryId);
-        $('#meta-sidebar').removeClass('open');
+        clearSelection();
     });
 
-    // 2. Load Files AJAX
+    // 2. Load Files
     function loadFiles(id) {
         $('#file-grid').html('<p style="padding:20px;">Loading...</p>');
-        
-        wp.apiFetch({
-            path: '/studiofy/v1/galleries/' + id + '/files',
-            method: 'GET'
-        }).then(files => {
-            renderGrid(files);
-        }).catch(err => {
-            $('#file-grid').html('<p style="color:red; padding:20px;">Error loading files.</p>');
-        });
+        wp.apiFetch({ path: '/studiofy/v1/galleries/' + id + '/files' }).then(renderGrid);
     }
 
-    // 3. Render Grid
     function renderGrid(files) {
         const grid = $('#file-grid');
         grid.empty();
         
         if (files.length === 0) {
-            grid.html('<p style="padding:20px; color:#888;">This folder is empty.</p>');
+            grid.html('<div class="studiofy-empty-state-small"><span class="dashicons dashicons-format-gallery"></span><p>This folder is empty.</p></div>');
             return;
         }
 
         files.forEach(f => {
-            let thumb = f.file_url;
-            // Placeholders for RAW
-            if(!['jpg','jpeg','png','gif'].includes(f.file_type.toLowerCase())) {
-                thumb = ''; // Or use a generic icon path
-            }
-
+            const isImg = ['jpg','jpeg','png','gif'].includes(f.file_type.toLowerCase());
+            const thumb = isImg ? f.file_url : '';
+            
             const item = $(`
-                <div class="studiofy-file-item" data-meta='${JSON.stringify(f)}'>
-                    ${thumb ? `<img src="${thumb}" class="file-preview">` : '<div style="height:100%; display:flex; align-items:center; justify-content:center; background:#ddd;">RAW</div>'}
-                    <span class="file-type-badge">${f.file_type}</span>
+                <div class="studiofy-file-item" data-id="${f.id}" data-meta='${JSON.stringify(f)}'>
+                    ${thumb ? `<img src="${thumb}" class="file-preview">` : '<div style="height:100%; display:flex; align-items:center; justify-content:center; background:#eee; color:#555;">RAW</div>'}
+                    <div class="file-trash-overlay"><span class="dashicons dashicons-trash"></span></div>
                 </div>
             `);
             
-            item.click(function() {
+            // Select Logic
+            item.click(function(e) {
+                e.stopPropagation();
                 $('.studiofy-file-item').removeClass('selected');
                 $(this).addClass('selected');
+                selectedFileId = f.id;
                 showMeta(f);
+            });
+
+            // Quick Delete Logic
+            item.find('.file-trash-overlay').click(function(e) {
+                e.stopPropagation();
+                deleteFile(f.id, item);
             });
             
             grid.append(item);
         });
     }
 
-    // 4. Show Metadata Sidebar
+    // 3. Metadata Sidebar Logic
     function showMeta(data) {
-        $('#meta-sidebar').addClass('open');
-        $('#meta-title').text(data.file_name);
-        $('#meta-date').text(data.created_at);
-        $('#meta-type').text(data.file_type.toUpperCase());
-        $('#meta-dims').text(data.dimensions || 'N/A');
-        $('#meta-size').text(data.file_size || 'N/A');
-        $('#meta-author').text(data.photographer || 'Unknown');
-        $('#meta-project').text(data.project_name || 'Unassigned');
+        $('#meta-empty').hide();
+        $('#meta-content').show();
         
-        let previewHtml = '';
-        if(['jpg','jpeg','png','gif'].includes(data.file_type.toLowerCase())) {
-            previewHtml = `<img src="${data.file_url}">`;
-        }
-        $('#meta-preview').html(previewHtml);
+        $('#meta-title').text(data.file_name);
+        $('#meta-size').text(data.file_size);
+        $('#meta-type').text(data.file_type);
+        $('#meta-dims').text(data.dimensions || 'N/A');
+        
+        const isImg = ['jpg','jpeg','png','gif'].includes(data.file_type.toLowerCase());
+        $('#meta-preview').html(isImg ? `<img src="${data.file_url}">` : '<div style="padding:20px; background:#eee; text-align:center;">No Preview</div>');
     }
 
-    $('.close-meta').click(function(){ $('#meta-sidebar').removeClass('open'); });
+    function clearSelection() {
+        $('.studiofy-file-item').removeClass('selected');
+        selectedFileId = 0;
+        $('#meta-content').hide();
+        $('#meta-empty').show();
+    }
 
-    // 5. Upload Handling with Validation
-    $('#btn-upload-media').click(function() {
-        if(currentGalleryId === 0) {
-            alert('Please select a folder first.');
-            return;
+    // 4. Click Off to Deselect
+    $('#file-grid').click(function(e) {
+        if (!$(e.target).closest('.studiofy-file-item').length) {
+            clearSelection();
         }
-        $('#file-input').click();
     });
 
-    $('#file-input').change(function() {
-        const files = this.files;
-        const maxBytes = parseInt(studiofyGallerySettings.max_upload_size);
+    // 5. Delete Logic
+    function deleteFile(id, domElement) {
+        if(!confirm('Permanently delete this file?')) return;
         
-        for (let i = 0; i < files.length; i++) {
-            if (files[i].size > maxBytes) {
-                alert(`File "${files[i].name}" is too large. Max size is ${Math.round(maxBytes/1024/1024)}MB.`);
-                $(this).val(''); // Clear input
-                return;
-            }
-        }
-        
-        if (files.length > 0) {
-            // Auto submit form on selection
-            $('#upload-form').submit();
+        wp.apiFetch({
+            path: '/studiofy/v1/galleries/files/' + id,
+            method: 'DELETE',
+            headers: { 'X-WP-Nonce': studiofyGallerySettings.nonce }
+        }).then(() => {
+            domElement.remove();
+            if(selectedFileId === id) clearSelection();
+        });
+    }
+
+    // Sidebar Delete Button
+    $('#btn-delete-file').click(function() {
+        if(selectedFileId) {
+            const el = $(`.studiofy-file-item[data-id="${selectedFileId}"]`);
+            deleteFile(selectedFileId, el);
         }
     });
+
+    // 6. Upload
+    $('#btn-upload-media').click(function() { $('#file-input').click(); });
+    $('#file-input').change(function() { if(this.files.length) $('#upload-form').submit(); });
 });
