@@ -1,7 +1,7 @@
 /**
  * Studiofy Project Modal
  * @package Studiofy
- * @version 2.2.10
+ * @version 2.2.11
  */
 jQuery(document).ready(function($) {
     
@@ -17,7 +17,6 @@ jQuery(document).ready(function($) {
             // Reset Form
             $('#studiofy-task-form')[0].reset();
             $('#task-id').val('');
-            // Store Project ID in a hidden field if needed for default milestone creation
             $('#task-milestone-id').data('project-id', id);
 
             loadProjectDetails(id);
@@ -36,7 +35,6 @@ jQuery(document).ready(function($) {
             headers: { 'X-WP-Nonce': studiofySettings.nonce }
         }).then(milestones => {
             renderMilestones(milestones);
-            // Auto-select first milestone for new tasks
             if(milestones.length > 0) {
                 $('#task-milestone-id').val(milestones[0].id);
             }
@@ -51,8 +49,7 @@ jQuery(document).ready(function($) {
         container.empty();
 
         if (milestones.length === 0) {
-            container.html('<p>No tasks found. Add a task to get started.</p>');
-            // Ensure we can add a task even with no milestones displayed (API handles default creation)
+            container.html('<p>No milestones found. Add a task to get started.</p>');
             return;
         }
 
@@ -82,8 +79,7 @@ jQuery(document).ready(function($) {
 
     // 1. Click to Edit Task
     $(document).on('click', '.studiofy-task-item', function(e) {
-        // Don't trigger if clicking the checkmark
-        if ($(e.target).hasClass('task-check')) return;
+        if ($(e.target).hasClass('task-check')) return; // Don't trigger if clicking checkbox
         
         const task = $(this).data('task');
         $('#task-id').val(task.id);
@@ -103,13 +99,13 @@ jQuery(document).ready(function($) {
         $('#task-title').focus();
     });
 
-    // 3. Mark Complete / Toggle Status
+    // 3. Mark Complete
     $(document).on('click', '.task-check', function(e) {
         e.stopPropagation();
         const id = $(this).data('id');
         const currentStatus = $(this).data('status');
         const newStatus = currentStatus === 'completed' ? 'pending' : 'completed';
-        const taskData = $(this).closest('li').data('task'); // Get full object to resend required fields
+        const taskData = $(this).closest('li').data('task');
         
         // Optimistic UI Update
         const li = $(this).closest('li');
@@ -123,24 +119,22 @@ jQuery(document).ready(function($) {
             data: {
                 id: id,
                 status: newStatus,
-                title: taskData.title, // Required
-                milestone_id: taskData.milestone_id // Required
+                title: taskData.title, 
+                milestone_id: taskData.milestone_id 
             }
         }).then(res => {
-            // Success - update data attr
             taskData.status = newStatus;
             li.data('task', taskData);
             $(this).data('status', newStatus);
         }).catch(err => {
             alert('Error updating task.');
-            // Revert UI
             loadProjectDetails(currentProjectId);
         });
     });
 
     // 4. Submit Form
     $('#studiofy-task-form').on('submit', function(e) {
-        e.preventDefault();
+        e.preventDefault(); // FIXED: Prevents page reload
         const btn = $(this).find('button[type="submit"]');
         const originalText = btn.text();
         btn.text('Saving...').prop('disabled', true);
@@ -148,7 +142,7 @@ jQuery(document).ready(function($) {
         const data = {
             id: $('#task-id').val(),
             milestone_id: $('#task-milestone-id').val(),
-            project_id: currentProjectId, // Fallback for API to create default milestone
+            project_id: currentProjectId, // Fallback for default milestone creation
             title: $('#task-title').val(),
             priority: $('#task-priority').val(),
             description: $('#task-desc').val(),
@@ -162,7 +156,6 @@ jQuery(document).ready(function($) {
             data: data
         }).then(response => {
             btn.text(originalText).prop('disabled', false);
-            // alert('Task Saved!');
             $('#studiofy-task-form')[0].reset();
             $('#task-id').val('');
             loadProjectDetails(currentProjectId);
