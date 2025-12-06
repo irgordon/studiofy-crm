@@ -19,7 +19,7 @@ Designed with a **"Performance & Privacy First"** architecture, Studiofy v2.2+ f
 ### 🎨 Native Elementor Integration
 We believe in design freedom. Studiofy adds custom **Widgets** to Elementor, allowing you to build your Client Portal exactly how you want it.
 
-* **Lead Capture Forms:** Entries go straight to your encrypted CRM database.
+* **Lead Capture Forms:** Drag-and-drop forms that auto-populate your CRM database.
 * **Booking Calendar:** Real-time session scheduling with availability checks.
 * **Proofing Galleries:** Beautiful, responsive, and secure image grids.
 
@@ -27,11 +27,11 @@ We believe in design freedom. Studiofy adds custom **Widgets** to Elementor, all
 
 * **Customer Management:** Securely store client details with AES-256 encryption.
 * **Project Kanban:** Visual workflow management (To Do / In Progress / Done).
-* **Invoicing:** Square API integration (Sandbox/Production support) with tax calculations.
+* **Invoicing:** Square API integration (Sandbox/Production support) with tax calculations and dynamic line items.
 * **Digital Contracts:** eSignature capture and PDF generation.
 * **File Management:** A dedicated "Windows Explorer" style interface for organizing client shoots, separate from the WP Media Library.
 
-### ⚡ High-Speed Performance (v2.2.1)
+### ⚡ High-Speed Performance
 The latest update introduces advanced optimization techniques:
 * **DOM Batching:** Zero-lag rendering for large gallery grids.
 * **Smart Caching:** Transient API caching reduces database load.
@@ -50,7 +50,7 @@ The latest update introduces advanced optimization techniques:
 Studiofy is designed for service-based photography businesses (Invoices, Contracts, Bookings). It does not replace WooCommerce for selling physical products, but handles the service workflow much better.
 
 = Is my client data secure? =
-Yes. We use OpenSSL AES-256-CBC encryption for sensitive fields (Phone Numbers, Addresses) in the database.
+Yes. We use OpenSSL AES-256-CBC encryption for sensitive fields (Phone Numbers, Addresses) in the database to ensure privacy at rest.
 
 = Can I upload RAW files? =
 Yes! The Gallery module supports RAW file uploads (.CR2, .NEF, .ARW) for storage and delivery, in addition to standard JPG/PNG/GIFs.
@@ -88,8 +88,44 @@ Yes! The Gallery module supports RAW file uploads (.CR2, .NEF, .ARW) for storage
 = 2.0.9 =
 * **System:** Added strict dependency check for Elementor with admin notice.
 
+= 2.0.8 =
+* **Fix:** Resolved JS validation bug preventing "Add Customer" form submission.
+* **UI:** Redesigned Contracts and Invoices submenus with Empty States.
+
+= 2.0.7 =
+* **Code:** Replaced raw AJAX calls with `wp.apiFetch` for better WordPress compatibility.
+* **Security:** Hardened nonce verification on all controllers.
+
+= 2.0.6 =
+* **UI:** Fixed Dashboard tile alignment and responsiveness.
+* **Fix:** Corrected modal positioning for Appointments.
+
+= 2.0.5 =
+* **Refactor:** Renamed "Clients" module to "Customers" globally.
+* **Fix:** Resolved "Add Customer" admin post handler issues.
+
+= 2.0.4 =
+* **Security:** Enhanced sanitization on all API endpoints.
+* **Performance:** Optimized database queries for large client lists.
+* **Fix:** Resolved layout issues in the Booking Widget.
+
+= 2.0.3 =
+* **UI:** Complete overhaul of Admin UI to match modern Dark Theme.
+* **Feature:** Added Tax calculation to Invoice Builder.
+* **Feature:** Added dynamic Line Items to Invoices.
+* **Security:** Implemented AES-256 Encryption for client PII.
+
+= 2.0.2 =
+* **Dashboard:** Added "Quick Actions" and "Revenue Overview" stats cards.
+* **Database:** Updated schema to support detailed contract dates and client companies.
+
+= 2.0.1 =
+* **Performance:** Added transient caching to Gallery Widgets to reduce DB load.
+* **API:** Added dynamic environment switching for Square (Sandbox/Production).
+
 = 2.0.0 =
 * **Major Release:** Full refactor to Elementor Addon architecture.
+* **Added:** Lead Form Widget, Gallery Widget, Scheduler Widget.
 
 == Upgrade Notice ==
 
