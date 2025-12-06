@@ -15,7 +15,7 @@ class Activator {
         ob_start();
 
         if (!current_user_can('activate_plugins')) {
-            // Allow if running via internal update check, otherwise return
+            // Allow if running via internal update check
             if (!doing_action('plugins_loaded')) return;
         }
         
@@ -30,7 +30,6 @@ class Activator {
 
             'studiofy_milestones' => "CREATE TABLE {$wpdb->prefix}studiofy_milestones (id mediumint(9) NOT NULL AUTO_INCREMENT, project_id mediumint(9) NOT NULL, name varchar(255) NOT NULL, is_completed boolean DEFAULT 0, created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL, PRIMARY KEY (id)) $charset_collate;",
 
-            // UPDATED: Added priority and description
             'studiofy_tasks' => "CREATE TABLE {$wpdb->prefix}studiofy_tasks (
                 id mediumint(9) NOT NULL AUTO_INCREMENT,
                 milestone_id mediumint(9) NOT NULL,
@@ -55,6 +54,7 @@ class Activator {
             dbDelta($sql);
         }
         
+        // Ensure Gallery Upload Directory Exists
         $upload = wp_upload_dir();
         $dir = $upload['basedir'] . '/studiofy_galleries';
         if (!file_exists($dir)) {
