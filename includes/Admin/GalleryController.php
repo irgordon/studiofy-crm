@@ -2,7 +2,7 @@
 /**
  * Gallery Controller
  * @package Studiofy\Admin
- * @version 2.2.17
+ * @version 2.2.23
  */
 
 declare(strict_types=1);
@@ -15,6 +15,7 @@ class GalleryController {
         add_action('admin_post_studiofy_save_gallery', [$this, 'handle_save']);
         add_action('admin_post_studiofy_delete_gallery', [$this, 'handle_delete_gallery']);
         add_action('wp_ajax_studiofy_create_gallery_page', [$this, 'ajax_create_page']);
+        add_action('wp_ajax_studiofy_gallery_upload_chunk', [$this, 'handle_chunk_upload']); // New Chunk Handler
         add_action('rest_api_init', [$this, 'register_routes']);
     }
 
@@ -55,10 +56,90 @@ class GalleryController {
         return new \WP_REST_Response(['success' => (bool)$updated], 200);
     }
 
+    /**
+     * Handle Chunked Uploads via Streaming
+     * @see https://developer.yahoo.com/performance/rules.html (Flush buffer, memory mgmt)
+     */
+    public function handle_chunk_upload(): void {
+        // 1. Security Check
+        check_ajax_referer('save_gallery', 'nonce');
+        if (!current_user_can('upload_files')) wp_send_json_error('Unauthorized');
+
+        // 2. Parameters
+        $gallery_id = (int)$_POST['gallery_id'];
+        $file_name  = sanitize_file_name($_POST['file_name']);
+        $chunk_idx  = (int)$_POST['chunk_index'];
+        $total_chunks = (int)$_POST['total_chunks'];
+
+        // 3. Validation (Extensions)
+        $ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'cr2', 'nef', 'arw', 'dng', 'orf', 'raf'];
+        if (!in_array($ext, $allowed)) wp_send_json_error('Invalid file type.');
+
+        // 4. Setup Directories
+        $upload_dir = wp_upload_dir();
+        $target_dir = $upload_dir['basedir'] . '/studiofy_galleries/' . $gallery_id;
+        if (!file_exists($target_dir)) mkdir($target_dir, 0755, true);
+
+        // Temp path for re-assembly
+        $temp_file = $target_dir . '/' . $file_name . '.part';
+        $final_file = $target_dir . '/' . $file_name;
+
+        // 5. Append Chunk (Streaming Logic)
+        if (!empty($_FILES['file_chunk']['tmp_name'])) {
+            $in = fopen($_FILES['file_chunk']['tmp_name'], 'rb');
+            
+            // Open temp file in 'append' mode (binary)
+            $out = fopen($temp_file, $chunk_idx === 0 ? 'wb' : 'ab'); 
+
+            if ($in && $out) {
+                while (!feof($in)) {
+                    fwrite($out, fread($in, 8192)); // 8KB Buffer
+                }
+                fclose($in);
+                fclose($out);
+            } else {
+                wp_send_json_error('Server Write Error');
+            }
+            
+            unlink($_FILES['file_chunk']['tmp_name']); // Cleanup temp chunk
+        }
+
+        // 6. Finalize if Last Chunk
+        if ($chunk_idx === ($total_chunks - 1)) {
+            rename($temp_file, $final_file);
+            
+            // Generate Metadata
+            $filesize = size_format(filesize($final_file));
+            $dims = '';
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) {
+                $info = getimagesize($final_file);
+                $dims = $info ? $info[0] . 'x' . $info[1] : '';
+            }
+
+            // DB Insert
+            global $wpdb;
+            $wpdb->insert($wpdb->prefix . 'studiofy_gallery_files', [
+                'gallery_id' => $gallery_id,
+                'uploaded_by' => get_current_user_id(),
+                'file_name' => $file_name,
+                'file_path' => $final_file,
+                'file_url'  => $upload_dir['baseurl'] . '/studiofy_galleries/' . $gallery_id . '/' . $file_name,
+                'file_type' => $ext,
+                'dimensions' => $dims,
+                'file_size' => $filesize,
+                'created_at' => current_time('mysql')
+            ]);
+
+            wp_send_json_success(['status' => 'complete']);
+        } else {
+            wp_send_json_success(['status' => 'chunk_uploaded']);
+        }
+    }
+
     public function render_page(): void {
         global $wpdb;
         $galleries = $wpdb->get_results("SELECT g.*, p.post_title as wp_title, p.ID as page_id FROM {$wpdb->prefix}studiofy_galleries g LEFT JOIN {$wpdb->posts} p ON g.wp_page_id = p.ID ORDER BY g.created_at DESC");
-        
         ?>
         <div class="wrap studiofy-explorer-wrap">
             <h1 class="wp-heading-inline">Image Galleries</h1>
@@ -68,7 +149,7 @@ class GalleryController {
             </div>
             <hr class="wp-header-end">
 
-            <div class="studiofy-explorer-container" style="height: 500px; margin-bottom: 40px;">
+            <div class="studiofy-explorer-container">
                 <div class="studiofy-explorer-sidebar">
                     <h3>Folders</h3>
                     <ul class="studiofy-folder-list">
@@ -84,23 +165,24 @@ class GalleryController {
                 </div>
                 <div class="studiofy-explorer-content">
                     <div class="studiofy-toolbar">
-                        <button class="button button-primary" id="btn-upload-media" disabled>Upload Media</button>
+                        <button class="button button-primary" id="btn-upload-media" disabled>Upload Media (Chunked)</button>
                         <span id="current-folder-label" style="margin-left:15px; color:#666;">No Gallery Selected</span>
                     </div>
                     <div class="studiofy-file-grid" id="file-grid" role="region" aria-label="File Grid">
                         <div class="studiofy-empty-state-small"><span class="dashicons dashicons-format-gallery"></span><p>Select a gallery folder.</p></div>
                     </div>
                 </div>
+                
                 <div class="studiofy-meta-sidebar" id="meta-sidebar" role="complementary" aria-label="Image Details">
                     <div class="meta-header"><h3>Details</h3><button class="close-meta" aria-label="Close Sidebar">&times;</button></div>
                     <div id="meta-content" style="display:none;">
                         <div class="meta-preview" id="meta-preview"></div>
                         <div class="meta-form">
-                            <label for="inp-meta-title">Title</label><input type="text" id="inp-meta-title" class="widefat" placeholder="Title" title="Title">
-                            <label for="inp-meta-author">Photographer</label><input type="text" id="inp-meta-author" class="widefat" placeholder="Photographer" title="Photographer">
-                            <label for="inp-meta-project">Project</label><input type="text" id="inp-meta-project" class="widefat" placeholder="Project" title="Project">
-                            <div class="meta-stats"><p><strong>Size:</strong> <span id="meta-size"></span></p><p><strong>Type:</strong> <span id="meta-type"></span></p><p><strong>Dims:</strong> <span id="meta-dims"></span></p></div>
-                            <button class="button button-primary" id="btn-save-meta" style="width:100%; margin-top:10px;">Save Metadata</button>
+                           <label for="inp-meta-title">Title</label><input type="text" id="inp-meta-title" class="widefat" placeholder="Title" title="Title">
+                           <label for="inp-meta-author">Photographer</label><input type="text" id="inp-meta-author" class="widefat" placeholder="Photographer" title="Photographer">
+                           <label for="inp-meta-project">Project</label><input type="text" id="inp-meta-project" class="widefat" placeholder="Project" title="Project">
+                           <div class="meta-stats"><p><strong>Size:</strong> <span id="meta-size"></span></p><p><strong>Type:</strong> <span id="meta-type"></span></p><p><strong>Dims:</strong> <span id="meta-dims"></span></p></div>
+                           <button class="button button-primary" id="btn-save-meta" style="width:100%; margin-top:10px;">Save Metadata</button>
                         </div>
                         <div class="meta-actions">
                              <button class="button" id="btn-view-large">View Larger</button>
@@ -115,207 +197,76 @@ class GalleryController {
             <?php 
             $sql = "SELECT g.*, c.first_name, c.last_name, (SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_gallery_files WHERE gallery_id = g.id) as img_count FROM {$wpdb->prefix}studiofy_galleries g LEFT JOIN {$wpdb->prefix}studiofy_customers c ON g.customer_id = c.id WHERE g.wp_page_id IS NOT NULL ORDER BY g.created_at DESC";
             $published = $wpdb->get_results($sql);
-            
-            if(empty($published)): ?>
-                <p>No private gallery pages created yet.</p>
-            <?php else: ?>
+            if(empty($published)): ?><p>No private gallery pages created yet.</p><?php else: ?>
                 <table class="wp-list-table widefat fixed striped">
-                    <thead><tr><th>Gallery ID</th><th>Private Gallery Name</th><th>Customer</th><th>Access Code</th><th>Images</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>Gallery ID</th><th>Name</th><th>Customer</th><th>Code</th><th>Images</th><th>Actions</th></tr></thead>
                     <tbody>
-                        <?php foreach($published as $pg): 
-                            $cust = $pg->first_name ? esc_html($pg->first_name.' '.$pg->last_name) : 'Unassigned';
-                            $edit_link = admin_url('post.php?post='.$pg->wp_page_id.'&action=edit');
-                            $del_link = wp_nonce_url(admin_url('admin-post.php?action=studiofy_delete_gallery&id='.$pg->id), 'del_gal_'.$pg->id);
-                        ?>
-                        <tr>
-                            <td><?php echo $pg->id; ?></td>
-                            <td><strong><a href="?page=studiofy-galleries&action=view&id=<?php echo $pg->id; ?>"><?php echo esc_html($pg->title); ?></a></strong></td>
-                            <td><?php echo $cust; ?></td>
-                            <td><code><?php echo esc_html($pg->password); ?></code></td>
-                            <td><?php echo $pg->img_count; ?></td>
-                            <td>
-                                <a href="<?php echo $edit_link; ?>" target="_blank">Change URL</a> | 
-                                <a href="<?php echo $del_link; ?>" onclick="return confirm('Delete gallery?');" style="color:#b32d2e;">Delete</a>
-                            </td>
-                        </tr>
+                        <?php foreach($published as $pg): $cust = $pg->first_name ? esc_html($pg->first_name.' '.$pg->last_name) : 'Unassigned'; ?>
+                        <tr><td><?php echo $pg->id; ?></td><td><strong><?php echo esc_html($pg->title); ?></strong></td><td><?php echo $cust; ?></td><td><code><?php echo esc_html($pg->password); ?></code></td><td><?php echo $pg->img_count; ?></td>
+                        <td><a href="<?php echo admin_url('post.php?post='.$pg->wp_page_id.'&action=edit'); ?>" target="_blank">Change URL</a></td></tr>
                         <?php endforeach; ?>
                     </tbody>
                 </table>
             <?php endif; ?>
         </div>
 
-        <form id="upload-form" method="post" action="<?php echo admin_url('admin-post.php'); ?>" enctype="multipart/form-data" style="display:none;">
-            <input type="hidden" name="action" value="studiofy_save_gallery">
-            <input type="hidden" name="id" id="upload-gallery-id">
-            <?php wp_nonce_field('save_gallery', 'studiofy_nonce_upload'); ?>
-            <label for="file-input" class="screen-reader-text">Upload Files</label>
-            <input type="file" name="gallery_files[]" id="file-input" multiple accept=".jpg,.jpeg,.png,.gif,.cr2,.nef,.arw">
-        </form>
+        <input type="file" id="file-input" multiple accept=".jpg,.jpeg,.png,.gif,.cr2,.nef,.arw,.dng,.orf,.raf" style="display:none;">
 
-        <div id="modal-new-gallery" class="studiofy-modal-overlay studiofy-hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title" style="display:none;">
-            <div class="studiofy-modal">
-                <div class="studiofy-modal-header">
-                    <h2 id="modal-title">Create New Gallery Folder</h2>
-                    <button class="close-modal" aria-label="Close">&times;</button>
+        <div id="modal-upload-progress" class="studiofy-modal-overlay studiofy-hidden" role="dialog" aria-modal="true">
+            <div class="studiofy-modal" style="width: 400px; text-align: center;">
+                <h3>Uploading Files...</h3>
+                <div class="studiofy-progress-container">
+                    <div id="studiofy-progress-bar" class="studiofy-progress-bar"></div>
                 </div>
+                <p id="upload-status-text">Starting...</p>
+            </div>
+        </div>
+
+        <div id="modal-new-gallery" class="studiofy-modal-overlay studiofy-hidden" role="dialog" aria-modal="true" style="display:none;">
+            <div class="studiofy-modal">
+                <div class="studiofy-modal-header"><h2 id="modal-title">Create New Gallery Folder</h2><button class="close-modal">&times;</button></div>
                 <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" class="studiofy-modal-body">
                     <input type="hidden" name="action" value="studiofy_save_gallery">
                     <?php wp_nonce_field('save_gallery', 'studiofy_nonce_create'); ?>
-                    <div class="studiofy-form-row">
-                        <div class="studiofy-col">
-                            <label for="gallery-title">Gallery Title *</label>
-                            <input type="text" name="title" id="gallery-title" required class="widefat" title="Title">
-                        </div>
-                    </div>
-                    <div class="studiofy-form-row">
-                        <div class="studiofy-col">
-                            <label for="gallery-desc">Description</label>
-                            <textarea name="description" id="gallery-desc" class="widefat" rows="3" title="Description"></textarea>
-                        </div>
-                    </div>
-                    <div class="studiofy-form-row">
-                        <div class="studiofy-col">
-                            <label for="gallery-pass">Access Password (Optional)</label>
-                            <input type="text" name="password" id="gallery-pass" class="widefat" placeholder="Leave blank to auto-generate" title="Password">
-                        </div>
-                    </div>
-                    
-                    <div class="studiofy-form-actions">
-                        <button type="button" class="button close-modal">Cancel</button>
-                        <button type="submit" class="button button-primary">Create Folder</button>
-                    </div>
+                    <div class="studiofy-form-row"><div class="studiofy-col"><label for="gallery-title">Title *</label><input type="text" name="title" id="gallery-title" required class="widefat" title="Title"></div></div>
+                    <div class="studiofy-form-row"><div class="studiofy-col"><label for="gallery-desc">Description</label><textarea name="description" id="gallery-desc" class="widefat" rows="3" title="Desc"></textarea></div></div>
+                    <div class="studiofy-form-row"><div class="studiofy-col"><label for="gallery-pass">Password (Optional)</label><input type="text" name="password" id="gallery-pass" class="widefat" title="Password"></div></div>
+                    <div class="studiofy-form-actions"><button type="button" class="button close-modal">Cancel</button><button type="submit" class="button button-primary">Create Folder</button></div>
                 </form>
             </div>
         </div>
         
-        <div id="studiofy-lightbox" class="studiofy-modal-overlay studiofy-hidden" role="dialog" aria-label="Image Preview">
-            <div class="studiofy-lightbox-content">
-                <img id="lightbox-img" src="" alt="Preview">
-                <button class="close-modal" aria-label="Close Preview" style="color:#fff; position:absolute; top:20px; right:20px; font-size:30px;">&times;</button>
-            </div>
-        </div>
-
-        <script>jQuery(document).ready(function($){ 
-            $('#btn-create-gallery').click(function(){ $('#modal-new-gallery').show().removeClass('studiofy-hidden'); }); 
-            $('.close-modal').click(function(){ $(this).closest('.studiofy-modal-overlay').hide().addClass('studiofy-hidden'); }); 
-        });</script>
+        <div id="studiofy-lightbox" class="studiofy-modal-overlay studiofy-hidden" role="dialog"><div class="studiofy-lightbox-content"><img id="lightbox-img" src=""><button class="close-modal" style="color:#fff; position:absolute; top:20px; right:20px; font-size:30px;">&times;</button></div></div>
+        <script>jQuery(document).ready(function($){ $('#btn-create-gallery').click(function(){ $('#modal-new-gallery').show().removeClass('studiofy-hidden'); }); $('.close-modal').click(function(){ $(this).closest('.studiofy-modal-overlay').hide().addClass('studiofy-hidden'); }); });</script>
         <?php
     }
 
     public function handle_save(): void {
-        // Unique Nonce Check
-        if (isset($_POST['studiofy_nonce_create']) && wp_verify_nonce($_POST['studiofy_nonce_create'], 'save_gallery')) {
-             $is_upload = false;
-        } elseif (isset($_POST['studiofy_nonce_upload']) && wp_verify_nonce($_POST['studiofy_nonce_upload'], 'save_gallery')) {
-             $is_upload = true;
-        } else {
-             wp_die('Security check failed');
-        }
-        
+        check_admin_referer('save_gallery', 'studiofy_nonce_create');
         global $wpdb;
-        $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
-        
-        if ($id === 0 && !$is_upload) {
-            $title = sanitize_text_field($_POST['title']);
-            $desc  = sanitize_textarea_field($_POST['description']);
-            $pass  = sanitize_text_field($_POST['password']);
-            
-            $wpdb->insert($wpdb->prefix.'studiofy_galleries', [
-                'title' => $title,
-                'description' => $desc,
-                'password' => $pass,
-                'status' => 'active'
-            ]);
-            wp_redirect(admin_url('admin.php?page=studiofy-galleries'));
-            exit;
-        }
-        
-        if ($is_upload && !empty($_FILES['gallery_files']['name'][0])) {
-             $upload_dir = wp_upload_dir();
-             $base_dir = $upload_dir['basedir'] . '/studiofy_galleries/' . $id;
-             $base_url = $upload_dir['baseurl'] . '/studiofy_galleries/' . $id;
-             if (!file_exists($base_dir)) mkdir($base_dir, 0755, true);
-             $files = $_FILES['gallery_files'];
-             for ($i = 0; $i < count($files['name']); $i++) {
-                if ($files['error'][$i] === 0) {
-                    $name = sanitize_file_name($files['name'][$i]);
-                    $target = $base_dir . '/' . $name;
-                    if (move_uploaded_file($files['tmp_name'][$i], $target)) {
-                         $ext = pathinfo($name, PATHINFO_EXTENSION);
-                         $dims = '';
-                         if(in_array(strtolower($ext), ['jpg','jpeg','png'])) {
-                            $info = getimagesize($target);
-                            $dims = $info ? $info[0].'x'.$info[1] : '';
-                         }
-                         $wpdb->insert($wpdb->prefix.'studiofy_gallery_files', [
-                            'gallery_id' => $id,
-                            'uploaded_by' => get_current_user_id(),
-                            'file_name' => $name,
-                            'file_path' => $target,
-                            'file_url' => $base_url . '/' . $name,
-                            'file_type' => $ext,
-                            'dimensions' => $dims,
-                            'file_size' => size_format(filesize($target)),
-                            'created_at' => current_time('mysql')
-                        ]);
-                    }
-                }
-             }
-        }
-        wp_redirect(admin_url('admin.php?page=studiofy-galleries&action=view&id='.$id));
+        $title = sanitize_text_field($_POST['title']);
+        $desc  = sanitize_textarea_field($_POST['description']);
+        $pass  = sanitize_text_field($_POST['password']);
+        $wpdb->insert($wpdb->prefix.'studiofy_galleries', ['title' => $title, 'description' => $desc, 'password' => $pass, 'status' => 'active']);
+        wp_redirect(admin_url('admin.php?page=studiofy-galleries'));
         exit;
-    }
-
-    public function handle_delete_gallery(): void {
-        check_admin_referer('del_gal_' . $_GET['id']);
-        global $wpdb;
-        $id = (int)$_GET['id'];
-        $page_id = $wpdb->get_var($wpdb->prepare("SELECT wp_page_id FROM {$wpdb->prefix}studiofy_galleries WHERE id = %d", $id));
-        if ($page_id) wp_delete_post($page_id, true);
-        $wpdb->delete($wpdb->prefix.'studiofy_galleries', ['id' => $id]);
-        $wpdb->delete($wpdb->prefix.'studiofy_gallery_files', ['gallery_id' => $id]);
-        $upload = wp_upload_dir();
-        $dir = $upload['basedir'] . '/studiofy_galleries/' . $id;
-        if(is_dir($dir)) { array_map('unlink', glob("$dir/*.*")); rmdir($dir); }
-        wp_redirect(admin_url('admin.php?page=studiofy-galleries')); exit;
     }
 
     public function ajax_create_page(): void {
         check_ajax_referer('wp_rest', 'nonce');
         if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
-        
         global $wpdb;
         $id = (int)$_POST['id'];
         $gallery = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_galleries WHERE id = %d", $id));
-        
-        if (!$gallery) wp_send_json_error('Gallery not found');
-        
-        // FIX: Return existing URL if page already exists
         if ($gallery->wp_page_id) {
             $link = get_edit_post_link($gallery->wp_page_id, '');
-            header('Content-Type: application/json');
-            wp_send_json_success(['message' => 'Page already exists.', 'redirect_url' => html_entity_decode($link)]);
-            return;
+            header('Content-Type: application/json'); wp_send_json_success(['message' => 'Exists', 'redirect_url' => html_entity_decode($link)]); return;
         }
-        
-        $password = !empty($gallery->password) ? $gallery->password : wp_generate_password(8, false);
-
-        $page_id = wp_insert_post([
-            'post_title'   => $gallery->title . ' - Proofing',
-            'post_content' => '[studiofy_proof_gallery id="' . $id . '"]',
-            'post_status'  => 'publish',
-            'post_type'    => 'page',
-            'post_password'=> $password
-        ]);
-        
-        if ($page_id) {
-            $wpdb->update($wpdb->prefix.'studiofy_galleries', ['wp_page_id' => $page_id, 'password' => $password], ['id' => $id]);
-            $redirect = get_edit_post_link($page_id, ''); 
-            header('Content-Type: application/json');
-            wp_send_json_success(['message' => 'Page Created!', 'redirect_url' => html_entity_decode($redirect)]);
-        } else {
-            header('Content-Type: application/json');
-            wp_send_json_error('Failed to create page');
-        }
+        $pass = !empty($gallery->password) ? $gallery->password : wp_generate_password(8, false);
+        $pid = wp_insert_post(['post_title'=>$gallery->title.' - Proofing','post_content'=>'[studiofy_proof_gallery id="'.$id.'"]','post_status'=>'publish','post_type'=>'page','post_password'=>$pass]);
+        if ($pid) {
+            $wpdb->update($wpdb->prefix.'studiofy_galleries', ['wp_page_id'=>$pid, 'password'=>$pass], ['id'=>$id]);
+            header('Content-Type: application/json'); wp_send_json_success(['message'=>'Created','redirect_url'=>html_entity_decode(get_edit_post_link($pid, ''))]);
+        } else { header('Content-Type: application/json'); wp_send_json_error('Failed'); }
     }
 }
