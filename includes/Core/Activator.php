@@ -2,7 +2,7 @@
 /**
  * Activator
  * @package Studiofy\Core
- * @version 2.1.8
+ * @version 2.1.10
  */
 
 declare(strict_types=1);
@@ -11,16 +11,33 @@ namespace Studiofy\Core;
 
 class Activator {
     public static function activate(): void {
-        if (!current_user_can('activate_plugins')) return;
+        // Prevent any output buffering issues
+        ob_start();
+
+        if (!current_user_can('activate_plugins')) {
+            return;
+        }
         
         global $wpdb;
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         $charset_collate = $wpdb->get_charset_collate();
 
         $tables = [
-            'studiofy_customers' => "CREATE TABLE {$wpdb->prefix}studiofy_customers (id mediumint(9) NOT NULL AUTO_INCREMENT, status varchar(20) DEFAULT 'Lead' NOT NULL, first_name varchar(100) NOT NULL, last_name varchar(100) NOT NULL, email varchar(100) NOT NULL, phone text NULL, company varchar(150) NULL, address text NULL, notes longtext NULL, created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL, PRIMARY KEY (id), KEY email (email)) $charset_collate;",
+            'studiofy_customers' => "CREATE TABLE {$wpdb->prefix}studiofy_customers (
+                id mediumint(9) NOT NULL AUTO_INCREMENT,
+                status varchar(20) DEFAULT 'Lead' NOT NULL,
+                first_name varchar(100) NOT NULL,
+                last_name varchar(100) NOT NULL,
+                email varchar(100) NOT NULL,
+                phone text NULL,
+                company varchar(150) NULL,
+                address text NULL,
+                notes longtext NULL,
+                created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
+                PRIMARY KEY (id),
+                KEY email (email)
+            ) $charset_collate;",
             
-            // Updated Gallery Files Table
             'studiofy_gallery_files' => "CREATE TABLE {$wpdb->prefix}studiofy_gallery_files (
                 id mediumint(9) NOT NULL AUTO_INCREMENT,
                 gallery_id mediumint(9) NOT NULL,
@@ -29,7 +46,7 @@ class Activator {
                 file_path text NOT NULL,
                 file_url text NOT NULL,
                 file_type varchar(50) NOT NULL,
-                dimensions varchar(50) NULL, -- e.g. 1920x1080
+                dimensions varchar(50) NULL,
                 file_size varchar(50) NULL,
                 is_watermarked boolean DEFAULT 0,
                 created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -50,16 +67,21 @@ class Activator {
             dbDelta($sql);
         }
         
-        // Create Upload Directory
+        // Create Upload Directory Safely
         $upload = wp_upload_dir();
         $dir = $upload['basedir'] . '/studiofy_galleries';
         if (!file_exists($dir)) {
-            mkdir($dir, 0755, true);
-            file_put_contents($dir . '/index.php', '<?php // Silence');
-            file_put_contents($dir . '/.htaccess', 'Options -Indexes');
+            @mkdir($dir, 0755, true);
+            @file_put_contents($dir . '/index.php', '<?php // Silence');
+            @file_put_contents($dir . '/.htaccess', 'Options -Indexes');
         }
 
-        if(!get_option('studiofy_db_version')) add_option('studiofy_do_activation_redirect', true);
+        if(!get_option('studiofy_db_version')) {
+            add_option('studiofy_do_activation_redirect', true);
+        }
         update_option('studiofy_db_version', STUDIOFY_DB_VERSION);
+
+        // Clean buffer to prevent "Unexpected Output" error during activation
+        ob_end_clean();
     }
 }
