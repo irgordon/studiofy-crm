@@ -1,14 +1,42 @@
 /**
  * Studiofy Admin Core
  * @package Studiofy
- * @version 2.1.1
+ * @version 2.1.4
  */
 jQuery(document).ready(function($){
     
-    // 1. WP Color Picker
-    $('.studiofy-color-field').wpColorPicker();
+    // Modal Logic
+    function setupModal(triggerId, modalId) {
+        $(triggerId).click(function(e){ 
+            e.preventDefault(); 
+            $(modalId).show(); // Force show
+            $(modalId).removeClass('studiofy-hidden'); 
+        });
+        
+        $(modalId + ' .close-modal').click(function(e){ 
+            e.preventDefault(); 
+            $(modalId).addClass('studiofy-hidden'); 
+            $(modalId).hide(); // Force hide
+        });
+        
+        // Close on overlay click
+        $(modalId).click(function(e){
+            if(e.target === this) {
+                $(this).addClass('studiofy-hidden');
+                $(this).hide();
+            }
+        });
+    }
     
-    // 2. Media Uploader
+    setupModal('#btn-new-customer', '#modal-new-customer'); // (Should check if element exists on page)
+    setupModal('#btn-new-appt', '#modal-new-appt');
+
+    // WP Color Picker
+    if($.fn.wpColorPicker) {
+        $('.studiofy-color-field').wpColorPicker();
+    }
+    
+    // Media Uploader
     $('.studiofy-upload-btn').click(function(e) {
         e.preventDefault();
         var button = $(this);
@@ -23,46 +51,41 @@ jQuery(document).ready(function($){
         }).open();
     });
 
-    // 3. Delete Confirmation
+    // Delete Confirmation
     $('.delete-link').click(function(){ return confirm('Are you sure you want to delete this item?'); });
 
-    // 4. Phone Auto-Formatter (US Format)
-    // Listens for input on any field with ID "phone"
-    $('#phone').on('input', function() {
-        var input = $(this).val().replace(/\D/g, ''); // Strip non-digits
-        var formatted = '';
-        
-        if (input.length > 0) {
-            // (123
-            if (input.length <= 3) {
-                formatted = input;
-            } 
-            // (123) 456
-            else if (input.length <= 6) {
-                formatted = '(' + input.substring(0, 3) + ') ' + input.substring(3);
-            } 
-            // (123) 456-7890
-            else {
-                formatted = '(' + input.substring(0, 3) + ') ' + input.substring(3, 6) + '-' + input.substring(6, 10);
+    // Customer Form Validation (Only runs if form exists)
+    $('#studiofy-customer-form').on('submit', function(e) {
+        let valid = true;
+        let errors = [];
+
+        try {
+            // Phone Validation
+            const phoneInput = $(this).find('input[name="phone"]');
+            if(phoneInput.length > 0 && phoneInput.val().trim() !== '') {
+                const phone = phoneInput.val();
+                if(!phone.match(/^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im)) {
+                    // console.warn('Phone format warning');
+                }
             }
-        }
-        
-        $(this).val(formatted);
-    });
 
-    // 5. Email Visual Feedback
-    $('#email').on('blur', function() {
-        var email = $(this).val();
-        var errorField = $('#email-error');
-        var regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic email regex
+            // Email Validation
+            const emailInput = $(this).find('input[name="email"]');
+            if(emailInput.length > 0) {
+                const email = emailInput.val();
+                if(email.trim() === '' || !email.match(/^[^@]+@[^@]+\.[a-zA-Z]{2,}$/)) {
+                    valid = false;
+                    errors.push('A valid email address is required.');
+                }
+            }
 
-        if(email.length > 0 && !regex.test(email)) {
-            $(this).css('border-color', '#d63638');
-            errorField.text('Please enter a valid email address.');
-            errorField.show();
-        } else {
-            $(this).css('border-color', ''); // Reset
-            errorField.hide();
+            if(!valid) {
+                e.preventDefault();
+                alert(errors.join('\n'));
+            }
+
+        } catch (err) {
+            console.error('Validation Script Error:', err);
         }
     });
 });
