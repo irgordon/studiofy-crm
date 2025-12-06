@@ -40,6 +40,7 @@ class ProjectEndpoints {
         $milestones = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_milestones WHERE project_id = %d ORDER BY created_at ASC", $project_id));
         $data = [];
         
+        // If no milestones, API returns empty array, JS handles UI
         foreach ($milestones as $milestone) {
             $tasks = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_tasks WHERE milestone_id = %d", $milestone->id));
             foreach($tasks as $task) {
