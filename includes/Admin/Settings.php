@@ -2,7 +2,7 @@
 /**
  * Settings Controller
  * @package Studiofy\Admin
- * @version 2.2.17
+ * @version 2.2.18
  */
 
 declare(strict_types=1);
@@ -55,23 +55,24 @@ class Settings {
         
         add_settings_field('square_token', 'Square Access Token', [$this, 'field_text'], 'studiofy-settings', 'studiofy_branding_section', ['key' => 'square_access_token', 'label' => 'Square Token']);
         add_settings_field('square_env', 'Square Environment', [$this, 'render_env_field'], 'studiofy-settings', 'studiofy_branding_section');
+        
+        // Google Maps API Key for Address Validation
+        add_settings_field('google_maps_key', 'Google Maps API Key', [$this, 'field_text'], 'studiofy-settings', 'studiofy_branding_section', ['key' => 'google_maps_key', 'label' => 'Google Maps API Key']);
 
         add_settings_section('studiofy_social_section', 'Social Media', [$this, 'render_social_table'], 'studiofy-settings');
         
-        // NOTE: Demo Data section NOT added here to avoid automatic rendering inside the main form.
+        // Demo Data Section (Rendered manually below)
     }
 
     public function render_page(): void {
         echo '<div class="wrap"><h1>Settings</h1>';
         
-        // 1. Main Settings Form (Target: options.php)
         echo '<form method="post" action="options.php">';
         settings_fields($this->optionGroup);
         do_settings_sections('studiofy-settings');
         submit_button('Save Settings');
         echo '</form>';
 
-        // 2. Demo Data Section (Separate, manual render)
         echo '<hr>';
         echo '<h2>Demo Data Import</h2>';
         $this->render_demo_section();
