@@ -1,7 +1,7 @@
 /**
  * Studiofy Gallery Explorer
  * @package Studiofy
- * @version 2.2.8
+ * @version 2.2.12
  */
 jQuery(document).ready(function($) {
     let currentGalleryId = 0;
@@ -30,25 +30,28 @@ jQuery(document).ready(function($) {
         clearSelection();
     });
 
-    // 2. Create Page Click (FIXED)
+    // 2. Create Page Click (FIXED AJAX URL)
     $('#btn-create-page').click(function(e) {
         e.preventDefault();
         const btn = $(this);
         btn.text('Creating...').prop('disabled', true);
 
-        $.post(studiofyGallerySettings.root + '../admin-ajax.php', {
+        // Uses localized ajax_url from Menu.php
+        $.post(studiofyGallerySettings.ajax_url, {
             action: 'studiofy_create_gallery_page',
             id: currentGalleryId,
             nonce: studiofyGallerySettings.nonce
         }, function(response) {
             if(response.success) {
-                alert('Page created! Redirecting...');
-                // Redirect to the new page
+                alert('Page created! Redirecting to editor...');
                 window.location.href = response.data.redirect_url;
             } else {
                 alert('Error: ' + (response.data || 'Unknown error'));
                 btn.prop('disabled', false).text('Create Private Gallery Page');
             }
+        }).fail(function(xhr, status, error) {
+            alert('AJAX Error: ' + error);
+            btn.prop('disabled', false).text('Create Private Gallery Page');
         });
     });
 
@@ -112,7 +115,7 @@ jQuery(document).ready(function($) {
         grid.appendChild(fragment);
     }
 
-    // 4. Sidebar
+    // 4. Meta Sidebar
     function showMeta(f) {
         $('#meta-empty').hide();
         $('#meta-content').show();
@@ -189,27 +192,13 @@ jQuery(document).ready(function($) {
         $('#lightbox-img').attr('src', '');
     });
 
-    // Upload
     $('#btn-upload-media').click(function() {
         if(currentGalleryId === 0) return;
         $('#file-input').click();
     });
 
     $('#file-input').change(function() {
-        const files = this.files;
-        const max = parseInt(studiofyGallerySettings.max_upload_size);
-        
-        for(let i=0; i<files.length; i++) {
-            if(files[i].size > max) {
-                alert(`File ${files[i].name} is too large.`);
-                $(this).val('');
-                return;
-            }
-        }
-        
-        if(files.length > 0) {
-            $('#upload-form').submit();
-        }
+        if(this.files.length > 0) $('#upload-form').submit();
     });
 
     $('#file-grid').click(function(e) {
