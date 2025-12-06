@@ -2,7 +2,7 @@
 /**
  * Gallery Controller
  * @package Studiofy\Admin
- * @version 2.2.9
+ * @version 2.2.12
  */
 
 declare(strict_types=1);
@@ -18,45 +18,57 @@ class GalleryController {
         add_action('rest_api_init', [$this, 'register_routes']);
     }
 
-    // ... (Routes & File Logic: get_gallery_files, delete_file, update_file_meta from previous versions remain same) ...
     public function register_routes(): void {
-        register_rest_route('studiofy/v1', '/galleries/(?P<id>\d+)/files', ['methods' => 'GET', 'callback' => [$this, 'get_gallery_files'], 'permission_callback' => fn() => current_user_can('upload_files')]);
-        register_rest_route('studiofy/v1', '/galleries/files/(?P<id>\d+)', ['methods' => 'DELETE', 'callback' => [$this, 'delete_file'], 'permission_callback' => fn() => current_user_can('upload_files')]);
-        register_rest_route('studiofy/v1', '/galleries/files/(?P<id>\d+)', ['methods' => 'POST', 'callback' => [$this, 'update_file_meta'], 'permission_callback' => fn() => current_user_can('upload_files')]);
+        register_rest_route('studiofy/v1', '/galleries/(?P<id>\d+)/files', [
+            'methods' => 'GET',
+            'callback' => [$this, 'get_gallery_files'],
+            'permission_callback' => fn() => current_user_can('upload_files')
+        ]);
+        register_rest_route('studiofy/v1', '/galleries/files/(?P<id>\d+)', [
+            'methods' => 'DELETE',
+            'callback' => [$this, 'delete_file'],
+            'permission_callback' => fn() => current_user_can('upload_files')
+        ]);
+        register_rest_route('studiofy/v1', '/galleries/files/(?P<id>\d+)', [
+            'methods' => 'POST',
+            'callback' => [$this, 'update_file_meta'],
+            'permission_callback' => fn() => current_user_can('upload_files')
+        ]);
     }
+
     public function get_gallery_files(\WP_REST_Request $request): \WP_REST_Response {
-        global $wpdb; $id = $request->get_param('id');
+        global $wpdb;
+        $id = $request->get_param('id');
         $files = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_gallery_files WHERE gallery_id = %d ORDER BY created_at DESC", $id));
         return new \WP_REST_Response($files, 200);
     }
+
     public function delete_file(\WP_REST_Request $request): \WP_REST_Response {
-        global $wpdb; $id = $request->get_param('id');
+        global $wpdb;
+        $id = $request->get_param('id');
         $file = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_gallery_files WHERE id = %d", $id));
-        if ($file) { if(file_exists($file->file_path)) unlink($file->file_path); $wpdb->delete($wpdb->prefix.'studiofy_gallery_files', ['id'=>$id]); return new \WP_REST_Response(['success'=>true],200); }
-        return new \WP_REST_Response(['success'=>false],404);
+        if ($file) {
+            if (file_exists($file->file_path)) unlink($file->file_path);
+            $wpdb->delete($wpdb->prefix . 'studiofy_gallery_files', ['id' => $id]);
+            return new \WP_REST_Response(['success' => true], 200);
+        }
+        return new \WP_REST_Response(['success' => false], 404);
     }
+
     public function update_file_meta(\WP_REST_Request $request): \WP_REST_Response {
-        global $wpdb; $id = $request->get_param('id'); $p = $request->get_json_params();
-        $u = $wpdb->update($wpdb->prefix.'studiofy_gallery_files', ['meta_title'=>sanitize_text_field($p['meta_title']),'meta_photographer'=>sanitize_text_field($p['meta_photographer']),'meta_project'=>sanitize_text_field($p['meta_project'])], ['id'=>$id]);
-        return new \WP_REST_Response(['success'=>(bool)$u],200);
+        global $wpdb;
+        $id = $request->get_param('id');
+        $params = $request->get_json_params();
+        $updated = $wpdb->update($wpdb->prefix.'studiofy_gallery_files', [
+            'meta_title' => sanitize_text_field($params['meta_title']),
+            'meta_photographer' => sanitize_text_field($params['meta_photographer']),
+            'meta_project' => sanitize_text_field($params['meta_project']),
+        ], ['id' => $id]);
+        return new \WP_REST_Response(['success' => (bool)$updated], 200);
     }
 
     public function render_page(): void {
         global $wpdb;
-        $action = $_GET['action'] ?? 'list';
-
-        if ($action === 'create' || $action === 'view') {
-            $this->render_form();
-        } else {
-            $this->render_list();
-        }
-    }
-
-    private function render_list(): void {
-        global $wpdb;
-        
-        // 1. Image Galleries Explorer (Top)
-        // ... (This section remains visually same as previous, just compacted for context) ...
         $galleries = $wpdb->get_results("SELECT g.*, p.post_title as wp_title, p.ID as page_id FROM {$wpdb->prefix}studiofy_galleries g LEFT JOIN {$wpdb->posts} p ON g.wp_page_id = p.ID ORDER BY g.created_at DESC");
         ?>
         <div class="wrap studiofy-explorer-wrap">
@@ -95,7 +107,11 @@ class GalleryController {
                     <div id="meta-content" style="display:none;">
                         <div class="meta-preview" id="meta-preview"></div>
                         <div class="meta-form">
-                           <button class="button button-primary" id="btn-save-meta" style="width:100%;">Save</button>
+                            <label>Title</label><input type="text" id="inp-meta-title" class="widefat">
+                            <label>Photographer</label><input type="text" id="inp-meta-author" class="widefat">
+                            <label>Project</label><input type="text" id="inp-meta-project" class="widefat">
+                            <div class="meta-stats"><p><strong>Size:</strong> <span id="meta-size"></span></p><p><strong>Type:</strong> <span id="meta-type"></span></p><p><strong>Dims:</strong> <span id="meta-dims"></span></p></div>
+                            <button class="button button-primary" id="btn-save-meta" style="width:100%; margin-top:10px;">Save Metadata</button>
                         </div>
                         <div class="meta-actions">
                              <button class="button" id="btn-view-large">View Larger</button>
@@ -107,19 +123,14 @@ class GalleryController {
 
             <h2>Published Private Galleries</h2>
             <?php 
-            $sql = "SELECT g.*, c.first_name, c.last_name, 
-                    (SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_gallery_files WHERE gallery_id = g.id) as img_count
-                    FROM {$wpdb->prefix}studiofy_galleries g
-                    LEFT JOIN {$wpdb->prefix}studiofy_customers c ON g.customer_id = c.id
-                    WHERE g.wp_page_id IS NOT NULL
-                    ORDER BY g.created_at DESC";
+            $sql = "SELECT g.*, c.first_name, c.last_name, (SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_gallery_files WHERE gallery_id = g.id) as img_count FROM {$wpdb->prefix}studiofy_galleries g LEFT JOIN {$wpdb->prefix}studiofy_customers c ON g.customer_id = c.id WHERE g.wp_page_id IS NOT NULL ORDER BY g.created_at DESC";
             $published = $wpdb->get_results($sql);
             
             if(empty($published)): ?>
-                <p>No private gallery pages created yet. Select a folder above and click "Create Private Gallery Page".</p>
+                <p>No private gallery pages created yet.</p>
             <?php else: ?>
                 <table class="wp-list-table widefat fixed striped">
-                    <thead><tr><th>Gallery ID</th><th>Private Gallery Name</th><th>Customer Name</th><th>Total Images</th><th>Proofing Status</th><th>Actions</th></tr></thead>
+                    <thead><tr><th>Gallery ID</th><th>Private Gallery Name</th><th>Customer Name</th><th>Total Images</th><th>Actions</th></tr></thead>
                     <tbody>
                         <?php foreach($published as $pg): 
                             $cust = $pg->first_name ? esc_html($pg->first_name.' '.$pg->last_name) : 'Unassigned';
@@ -128,14 +139,12 @@ class GalleryController {
                         ?>
                         <tr>
                             <td><?php echo $pg->id; ?></td>
-                            <td><strong><a href="?page=studiofy-galleries&action=view&id=<?php echo $pg->id; ?>"><?php echo esc_html($pg->title); ?></a></strong></td>
+                            <td><strong><?php echo esc_html($pg->title); ?></strong></td>
                             <td><?php echo $cust; ?></td>
                             <td><?php echo $pg->img_count; ?></td>
-                            <td><?php echo ucfirst($pg->status); ?></td>
                             <td>
-                                <a href="?page=studiofy-galleries&action=view&id=<?php echo $pg->id; ?>">Edit Photos</a> | 
                                 <a href="<?php echo $edit_link; ?>" target="_blank">Change URL</a> | 
-                                <a href="<?php echo $del_link; ?>" onclick="return confirm('Delete gallery and page?');" style="color:#b32d2e;">Delete</a>
+                                <a href="<?php echo $del_link; ?>" onclick="return confirm('Delete gallery?');" style="color:#b32d2e;">Delete</a>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -167,16 +176,7 @@ class GalleryController {
         <?php
     }
 
-    private function render_form(): void {
-        // (Render Form Logic from v2.2.2 - Same logic used when editing/creating)
-        $this->render_page(); // For simplicity, redirecting logic back to main page view but focusing the specific ID if needed, or implement separate view.
-        // Actually, the request implies 'Add New Gallery' creates a folder. 
-        // The table below lists 'Private Galleries'.
-        // Code above handles both via modal.
-    }
-
     public function handle_save(): void {
-        // (Save logic same as v2.2.3)
         check_admin_referer('save_gallery', 'studiofy_nonce');
         global $wpdb;
         $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
@@ -191,10 +191,7 @@ class GalleryController {
             exit;
         }
         
-        // Upload logic... (Same as v2.2.3)
         if (!empty($_FILES['gallery_files']['name'][0])) {
-             // ...
-             // (Copy upload logic from v2.2.3 here fully)
              $upload_dir = wp_upload_dir();
              $base_dir = $upload_dir['basedir'] . '/studiofy_galleries/' . $id;
              $base_url = $upload_dir['baseurl'] . '/studiofy_galleries/' . $id;
@@ -226,22 +223,13 @@ class GalleryController {
         check_admin_referer('del_gal_' . $_GET['id']);
         global $wpdb;
         $id = (int)$_GET['id'];
-        
-        // Get Page ID to delete it too
         $page_id = $wpdb->get_var($wpdb->prepare("SELECT wp_page_id FROM {$wpdb->prefix}studiofy_galleries WHERE id = %d", $id));
         if ($page_id) wp_delete_post($page_id, true);
-        
         $wpdb->delete($wpdb->prefix.'studiofy_galleries', ['id' => $id]);
         $wpdb->delete($wpdb->prefix.'studiofy_gallery_files', ['gallery_id' => $id]);
-        
-        // Remove files
         $upload = wp_upload_dir();
         $dir = $upload['basedir'] . '/studiofy_galleries/' . $id;
-        if(is_dir($dir)) {
-            array_map('unlink', glob("$dir/*.*"));
-            rmdir($dir);
-        }
-
+        if(is_dir($dir)) { array_map('unlink', glob("$dir/*.*")); rmdir($dir); }
         wp_redirect(admin_url('admin.php?page=studiofy-galleries')); exit;
     }
 
@@ -265,9 +253,8 @@ class GalleryController {
             'post_password'=> $password
         ]);
         
-        if ($page_id) {
+        if ($page_id && !is_wp_error($page_id)) {
             $wpdb->update($wpdb->prefix.'studiofy_galleries', ['wp_page_id' => $page_id, 'password' => $password], ['id' => $id]);
-            // FIX: Ensure valid permalink is returned
             $redirect = get_edit_post_link($page_id, ''); 
             wp_send_json_success(['message' => 'Page Created!', 'redirect_url' => html_entity_decode($redirect)]);
         } else {
