@@ -2,7 +2,7 @@
 /**
  * Project Details API Routes
  * @package Studiofy\Api
- * @version 2.2.10
+ * @version 2.2.11
  */
 
 declare(strict_types=1);
@@ -40,11 +40,6 @@ class ProjectEndpoints {
         $milestones = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_milestones WHERE project_id = %d ORDER BY created_at ASC", $project_id));
         $data = [];
         
-        // If no milestones exist for project, return empty but valid
-        if (empty($milestones)) {
-            // Optional: Create default milestone? For now return empty.
-        }
-
         foreach ($milestones as $milestone) {
             $tasks = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_tasks WHERE milestone_id = %d", $milestone->id));
             foreach($tasks as $task) {
@@ -62,9 +57,8 @@ class ProjectEndpoints {
         $table = $wpdb->prefix . 'studiofy_tasks';
         $params = $request->get_json_params();
         
-        // Logging for Debugging
         if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('Studiofy Task Save: ' . print_r($params, true));
+            error_log('Studiofy Task Save Params: ' . print_r($params, true));
         }
 
         $data = [
@@ -76,9 +70,8 @@ class ProjectEndpoints {
             'status'       => sanitize_text_field($params['status'] ?? 'pending')
         ];
 
-        // Ensure Milestone Exists. If not, create a default "General" milestone for the project
+        // Ensure Milestone Exists logic
         if ($data['milestone_id'] === 0 && !empty($params['project_id'])) {
-             // Logic to find or create a default milestone
              $proj_id = (int)$params['project_id'];
              $m_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}studiofy_milestones WHERE project_id = %d LIMIT 1", $proj_id));
              
@@ -104,7 +97,7 @@ class ProjectEndpoints {
 
         if ($result === false) {
              error_log('Studiofy DB Error: ' . $wpdb->last_error);
-             return new WP_REST_Response(['success' => false, 'message' => 'Database Error'], 500);
+             return new WP_REST_Response(['success' => false, 'message' => 'Database Error: ' . $wpdb->last_error], 500);
         }
 
         return new WP_REST_Response(['success' => true, 'id' => $task_id, 'data' => $data], 200);
