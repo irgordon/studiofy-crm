@@ -2,7 +2,7 @@
 /**
  * Project Controller
  * @package Studiofy\Admin
- * @version 2.2.14
+ * @version 2.2.26
  */
 
 declare(strict_types=1);
@@ -59,10 +59,17 @@ class ProjectController {
                     <a href="?page=studiofy-projects&action=new" class="button button-primary button-large">Create Project</a>
                 </div>
             <?php else: ?>
-                <h2 class="nav-tab-wrapper"><span class="nav-tab nav-tab-active">Visual Board</span></h2>
-                <div style="margin-top: 20px;"><?php $this->render_kanban_html(); ?></div>
-                <h2 class="nav-tab-wrapper" style="margin-top: 40px;"><span class="nav-tab nav-tab-active">Detailed List</span></h2>
-                <div style="margin-top: 20px;"><?php $this->render_list_html(); ?></div>
+                
+                <h2 class="nav-tab-wrapper"><span class="nav-tab nav-tab-active">Kanban Board</span></h2>
+                <div style="margin-top: 20px;">
+                    <?php $this->render_kanban_html(); ?>
+                </div>
+
+                <h2 class="nav-tab-wrapper" style="margin-top: 40px;"><span class="nav-tab nav-tab-active">Project List</span></h2>
+                <div style="margin-top: 20px;">
+                    <?php $this->render_list_html(); ?>
+                </div>
+
             <?php endif; ?>
         </div>
         <?php
@@ -71,20 +78,49 @@ class ProjectController {
 
     private function render_kanban_html(): void {
         $projects = $this->get_projects_by_status();
+        global $wpdb;
+
+        // Define columns with friendly names and color classes
+        $columns = [
+            'todo' => ['label' => 'To Do', 'color' => 'col-gray'],
+            'in_progress' => ['label' => 'In Progress', 'color' => 'col-blue'],
+            'future' => ['label' => 'Future / On Hold', 'color' => 'col-green']
+        ];
         ?>
         <div class="studiofy-kanban-board">
-            <?php foreach(['todo', 'in_progress', 'future'] as $status): ?>
-            <div class="studiofy-column" data-status="<?php echo $status; ?>">
-                <h2 class="studiofy-col-title"><?php echo ucfirst(str_replace('_',' ',$status)); ?></h2>
+            <?php foreach($columns as $key => $col): ?>
+            <div class="studiofy-column <?php echo esc_attr($col['color']); ?>" data-status="<?php echo esc_attr($key); ?>">
+                <div class="studiofy-col-header">
+                    <span class="col-name"><?php echo esc_html($col['label']); ?></span>
+                    <span class="col-count"><?php echo count($projects[$key]); ?></span>
+                </div>
+                
                 <div class="studiofy-card-container">
-                    <?php foreach ($projects[$status] as $project): ?>
+                    <?php foreach ($projects[$key] as $project): 
+                        // Count Tasks for this Project
+                        $task_count = $wpdb->get_var($wpdb->prepare(
+                            "SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_tasks t 
+                             JOIN {$wpdb->prefix}studiofy_milestones m ON t.milestone_id = m.id 
+                             WHERE m.project_id = %d", 
+                            $project->id
+                        ));
+                    ?>
                         <div class="studiofy-card" data-id="<?php echo esc_attr($project->id); ?>">
-                            <div class="studiofy-card-header"><strong><?php echo esc_html($project->title); ?></strong></div>
-                            <div class="studiofy-card-body">
-                                <p><?php echo esc_html($project->budget ? '$'.number_format((float)$project->budget, 2) : ''); ?></p>
+                            <div class="studiofy-card-header">
+                                <strong><?php echo esc_html($project->title); ?></strong>
+                            </div>
+                            <div class="studiofy-card-meta">
+                                <div class="meta-item">
+                                    <span class="dashicons dashicons-money-alt"></span>
+                                    <?php echo esc_html($project->budget ? '$'.number_format((float)$project->budget, 0) : '-'); ?>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="dashicons dashicons-list-view"></span>
+                                    <?php echo (int)$task_count . ' Tasks'; ?>
+                                </div>
                             </div>
                             <div class="studiofy-card-actions">
-                                <button class="button button-small" onclick="StudiofyKanban.editProject(<?php echo $project->id; ?>)">Manage Tasks</button>
+                                <button class="button button-small" onclick="StudiofyModal.open(<?php echo $project->id; ?>)">View Tasks</button>
                             </div>
                         </div>
                     <?php endforeach; ?>
