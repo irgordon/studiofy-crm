@@ -5,7 +5,7 @@
  */
 
 /* =========================================
-   1. Layout Container (Windows Explorer Style)
+   1. Layout Container
    ========================================= */
 .studiofy-explorer-wrap { 
     height: calc(100vh - 100px); 
@@ -73,8 +73,6 @@
     gap: 15px; 
     align-content: start; 
     background: #f0f0f1;
-    
-    /* Performance Optimizations */
     content-visibility: auto; 
     contain-intrinsic-size: 150px;
 }
@@ -89,8 +87,6 @@
     position: relative; 
     aspect-ratio: 1; 
     transition: box-shadow 0.2s;
-    
-    /* Hardware Acceleration hint */
     will-change: transform; 
     contain: content;
 }
