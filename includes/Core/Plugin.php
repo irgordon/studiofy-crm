@@ -18,7 +18,7 @@ use Studiofy\Api\ProjectEndpoints;
 use Studiofy\Api\GalleryRoutes;
 use Studiofy\Api\InvoiceRoutes;
 use Studiofy\Core\DemoDataManager;
-use Studiofy\Frontend\GalleryShortcode; // Imported
+use Studiofy\Frontend\GalleryShortcode; 
 
 class Plugin {
     
@@ -29,7 +29,7 @@ class Plugin {
         // Core Logic
         (new DemoDataManager())->init();
 
-        // Frontend Logic (FIXED: Added this line)
+        // Frontend Logic 
         (new GalleryShortcode())->init();
 
         // Modules
