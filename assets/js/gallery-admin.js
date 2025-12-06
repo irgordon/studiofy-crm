@@ -1,7 +1,7 @@
 /**
  * Studiofy Gallery Explorer
  * @package Studiofy
- * @version 2.2.3
+ * @version 2.2.8
  */
 jQuery(document).ready(function($) {
     let currentGalleryId = 0;
@@ -14,13 +14,12 @@ jQuery(document).ready(function($) {
         $(this).addClass('active');
         
         currentGalleryId = $(this).data('id');
-        const hasPage = $(this).data('has-page'); // 'true' or 'false'
+        const hasPage = $(this).data('has-page'); 
         
         $('#current-folder-label').text($(this).text().trim());
         $('#upload-gallery-id').val(currentGalleryId);
         $('#btn-upload-media').prop('disabled', false);
         
-        // Page Creation Button Logic
         if(hasPage === 'true') {
              $('#btn-create-page').prop('disabled', true).text('Page Exists');
         } else {
@@ -31,7 +30,7 @@ jQuery(document).ready(function($) {
         clearSelection();
     });
 
-    // 2. Create Page Click
+    // 2. Create Page Click (FIXED)
     $('#btn-create-page').click(function(e) {
         e.preventDefault();
         const btn = $(this);
@@ -43,11 +42,9 @@ jQuery(document).ready(function($) {
             nonce: studiofyGallerySettings.nonce
         }, function(response) {
             if(response.success) {
-                alert('Page created successfully!');
-                btn.text('Page Exists');
-                // Update icon in sidebar to show locked status
-                $(`.folder-item[data-id="${currentGalleryId}"] .dashicons`).removeClass('dashicons-hidden').addClass('dashicons-admin-page');
-                $(`.folder-item[data-id="${currentGalleryId}"]`).data('has-page', 'true');
+                alert('Page created! Redirecting...');
+                // Redirect to the new page
+                window.location.href = response.data.redirect_url;
             } else {
                 alert('Error: ' + (response.data || 'Unknown error'));
                 btn.prop('disabled', false).text('Create Private Gallery Page');
@@ -92,7 +89,6 @@ jQuery(document).ready(function($) {
                 <div class="file-trash-overlay"><span class="dashicons dashicons-trash"></span></div>
             `;
             
-            // Select Logic
             item.addEventListener('click', function(e) {
                 e.stopPropagation();
                 $('.studiofy-file-item').removeClass('selected');
@@ -101,12 +97,10 @@ jQuery(document).ready(function($) {
                 showMeta(f);
             });
 
-            // Double Click
             item.addEventListener('dblclick', function(e) {
                 if(isImg) openLightbox(f.file_url);
             });
 
-            // Delete
             item.querySelector('.file-trash-overlay').addEventListener('click', function(e) {
                 e.stopPropagation();
                 deleteFile(f.id, item);
@@ -118,7 +112,7 @@ jQuery(document).ready(function($) {
         grid.appendChild(fragment);
     }
 
-    // 4. Meta Sidebar
+    // 4. Sidebar
     function showMeta(f) {
         $('#meta-empty').hide();
         $('#meta-content').show();
@@ -135,7 +129,6 @@ jQuery(document).ready(function($) {
         const isImg = ['jpg','jpeg','png','gif'].includes(f.file_type.toLowerCase());
         $('#meta-preview').html(isImg ? `<img src="${f.file_url}" loading="lazy">` : '');
         
-        // Save Handler
         $('#btn-save-meta').off('click').click(function() {
             const btn = $(this);
             btn.text('Saving...').prop('disabled', true);
@@ -184,7 +177,6 @@ jQuery(document).ready(function($) {
         });
     }
 
-    // Lightbox
     function openLightbox(url) {
         $('#lightbox-img').attr('src', url);
         $('#studiofy-lightbox').removeClass('studiofy-hidden');
@@ -220,7 +212,6 @@ jQuery(document).ready(function($) {
         }
     });
 
-    // Click Off
     $('#file-grid').click(function(e) {
         if(e.target.id === 'file-grid') clearSelection();
     });
