@@ -2,14 +2,14 @@
 /**
  * Plugin Name: Studiofy CRM
  * Description: A comprehensive Elementor Addon and CRM for Photographers.
- * Version: 2.2.18
+ * Version: 2.2.19
  * Author: Ian R. Gordon
  * Text Domain: studiofy
  * Requires PHP: 8.1
  * Requires at least: 6.6
  * Elementor tested up to: 3.25.0
  * @package Studiofy
- * @version 2.2.18
+ * @version 2.2.19
  */
 
 declare(strict_types=1);
@@ -30,8 +30,8 @@ add_action('send_headers', function() {
     }
 });
 
-define('STUDIOFY_VERSION', '2.2.18');
-define('STUDIOFY_DB_VERSION', '2.12');
+define('STUDIOFY_VERSION', '2.2.19');
+define('STUDIOFY_DB_VERSION', '2.13'); // Bumped for Task Schema compatibility
 define('STUDIOFY_PATH', plugin_dir_path(__FILE__));
 define('STUDIOFY_URL', plugin_dir_url(__FILE__));
 
@@ -88,6 +88,14 @@ function studiofy_check_dependencies(): void {
     });
 }
 add_action('plugins_loaded', 'Studiofy\\studiofy_check_dependencies');
+
+// Auto-Update DB Schema if version changes
+function studiofy_update_db_check(): void {
+    if (get_option('studiofy_db_version') != STUDIOFY_DB_VERSION) {
+        \Studiofy\Core\Activator::activate();
+    }
+}
+add_action('plugins_loaded', 'Studiofy\\studiofy_update_db_check');
 
 function run_studiofy(): void {
     if (version_compare(PHP_VERSION, '8.1', '<')) return;
