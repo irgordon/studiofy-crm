@@ -1,22 +1,52 @@
 /**
  * Studiofy Admin CSS
  * @package Studiofy
- * @version 2.1.6
+ * @version 2.1.7
  */
 
-/* 1. Modal Positioning Fix */
+/* 1. Dashboard Flex Layout (Fixed) */
+.studiofy-dashboard-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.studiofy-stat-card {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    padding: 20px;
+    flex: 1 1 200px; /* Grow, Shrink, Basis */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.stat-icon-wrapper { margin-bottom: 10px; }
+.stat-icon-wrapper .dashicons { font-size: 32px; width: 32px; height: 32px; color: #2271b1; }
+.stat-label { font-size: 13px; color: #646970; text-transform: uppercase; font-weight: 600; }
+.stat-value { font-size: 28px; font-weight: 700; color: #1d2327; margin-top: 5px; }
+
+/* 2. Modal Centering (Fixed) */
 .studiofy-modal-overlay { 
     position: fixed; 
-    inset: 0; /* Replaces top/left/width/height */
+    top: 0; 
+    left: 0; 
+    width: 100vw; 
+    height: 100vh; 
     background: rgba(0,0,0,0.7); 
-    z-index: 100000; /* Higher than WP Admin Bar */
-    display: grid;
-    place_items: center; /* Centering magic */
-    justify-content: center;
-    align-content: center;
+    z-index: 100000; 
 }
 
 .studiofy-modal { 
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Dead center */
     background: #fff; 
     width: 600px; 
     max-width: 90vw; 
@@ -24,67 +54,18 @@
     overflow-y: auto; 
     box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
     border-radius: 4px;
-    position: relative;
-    /* Remove previous absolute positioning if any */
+    z-index: 100001;
 }
 
 .studiofy-modal-header { padding: 15px 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; background: #f6f7f7; }
 .studiofy-modal-body { padding: 20px; }
 .studiofy-hidden { display: none !important; }
 
-/* 2. Calendar Styles */
-.studiofy-calendar-view { background: #fff; border: 1px solid #c3c4c7; }
-.calendar-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #f0f0f1; border-bottom: 1px solid #c3c4c7; }
-.calendar-grid { 
-    display: grid; 
-    grid-template-columns: repeat(7, 1fr); 
-    background: #c3c4c7; 
-    gap: 1px; 
-    border-bottom: 1px solid #c3c4c7;
-}
-.calendar-head-day { background: #f6f7f7; font-weight: 600; text-align: center; padding: 10px; font-size: 13px; }
-.calendar-day { background: #fff; min-height: 120px; padding: 10px; position: relative; }
-.calendar-day .day-num { font-weight: 600; color: #646970; margin-bottom: 5px; display: block; }
-.calendar-day.empty { background: #fcfcfc; }
+/* 3. Gallery Grid */
+.studiofy-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; margin-top: 15px; }
+.studiofy-item { position: relative; border-radius: 4px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border: 1px solid #ddd; }
 
-/* 3. Event Styling with Delete Button */
-.calendar-event { 
-    background: #2271b1; 
-    color: #fff; 
-    padding: 4px 6px; 
-    font-size: 11px; 
-    margin-bottom: 4px; 
-    border-radius: 3px; 
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    transition: background 0.2s;
-}
-.calendar-event:hover { background: #135e96; }
-.calendar-event span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.calendar-event small { opacity: 0.8; margin-right: 4px; }
-
-.delete-event {
-    background: #d63638;
-    color: #fff;
-    width: 16px;
-    height: 16px;
-    line-height: 14px;
-    text-align: center;
-    border-radius: 2px;
-    font-weight: bold;
-    text-decoration: none;
-    margin-left: 5px;
-    display: none; /* Hide by default, show on hover */
-}
-.calendar-event:hover .delete-event { display: inline-block; }
-.delete-event:hover { background: #a00; color: #fff; }
-
-/* 4. General Utils */
-.studiofy-toolbar { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-.studiofy-empty-state { text-align: center; padding: 60px 20px; background: #fff; border: 1px dashed #c3c4c7; border-radius: 4px; margin-top: 20px; }
-.studiofy-empty-state .empty-icon { font-size: 48px; width: 48px; height: 48px; color: #646970; margin-bottom: 15px; }
+/* General */
 .studiofy-form-row { display: flex; gap: 20px; margin-bottom: 15px; }
 .studiofy-col { flex: 1; }
 .studiofy-col label { display: block; font-weight: 600; margin-bottom: 5px; }
@@ -93,4 +74,4 @@
 .studiofy-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; color: #fff; }
 .studiofy-badge.lead { background: #2271b1; }
 .studiofy-badge.active { background: #46b450; }
-.studiofy-badge.inactive { background: #999; }
+.studiofy-badge.draft { background: #999; }
