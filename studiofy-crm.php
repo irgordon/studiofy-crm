@@ -1,15 +1,15 @@
 <?php
 /**
  * Plugin Name: Studiofy CRM
- * Description: A comprehensive Elementor Addon and CRM for Photographers. Requires Elementor for frontend visual building.
- * Version: 2.0.9
+ * Description: A comprehensive Elementor Addon and CRM for Photographers.
+ * Version: 2.1.0
  * Author: Ian R. Gordon
  * Text Domain: studiofy
  * Requires PHP: 8.1
  * Requires at least: 6.6
  * Elementor tested up to: 3.25.0
  * @package Studiofy
- * @version 2.0.9
+ * @version 2.1.0
  */
 
 declare(strict_types=1);
@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('STUDIOFY_VERSION', '2.0.9');
+define('STUDIOFY_VERSION', '2.1.0');
 define('STUDIOFY_DB_VERSION', '2.9');
 define('STUDIOFY_PATH', plugin_dir_path(__FILE__));
 define('STUDIOFY_URL', plugin_dir_url(__FILE__));
@@ -66,7 +66,6 @@ register_deactivation_hook(__FILE__, [Core\Deactivator::class, 'deactivate']);
 
 /**
  * Dependency Check for Elementor
- * Displays a native WP Admin notice if Elementor is missing or inactive.
  */
 function studiofy_check_dependencies(): void {
     if (did_action('elementor/loaded')) {
@@ -128,6 +127,6 @@ function run_studiofy(): void {
         if (did_action('elementor/loaded')) {
             \Studiofy\Elementor\Addon::instance();
         }
-    }, 20); // Priority 20 to ensure Elementor loads first
+    }, 20);
 }
 run_studiofy();
