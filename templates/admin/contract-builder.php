@@ -1,6 +1,6 @@
-<div class="wrap studiofy-dark-theme">
+<div class="wrap">
     <h1><?php echo $contract ? 'Edit Contract' : 'New Contract'; ?></h1>
-    <form method="post" action="<?php echo admin_url('admin_post.php'); ?>">
+    <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
         <input type="hidden" name="action" value="studiofy_save_contract">
         <?php wp_nonce_field('save_contract', 'studiofy_nonce'); ?>
         <?php if ($contract) echo '<input type="hidden" name="contract_id" value="' . $contract->id . '">'; ?>
@@ -11,9 +11,9 @@
             
             <div class="studiofy-form-row" style="margin-top:10px;">
                 <div class="studiofy-col"><label>Client *</label>
-                    <select name="client_id" required class="widefat">
+                    <select name="customer_id" required class="widefat">
                         <option value="">Select client</option>
-                        <?php foreach($clients as $c) echo "<option value='{$c->id}'>{$c->first_name} {$c->last_name}</option>"; ?>
+                        <?php foreach($customers as $c) echo "<option value='{$c->id}'>{$c->first_name} {$c->last_name}</option>"; ?>
                     </select>
                 </div>
                 <div class="studiofy-col"><label>Project (Optional)</label>
