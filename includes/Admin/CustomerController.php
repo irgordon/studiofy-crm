@@ -2,7 +2,7 @@
 /**
  * Customer Management
  * @package Studiofy\Admin
- * @version 2.1.1
+ * @version 2.1.2
  */
 
 declare(strict_types=1);
@@ -37,11 +37,11 @@ class CustomerController {
                 case 'deleted': $message = 'Customer deleted.'; break;
                 case 'error': 
                     $class = 'notice notice-error is-dismissible';
-                    $message = 'Error saving customer. Please check required fields.'; 
+                    $message = 'Error saving customer. Please check input.'; 
                     break;
                 case 'nonce':
                     $class = 'notice notice-error is-dismissible';
-                    $message = 'Security check failed. Please try again.';
+                    $message = 'Security token expired. Please try again.';
                     break;
             }
             
@@ -135,15 +135,13 @@ class CustomerController {
         <?php
     }
 
-    /**
-     * Renders the Full Page Form (Replaces Modal)
-     */
     private function render_form(): void {
+        // Corrected action URL to admin-post.php (hyphen)
         ?>
         <div class="wrap">
             <h1>Add New Customer</h1>
             
-            <form method="post" action="<?php echo admin_url('admin_post.php'); ?>" class="studiofy-card-form">
+            <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" class="studiofy-card-form" id="studiofy-customer-form">
                 <input type="hidden" name="action" value="studiofy_save_customer">
                 <?php wp_nonce_field('save_customer', 'studiofy_nonce'); ?>
                 
@@ -195,7 +193,7 @@ class CustomerController {
                         <td>
                             <input type="text" name="addr_city" placeholder="City" style="width: 150px;">
                             <input type="text" name="addr_state" placeholder="State" maxlength="2" style="width: 60px;">
-                            <input type="text" name="addr_zip" placeholder="Zip" maxlength="5" style="width: 80px;">
+                            <input type="text" name="addr_zip" id="addr_zip" placeholder="Zip" maxlength="5" style="width: 80px;">
                         </td>
                     </tr>
                 </table>
@@ -215,7 +213,7 @@ class CustomerController {
 
     public function handle_save(): void {
         if (!isset($_POST['studiofy_nonce']) || !wp_verify_nonce($_POST['studiofy_nonce'], 'save_customer')) {
-            wp_redirect(admin_url('admin.php?page=studiofy-customers&msg=nonce'));
+            wp_redirect(admin_url('admin.php?page=studiofy-customers&action=new&msg=nonce'));
             exit;
         }
 
@@ -223,7 +221,7 @@ class CustomerController {
             wp_die('Unauthorized');
         }
         
-        // Basic Validation
+        // Validation Check
         if (empty($_POST['first_name']) || empty($_POST['email'])) {
             wp_redirect(admin_url('admin.php?page=studiofy-customers&action=new&msg=error'));
             exit;
