@@ -89,7 +89,7 @@ function studiofy_check_dependencies(): void {
 }
 add_action('plugins_loaded', 'Studiofy\\studiofy_check_dependencies');
 
-// Auto-Update DB Schema
+// Auto-Update DB Schema if version changes
 function studiofy_update_db_check(): void {
     if (get_option('studiofy_db_version') != STUDIOFY_DB_VERSION) {
         \Studiofy\Core\Activator::activate();
@@ -97,6 +97,9 @@ function studiofy_update_db_check(): void {
 }
 add_action('plugins_loaded', 'Studiofy\\studiofy_update_db_check');
 
+/**
+ * Register Hidden CPT for Elementor Contracts
+ */
 function studiofy_register_cpt(): void {
     register_post_type('studiofy_doc', [
         'labels' => ['name' => 'Contract Docs', 'singular_name' => 'Contract Doc'],
