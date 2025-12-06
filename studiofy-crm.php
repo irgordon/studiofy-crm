@@ -21,7 +21,7 @@ if (!defined('ABSPATH')) {
 }
 
 define('STUDIOFY_VERSION', '2.2.11');
-define('STUDIOFY_DB_VERSION', '2.12');
+define('STUDIOFY_DB_VERSION', '2.13'); // Bumped to force schema update for Tasks
 define('STUDIOFY_PATH', plugin_dir_path(__FILE__));
 define('STUDIOFY_URL', plugin_dir_url(__FILE__));
 
@@ -78,6 +78,16 @@ function studiofy_check_dependencies(): void {
     });
 }
 add_action('plugins_loaded', 'Studiofy\\studiofy_check_dependencies');
+
+/**
+ * Auto-Update DB Schema if version changes
+ */
+function studiofy_update_db_check(): void {
+    if (get_option('studiofy_db_version') != STUDIOFY_DB_VERSION) {
+        \Studiofy\Core\Activator::activate();
+    }
+}
+add_action('plugins_loaded', 'Studiofy\\studiofy_update_db_check');
 
 function run_studiofy(): void {
     if (version_compare(PHP_VERSION, '8.1', '<')) return;
