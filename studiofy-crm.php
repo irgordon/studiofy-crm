@@ -2,14 +2,14 @@
 /**
  * Plugin Name: Studiofy CRM
  * Description: A comprehensive Elementor Addon and CRM for Photographers.
- * Version: 2.2.19
+ * Version: 2.2.20
  * Author: Ian R. Gordon
  * Text Domain: studiofy
  * Requires PHP: 8.1
  * Requires at least: 6.6
  * Elementor tested up to: 3.25.0
  * @package Studiofy
- * @version 2.2.19
+ * @version 2.2.20
  */
 
 declare(strict_types=1);
@@ -30,8 +30,8 @@ add_action('send_headers', function() {
     }
 });
 
-define('STUDIOFY_VERSION', '2.2.19');
-define('STUDIOFY_DB_VERSION', '2.13'); // Bumped for Task Schema compatibility
+define('STUDIOFY_VERSION', '2.2.20');
+define('STUDIOFY_DB_VERSION', '2.14'); // Bumped for Contract Linked Post ID
 define('STUDIOFY_PATH', plugin_dir_path(__FILE__));
 define('STUDIOFY_URL', plugin_dir_url(__FILE__));
 
@@ -96,6 +96,22 @@ function studiofy_update_db_check(): void {
     }
 }
 add_action('plugins_loaded', 'Studiofy\\studiofy_update_db_check');
+
+/**
+ * Register Hidden CPT for Elementor Contracts
+ */
+function studiofy_register_cpt(): void {
+    register_post_type('studiofy_contract_doc', [
+        'labels' => ['name' => 'Contract Docs', 'singular_name' => 'Contract Doc'],
+        'public' => false, // Hidden from frontend
+        'show_ui' => true, // Visible for Elementor
+        'show_in_menu' => false, // Hidden from WP Admin Menu
+        'supports' => ['title', 'editor', 'elementor'],
+        'capability_type' => 'post',
+        'map_meta_cap' => true,
+    ]);
+}
+add_action('init', 'Studiofy\\studiofy_register_cpt');
 
 function run_studiofy(): void {
     if (version_compare(PHP_VERSION, '8.1', '<')) return;
