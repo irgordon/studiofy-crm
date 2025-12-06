@@ -2,7 +2,7 @@
 /**
  * Project Controller
  * @package Studiofy\Admin
- * @version 2.2.8
+ * @version 2.2.9
  */
 
 declare(strict_types=1);
@@ -10,8 +10,10 @@ declare(strict_types=1);
 namespace Studiofy\Admin;
 
 use function Studiofy\studiofy_get_asset_version;
+use Studiofy\Utils\TableHelper;
 
 class ProjectController {
+    use TableHelper;
 
     public function init(): void {
         add_action('admin_post_studiofy_save_project', [$this, 'handle_save']);
@@ -24,11 +26,15 @@ class ProjectController {
         if ($action === 'new' || $action === 'edit') {
             $this->render_form();
         } else {
-            $this->render_kanban_board();
+            $this->render_dashboard();
         }
     }
 
-    public function render_kanban_board(): void {
+    /**
+     * Renders both Kanban and List View
+     */
+    public function render_dashboard(): void {
+        // Enqueue Assets
         wp_enqueue_script('jquery-ui-sortable');
         wp_enqueue_script('studiofy-kanban', STUDIOFY_URL . 'assets/js/kanban.js', ['jquery', 'jquery-ui-sortable', 'wp-api-fetch'], studiofy_get_asset_version('assets/js/kanban.js'), true);
         wp_enqueue_script('studiofy-modal-js', STUDIOFY_URL . 'assets/js/project-modal.js', ['jquery', 'wp-api-fetch'], studiofy_get_asset_version('assets/js/project-modal.js'), true);
@@ -49,14 +55,6 @@ class ProjectController {
             <a href="?page=studiofy-projects&action=new" class="page-title-action">New Project</a>
             <hr class="wp-header-end">
 
-            <div class="studiofy-toolbar">
-                <input type="search" placeholder="Search projects..." class="widefat" style="max-width:400px;">
-                <div class="view-toggle">
-                    <button class="button active">Kanban</button>
-                    <button class="button">List</button>
-                </div>
-            </div>
-
             <?php if ($count == 0): ?>
                 <div class="studiofy-empty-card">
                     <div class="empty-icon dashicons dashicons-grid-view"></div>
@@ -64,9 +62,23 @@ class ProjectController {
                     <p>Create your first project to start tracking work, deadlines, and budgets.</p>
                     <a href="?page=studiofy-projects&action=new" class="button button-primary button-large">Create Project</a>
                 </div>
-            <?php else: 
-                $this->render_kanban_html();
-            endif; ?>
+            <?php else: ?>
+                
+                <h2 class="nav-tab-wrapper">
+                    <span class="nav-tab nav-tab-active">Visual Board</span>
+                </h2>
+                <div style="margin-top: 20px;">
+                    <?php $this->render_kanban_html(); ?>
+                </div>
+
+                <h2 class="nav-tab-wrapper" style="margin-top: 40px;">
+                    <span class="nav-tab nav-tab-active">Detailed List</span>
+                </h2>
+                <div style="margin-top: 20px;">
+                    <?php $this->render_list_html(); ?>
+                </div>
+
+            <?php endif; ?>
         </div>
         <?php
         require_once STUDIOFY_PATH . 'templates/admin/modal-project.php';
@@ -86,13 +98,83 @@ class ProjectController {
                             <div class="studiofy-card-body">
                                 <p><?php echo esc_html($project->budget ? '$'.number_format((float)$project->budget, 2) : ''); ?></p>
                             </div>
-                            <div class="studiofy-card-actions"><button class="button button-small" onclick="StudiofyKanban.editProject(<?php echo $project->id; ?>)">Manage</button></div>
+                            <div class="studiofy-card-actions">
+                                <button class="button button-small" onclick="StudiofyKanban.editProject(<?php echo $project->id; ?>)">Manage Tasks</button>
+                            </div>
                         </div>
                     <?php endforeach; ?>
                 </div>
             </div>
             <?php endforeach; ?>
         </div>
+        <?php
+    }
+
+    private function render_list_html(): void {
+        global $wpdb;
+        
+        $orderby = $_GET['orderby'] ?? 'id';
+        $order = strtoupper($_GET['order'] ?? 'DESC');
+        
+        // Query Projects with Customer Name and Invoice Status
+        $sql = "SELECT p.*, c.first_name, c.last_name,
+                (SELECT status FROM {$wpdb->prefix}studiofy_invoices WHERE project_id = p.id LIMIT 1) as payment_status
+                FROM {$wpdb->prefix}studiofy_projects p
+                LEFT JOIN {$wpdb->prefix}studiofy_customers c ON p.customer_id = c.id
+                ORDER BY p.$orderby $order";
+                
+        $items = $wpdb->get_results($sql);
+        ?>
+        <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
+            <input type="hidden" name="action" value="studiofy_bulk_project">
+            <?php wp_nonce_field('bulk_project', 'studiofy_nonce'); ?>
+
+            <div class="tablenav top">
+                <div class="alignleft actions bulkactions">
+                    <select name="bulk_action">
+                        <option value="-1">Bulk Actions</option>
+                        <option value="delete">Delete</option>
+                    </select>
+                    <button type="submit" class="button action">Apply</button>
+                </div>
+            </div>
+
+            <table class="wp-list-table widefat fixed striped">
+                <thead>
+                    <tr>
+                        <td id="cb" class="manage-column column-cb check-column"><input type="checkbox"></td>
+                        <th class="manage-column sortable"><?php echo $this->sort_link('Project ID', 'id'); ?></th>
+                        <th class="manage-column sortable"><?php echo $this->sort_link('Project Name', 'title'); ?></th>
+                        <th class="manage-column">Customer Name</th>
+                        <th class="manage-column sortable"><?php echo $this->sort_link('Status', 'status'); ?></th>
+                        <th class="manage-column">Payment Status</th>
+                        <th class="manage-column">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($items as $item): 
+                        $edit_url = "?page=studiofy-projects&action=edit&id={$item->id}";
+                        $del_url = wp_nonce_url(admin_url('admin-post.php?action=studiofy_delete_project&id='.$item->id), 'delete_project_'.$item->id);
+                        
+                        $payment_label = $item->payment_status ? $item->payment_status : 'Unpaid';
+                        $customer_name = $item->first_name ? esc_html($item->first_name . ' ' . $item->last_name) : 'Unknown';
+                    ?>
+                        <tr>
+                            <th scope="row" class="check-column"><input type="checkbox" name="ids[]" value="<?php echo $item->id; ?>"></th>
+                            <td><?php echo $item->id; ?></td>
+                            <td><strong><a href="<?php echo $edit_url; ?>"><?php echo esc_html($item->title); ?></a></strong></td>
+                            <td><?php echo $customer_name; ?></td>
+                            <td><span class="studiofy-badge <?php echo esc_attr($item->status); ?>"><?php echo esc_html(str_replace('_',' ',$item->status)); ?></span></td>
+                            <td><span class="studiofy-badge <?php echo strtolower($payment_label); ?>"><?php echo $payment_label; ?></span></td>
+                            <td>
+                                <a href="<?php echo $edit_url; ?>" class="button button-small">Edit</a>
+                                <a href="<?php echo $del_url; ?>" onclick="return confirm('Delete this project?')" class="button button-small" style="color:#b32d2e;">Delete</a>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </form>
         <?php
     }
 
