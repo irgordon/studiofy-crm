@@ -2,7 +2,7 @@
 /**
  * Settings Controller
  * @package Studiofy\Admin
- * @version 2.2.5
+ * @version 2.2.6
  */
 
 declare(strict_types=1);
@@ -22,12 +22,10 @@ class Settings {
     }
 
     public function display_notices(): void {
-        // Native Settings Saved Notice
         if (isset($_GET['settings-updated']) && $_GET['settings-updated'] == 'true') {
             echo '<div class="notice notice-success is-dismissible"><p><strong>Settings Saved.</strong></p></div>';
         }
 
-        // Demo Data Notices
         if (isset($_GET['msg'])) {
             $msg = '';
             $type = 'success';
@@ -59,18 +57,24 @@ class Settings {
         add_settings_field('square_env', 'Square Environment', [$this, 'render_env_field'], 'studiofy-settings', 'studiofy_branding_section');
 
         add_settings_section('studiofy_social_section', 'Social Media', [$this, 'render_social_table'], 'studiofy-settings');
-        
-        // Demo Data Section
-        add_settings_section('studiofy_demo_section', 'Demo Data Import', [$this, 'render_demo_section'], 'studiofy-settings');
     }
 
     public function render_page(): void {
         echo '<div class="wrap"><h1>Settings</h1>';
+        
+        // 1. Main Settings Form (Points to options.php)
         echo '<form method="post" action="options.php">';
         settings_fields($this->optionGroup);
         do_settings_sections('studiofy-settings');
         submit_button('Save Settings');
-        echo '</form></div>';
+        echo '</form>';
+
+        // 2. Demo Data Section (Separate Form to prevent nesting issues)
+        echo '<hr>';
+        echo '<h2>Demo Data Import</h2>';
+        $this->render_demo_section();
+        
+        echo '</div>';
     }
 
     public function field_text(array $args): void {
@@ -107,16 +111,16 @@ class Settings {
     }
 
     /**
-     * Renders Demo Data File Upload & Delete
+     * Renders Demo Data (Standalone Form)
      */
     public function render_demo_section(): void {
         $has_demo = get_option('studiofy_demo_data_ids');
         ?>
-        <p class="description">Upload the official <code>Studiofy_Demo_data.xml</code> file to populate your CRM with test data.</p>
+        <p class="description">Upload the <code>Studiofy_Demo_data.xml</code> file to populate your CRM with test data.</p>
         
         <div style="background: #fff; border: 1px solid #ccd0d4; padding: 20px; max-width: 600px; border-radius: 4px; margin-top: 10px;">
             
-            <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" enctype="multipart/form-data" style="margin-bottom: 20px;">
+            <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" enctype="multipart/form-data">
                 <input type="hidden" name="action" value="studiofy_import_demo">
                 <?php wp_nonce_field('import_demo', 'studiofy_nonce'); ?>
                 
@@ -125,7 +129,7 @@ class Settings {
                 
                 <p class="submit" style="padding:0; margin-top:10px;">
                     <button type="submit" class="button button-secondary" <?php echo $has_demo ? 'disabled' : ''; ?>>
-                        <?php echo $has_demo ? 'Demo Data Already Imported' : 'Upload & Import Data'; ?>
+                        <?php echo $has_demo ? 'Demo Data Imported' : 'Upload & Import Data'; ?>
                     </button>
                 </p>
             </form>
