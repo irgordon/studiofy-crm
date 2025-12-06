@@ -2,7 +2,7 @@
 /**
  * Settings Controller
  * @package Studiofy\Admin
- * @version 2.0.7
+ * @version 2.1.0
  */
 
 declare(strict_types=1);
@@ -25,29 +25,53 @@ class Settings {
         
         add_settings_section('studiofy_branding_section', 'Business Identity', null, 'studiofy-settings');
         add_settings_field('business_name', 'Business Name', [$this, 'field_text'], 'studiofy-settings', 'studiofy_branding_section', ['key' => 'business_name']);
+        add_settings_field('photo_types', 'Type(s) of Photography', [$this, 'field_text'], 'studiofy-settings', 'studiofy_branding_section', ['key' => 'photo_types']);
         add_settings_field('business_logo', 'Logo', [$this, 'field_logo'], 'studiofy-settings', 'studiofy_branding_section');
+        
         add_settings_field('square_token', 'Square Access Token', [$this, 'field_text'], 'studiofy-settings', 'studiofy_branding_section', ['key' => 'square_access_token']);
+        add_settings_field('square_env', 'Square Environment', [$this, 'render_env_field'], 'studiofy-settings', 'studiofy_branding_section');
+
         add_settings_section('studiofy_social_section', 'Social Media', [$this, 'render_social_table'], 'studiofy-settings');
     }
 
     public function render_page(): void {
-        echo '<div class="wrap"><h1>Settings</h1><form method="post" action="options.php">';
+        echo '<div class="wrap"><h1>Settings</h1>';
+        echo '<form method="post" action="options.php">';
         settings_fields($this->optionGroup);
         do_settings_sections('studiofy-settings');
         submit_button('Save Settings');
         echo '</form></div>';
     }
 
+    /**
+     * Renders text field with explicit "Current Value" display below it.
+     */
     public function field_text(array $args): void {
         $options = get_option('studiofy_branding');
         $val = $options[$args['key']] ?? '';
         echo '<input type="text" name="studiofy_branding[' . esc_attr($args['key']) . ']" value="' . esc_attr($val) . '" class="regular-text">';
+        
+        if (!empty($val)) {
+            echo '<p class="description" style="color: #2271b1; margin-top: 5px;">Current set value: <strong>' . esc_html($val) . '</strong></p>';
+        } else {
+            echo '<p class="description"><em>No value set.</em></p>';
+        }
+    }
+
+    public function render_env_field(): void {
+         $options = get_option('studiofy_branding');
+         $env = $options['square_env'] ?? 'sandbox';
+         echo '<select name="studiofy_branding[square_env]"><option value="sandbox" '.selected($env,'sandbox',false).'>Sandbox</option><option value="production" '.selected($env,'production',false).'>Production</option></select>';
+         echo '<p class="description" style="color: #2271b1; margin-top: 5px;">Current set value: <strong>' . esc_html(ucfirst($env)) . '</strong></p>';
     }
 
     public function field_logo(): void {
         $options = get_option('studiofy_branding');
         $logo = $options['business_logo'] ?? '';
         echo '<div class="studiofy-media-uploader"><input type="text" name="studiofy_branding[business_logo]" id="studiofy_business_logo" value="' . esc_attr($logo) . '" class="regular-text"><button type="button" class="button studiofy-upload-btn" data-target="#studiofy_business_logo">Select Logo</button></div>';
+        if ($logo) {
+            echo '<div style="margin-top:10px;"><img src="' . esc_url($logo) . '" style="max-height: 50px; border: 1px solid #ccc; padding: 2px;"></div>';
+        }
     }
 
     public function render_social_table(): void {
