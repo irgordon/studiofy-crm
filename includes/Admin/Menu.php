@@ -2,7 +2,7 @@
 /**
  * Admin Menu Controller
  * @package Studiofy\Admin
- * @version 2.2.12
+ * @version 2.2.27
  */
 
 declare(strict_types=1);
@@ -90,10 +90,11 @@ class Menu {
                 true
             );
             
-            // FIXED: Added ajax_url
+            // FIXED: Added specific upload_nonce to solve 403 error
             wp_localize_script('studiofy-gallery-admin-js', 'studiofyGallerySettings', [
                 'root' => esc_url_raw(rest_url()),
-                'nonce' => wp_create_nonce('wp_rest'),
+                'nonce' => wp_create_nonce('wp_rest'), // General REST nonce
+                'upload_nonce' => wp_create_nonce('studiofy_upload_chunk'), // Specific Upload Nonce
                 'max_upload_size' => wp_max_upload_size(),
                 'ajax_url' => admin_url('admin-ajax.php')
             ]);
