@@ -4,7 +4,7 @@ Tags: crm, photography, elementor, invoicing, scheduling, kanban, gallery, proof
 Requires at least: 6.6
 Tested up to: 6.7
 Requires PHP: 8.1
-Stable tag: 2.2.10
+Stable tag: 2.2.17
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -67,16 +67,46 @@ Yes! The Gallery module supports RAW file uploads (.CR2, .NEF, .ARW) for storage
 
 == Changelog ==
 
+= 2.2.17 =
+* **Fix:** Resolved nested HTML form issue in Settings page preventing Demo Data import.
+* **Fix:** Corrected Gallery creation logic to return existing Private Page URL if one already exists.
+* **Cleanup:** Implemented full data cleanup (files and tables) upon plugin deletion.
+
+= 2.2.16 =
+* **Fix:** Resolved duplicate DOM ID `#studiofy_nonce` in Gallery Module.
+* **Update:** Updated Deactivator to clean up Private Gallery pages.
+
+= 2.2.15 =
+* **UI:** Expanded Gallery Meta Sidebar width to prevent content compression.
+* **CSS:** Fixed Flexbox layout for Gallery Explorer on smaller screens.
+
+= 2.2.14 =
+* **Accessibility:** Added explicit `<label>` tags and `id` attributes to all form inputs in Projects, Contracts, and Invoices.
+* **Security:** Implemented HTTP Security Headers (X-Content-Type-Options, Referrer-Policy).
+* **Fix:** Removed deprecated CSS properties (`speak`, `-ms-filter`).
+
+= 2.2.13 =
+* **Accessibility:** Fixed ARIA attribute warnings in Settings module.
+* **Fix:** Ensured correct `application/json` content-type headers for all AJAX responses.
+
+= 2.2.12 =
+* **Fix:** Resolved 404 Error in Gallery AJAX calls by localizing `admin_url`.
+* **Database:** Corrected `dbDelta` schema definition for `wp_page_id`.
+
+= 2.2.11 =
+* **Fix:** Resolved fatal error in Invoice Builder when line items are empty (`json_decode` on null).
+* **Fix:** Fixed PHP 8.1 deprecation warning in Invoice Controller (`ltrim`).
+* **UI:** Standardized Invoice Empty State to match other modules.
+
 = 2.2.10 =
-* **Fix:** Resolved PHP 8.1+ deprecation warning in Invoice Controller (`ltrim` on null).
-* **Fix:** Fixed "Create Task" button in Project Modal (prevented page reload).
+* **Fix:** Resolved Task creation bug in Project Modal preventing form submission.
 * **Feature:** Added visual strike-through for completed tasks in Kanban view.
 * **Update:** Added error logging for API task failures.
 
 = 2.2.9 =
 * **Feature:** Overhauled Project Module to display both Kanban Board and Detailed List Table.
 * **Feature:** Added "Private Galleries" list table to Gallery Module with Edit/View/Delete actions.
-* **Fix:** Corrected redirection logic after creating a Private Gallery Page (now redirects to edit screen).
+* **Fix:** Corrected redirection logic after creating a Private Gallery Page.
 * **Update:** Added "Payment Status" column to Project List (derived from Invoice status).
 
 = 2.2.8 =
@@ -88,7 +118,7 @@ Yes! The Gallery module supports RAW file uploads (.CR2, .NEF, .ARW) for storage
 * **Update:** Added automatic Dashboard stats cache clearing after Demo Import/Delete.
 
 = 2.2.6 =
-* **Fix:** Refactored Settings page to prevent nested HTML forms (fixed Demo Data upload failure).
+* **Fix:** Refactored Settings page architecture to separate Demo Import form from main Options form.
 
 = 2.2.5 =
 * **Feature:** Refactored Demo Data to use XML File Upload instead of hardcoded data.
@@ -118,57 +148,11 @@ Yes! The Gallery module supports RAW file uploads (.CR2, .NEF, .ARW) for storage
 * **Fix:** Resolved JS syntax error in Gallery Admin script.
 * **Style:** Refined table layouts to match WP Core standards.
 
-= 2.1.12 =
-* **Database:** Fixed schema definition for `wp_page_id` in galleries table.
-
-= 2.1.11 =
-* **Feature:** Added Private Gallery workflow (Auto-creates Password Protected Page).
-* **Feature:** Added "View Larger" Lightbox to Admin Gallery.
-* **Feature:** Added File Type overlays and Metadata editing sidebar.
-
-= 2.0.9 =
-* **System:** Added strict dependency check for Elementor with admin notice.
-
-= 2.0.8 =
-* **Fix:** Resolved JS validation bug preventing "Add Customer" form submission.
-* **UI:** Redesigned Contracts and Invoices submenus with Empty States.
-
-= 2.0.7 =
-* **Code:** Replaced raw AJAX calls with `wp.apiFetch` for better WordPress compatibility.
-* **Security:** Hardened nonce verification on all controllers.
-
-= 2.0.6 =
-* **UI:** Fixed Dashboard tile alignment and responsiveness.
-* **Fix:** Corrected modal positioning for Appointments.
-
-= 2.0.5 =
-* **Refactor:** Renamed "Clients" module to "Customers" globally.
-* **Fix:** Resolved "Add Customer" admin post handler issues.
-
-= 2.0.4 =
-* **Security:** Enhanced sanitization on all API endpoints.
-* **Performance:** Optimized database queries for large client lists.
-* **Fix:** Resolved layout issues in the Booking Widget.
-
-= 2.0.3 =
-* **UI:** Complete overhaul of Admin UI to match modern Dark Theme.
-* **Feature:** Added Tax calculation to Invoice Builder.
-* **Feature:** Added dynamic Line Items to Invoices.
-* **Security:** Implemented AES-256 Encryption for client PII.
-
-= 2.0.2 =
-* **Dashboard:** Added "Quick Actions" and "Revenue Overview" stats cards.
-* **Database:** Updated schema to support detailed contract dates and client companies.
-
-= 2.0.1 =
-* **Performance:** Added transient caching to Gallery Widgets to reduce DB load.
-* **API:** Added dynamic environment switching for Square (Sandbox/Production).
-
 = 2.0.0 =
 * **Major Release:** Full refactor to Elementor Addon architecture.
 * **Added:** Lead Form Widget, Gallery Widget, Scheduler Widget.
 
 == Upgrade Notice ==
 
-= 2.2.10 =
-Maintenance release fixing PHP 8.1 warnings and Project Task interactions. Recommended update.
+= 2.2.17 =
+Cumulative update fixing Settings page forms, Gallery logic, and Accessibility compliance. Recommended for all users.
