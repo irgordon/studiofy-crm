@@ -1,48 +1,23 @@
-<div class="wrap studiofy-contract-viewer">
-    <div class="studiofy-paper">
-        <div class="contract-header">
-            <h1>CONTRACT AGREEMENT</h1>
-            <p><strong>Reference:</strong> #<?php echo $contract->id; ?></p>
-            <p><strong>Date:</strong> <?php echo date('F j, Y', strtotime($contract->created_at)); ?></p>
-        </div>
-
-        <hr>
-
-        <div class="contract-body">
-            <?php echo wp_kses_post($contract->body_content); ?>
-        </div>
-
-        <hr>
-
-        <div class="contract-footer">
+<div class="wrap">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h1><?php echo esc_html($contract->title); ?></h1>
+        <a href="<?php echo admin_url('admin.php?page=studiofy-contracts'); ?>" class="button">&laquo; Back to Contracts</a>
+    </div>
+    
+    <div class="studiofy-contract-paper">
+        <?php echo $view_content; // Rendered Elementor Content ?>
+        
+        <div class="signature-section">
+            <h3>Signatures</h3>
             <?php if ($contract->status === 'signed'): ?>
-                <div class="signature-stamp">
-                    <p>Digitally Signed by: <strong><?php echo esc_html($contract->signed_name); ?></strong></p>
-                    <p>Date: <?php echo $contract->signed_at; ?></p>
-                    <div class="signature-image">
-                        <img src="<?php echo $contract->signature_data; ?>" alt="Signature">
-                    </div>
+                <div class="signed-box">
+                    <img src="<?php echo esc_url($contract->signature_data); ?>" style="max-width:300px;">
+                    <p>Signed by: <strong><?php echo esc_html($contract->signed_name); ?></strong><br>
+                    Date: <?php echo esc_html($contract->signed_at); ?></p>
                 </div>
             <?php else: ?>
-                <div class="signing-area no-print">
-                    <h3>Sign Here</h3>
-                    <canvas id="studiofy-signature-pad" width="500" height="200"></canvas>
-                    <div class="controls">
-                        <button type="button" class="button" id="clear-signature">Clear</button>
-                    </div>
-                    
-                    <form method="post" action="<?php echo admin_url('admin_post.php'); ?>" id="signature-form">
-                        <input type="hidden" name="action" value="studiofy_sign_contract">
-                        <input type="hidden" name="contract_id" value="<?php echo $contract->id; ?>">
-                        <input type="hidden" name="signature_data" id="signature-data">
-                        
-                        <p>
-                            <label>Type Full Name to Confirm:</label><br>
-                            <input type="text" name="signed_name" required class="regular-text">
-                        </p>
-                        <button type="submit" class="button button-primary button-large">Accept & Sign Contract</button>
-                    </form>
-                </div>
+                <p>Status: <span class="studiofy-badge draft">Pending Signature</span></p>
+                <p><em>(Client signature capture is available on the frontend portal)</em></p>
             <?php endif; ?>
         </div>
     </div>
