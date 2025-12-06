@@ -2,7 +2,7 @@
 /**
  * Project Controller
  * @package Studiofy\Admin
- * @version 2.2.3
+ * @version 2.2.8
  */
 
 declare(strict_types=1);
@@ -49,11 +49,19 @@ class ProjectController {
             <a href="?page=studiofy-projects&action=new" class="page-title-action">New Project</a>
             <hr class="wp-header-end">
 
+            <div class="studiofy-toolbar">
+                <input type="search" placeholder="Search projects..." class="widefat" style="max-width:400px;">
+                <div class="view-toggle">
+                    <button class="button active">Kanban</button>
+                    <button class="button">List</button>
+                </div>
+            </div>
+
             <?php if ($count == 0): ?>
                 <div class="studiofy-empty-card">
                     <div class="empty-icon dashicons dashicons-grid-view"></div>
                     <h2>No projects yet</h2>
-                    <p>Create your first project to start tracking work.</p>
+                    <p>Create your first project to start tracking work, deadlines, and budgets.</p>
                     <a href="?page=studiofy-projects&action=new" class="button button-primary button-large">Create Project</a>
                 </div>
             <?php else: 
@@ -76,11 +84,9 @@ class ProjectController {
                         <div class="studiofy-card" data-id="<?php echo esc_attr($project->id); ?>">
                             <div class="studiofy-card-header"><strong><?php echo esc_html($project->title); ?></strong></div>
                             <div class="studiofy-card-body">
-                                <p><?php echo esc_html($project->budget ? '$'.number_format($project->budget, 2) : ''); ?></p>
+                                <p><?php echo esc_html($project->budget ? '$'.number_format((float)$project->budget, 2) : ''); ?></p>
                             </div>
-                            <div class="studiofy-card-actions">
-                                <button class="button button-small" onclick="StudiofyKanban.editProject(<?php echo $project->id; ?>)">Manage</button>
-                            </div>
+                            <div class="studiofy-card-actions"><button class="button button-small" onclick="StudiofyKanban.editProject(<?php echo $project->id; ?>)">Manage</button></div>
                         </div>
                     <?php endforeach; ?>
                 </div>
@@ -146,7 +152,7 @@ class ProjectController {
                     <tr>
                         <th scope="row"><label>Budget</label></th>
                         <td>
-                            <input type="text" name="budget" id="project_budget" class="regular-text" placeholder="$0.00" value="<?php echo esc_attr($data->budget ? '$'.number_format($data->budget, 2) : ''); ?>">
+                            <input type="text" name="budget" id="project_budget" class="regular-text" placeholder="$0.00" value="<?php echo esc_attr($data->budget ? '$'.number_format((float)$data->budget, 2) : ''); ?>">
                         </td>
                     </tr>
                     <tr>
@@ -156,7 +162,6 @@ class ProjectController {
                                 <label><input type="radio" name="tax_status" value="taxed" <?php checked($tax_status, 'taxed'); ?>> Taxable Project</label><br>
                                 <label><input type="radio" name="tax_status" value="exempt" <?php checked($tax_status, 'exempt'); ?>> Tax Exempt</label>
                             </fieldset>
-                            <p class="description">Invoices linked to this project will inherit this tax setting.</p>
                         </td>
                     </tr>
                     <tr>
@@ -175,13 +180,9 @@ class ProjectController {
     }
 
     public function handle_save(): void {
-        if (!isset($_POST['studiofy_nonce']) || !wp_verify_nonce($_POST['studiofy_nonce'], 'save_project')) {
-            wp_die('Security check failed');
-        }
-
+        if (!isset($_POST['studiofy_nonce']) || !wp_verify_nonce($_POST['studiofy_nonce'], 'save_project')) wp_die('Security check failed');
         global $wpdb;
         
-        // Strip non-numeric characters from budget
         $budget = isset($_POST['budget']) ? preg_replace('/[^\d.]/', '', $_POST['budget']) : 0;
         
         $data = [
@@ -193,11 +194,8 @@ class ProjectController {
             'notes' => sanitize_textarea_field($_POST['notes']),
         ];
         
-        if (!empty($_POST['id'])) {
-            $wpdb->update($wpdb->prefix.'studiofy_projects', $data, ['id' => (int)$_POST['id']]);
-        } else {
-            $wpdb->insert($wpdb->prefix.'studiofy_projects', array_merge($data, ['created_at' => current_time('mysql')]));
-        }
+        if(!empty($_POST['id'])) $wpdb->update($wpdb->prefix.'studiofy_projects', $data, ['id'=>(int)$_POST['id']]);
+        else $wpdb->insert($wpdb->prefix.'studiofy_projects', $data);
         
         wp_redirect(admin_url('admin.php?page=studiofy-projects'));
         exit;
@@ -206,9 +204,8 @@ class ProjectController {
     public function handle_delete(): void {
         check_admin_referer('delete_project_'.$_GET['id']);
         global $wpdb;
-        $wpdb->delete($wpdb->prefix.'studiofy_projects', ['id' => (int)$_GET['id']]);
-        wp_redirect(admin_url('admin.php?page=studiofy-projects'));
-        exit;
+        $wpdb->delete($wpdb->prefix.'studiofy_projects', ['id'=>(int)$_GET['id']]);
+        wp_redirect(admin_url('admin.php?page=studiofy-projects')); exit;
     }
 
     public function handle_bulk(): void {
@@ -219,7 +216,6 @@ class ProjectController {
             $in = implode(',', $ids);
             $wpdb->query("DELETE FROM {$wpdb->prefix}studiofy_projects WHERE id IN ($in)");
         }
-        wp_redirect(admin_url('admin.php?page=studiofy-projects'));
-        exit;
+        wp_redirect(admin_url('admin.php?page=studiofy-projects')); exit;
     }
 }
