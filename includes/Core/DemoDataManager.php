@@ -3,7 +3,7 @@
  * Demo Data Manager
  * Handles XML File Upload & Import.
  * @package Studiofy\Core
- * @version 2.2.19
+ * @version 2.2.24
  */
 
 declare(strict_types=1);
@@ -74,7 +74,9 @@ class DemoDataManager {
             'projects' => [],
             'tasks' => [],
             'invoices' => [],
-            'contracts' => []
+            'contracts' => [],
+            'galleries' => [],
+            'files' => []
         ];
 
         // 1. Import Customers
@@ -136,8 +138,7 @@ class DemoDataManager {
             }
         }
 
-        // 3. Import Tasks (New for v2.2.19)
-        // Tasks are linked to projects. We create a default Milestone for each project first.
+        // 3. Import Tasks
         if(isset($xml->tasks->task)) {
             foreach ($xml->tasks->task as $t) {
                 $proj_xml_id = (int)$t['project_id'];
@@ -164,7 +165,60 @@ class DemoDataManager {
             }
         }
 
-        // 4. Import Invoices
+        // 4. Import Galleries & Files
+        $gallery_map = [];
+        if(isset($xml->galleries->gallery)) {
+            foreach ($xml->galleries->gallery as $g) {
+                $xml_id = (int)$g['id'];
+                $real_cust_id = $customer_map[(int)$g['customer_id']] ?? 0;
+                
+                $wpdb->insert($wpdb->prefix . 'studiofy_galleries', [
+                    'title' => (string)$g->title,
+                    'description' => (string)$g->description,
+                    'customer_id' => $real_cust_id ?: null,
+                    'password' => (string)$g->password,
+                    'status' => 'active',
+                    'created_at' => current_time('mysql')
+                ]);
+                $db_id = $wpdb->insert_id;
+                $ids['galleries'][] = $db_id;
+                $gallery_map[$xml_id] = $db_id;
+
+                // Create WP Page
+                $pid = wp_insert_post([
+                    'post_title' => (string)$g->title . ' - Demo', 
+                    'post_content' => '[studiofy_proof_gallery id="'.$db_id.'"]', 
+                    'post_status' => 'publish', 
+                    'post_type' => 'page', 
+                    'post_password' => (string)$g->password
+                ]);
+                
+                if($pid) {
+                    $wpdb->update($wpdb->prefix.'studiofy_galleries', ['wp_page_id' => $pid], ['id' => $db_id]);
+                }
+            }
+        }
+
+        if(isset($xml->gallery_files->file)) {
+            foreach ($xml->gallery_files->file as $f) {
+                $real_gal_id = $gallery_map[(int)$f['gallery_id']] ?? 0;
+                if ($real_gal_id) {
+                    $wpdb->insert($wpdb->prefix . 'studiofy_gallery_files', [
+                        'gallery_id' => $real_gal_id,
+                        'uploaded_by' => get_current_user_id(),
+                        'file_name' => (string)$f->name,
+                        'file_path' => '', // External URL, no local path
+                        'file_url' => (string)$f['url'],
+                        'file_type' => 'jpg',
+                        'file_size' => '200KB',
+                        'created_at' => current_time('mysql')
+                    ]);
+                    $ids['files'][] = $wpdb->insert_id;
+                }
+            }
+        }
+
+        // 5. Import Invoices
         if(isset($xml->invoices->invoice)) {
             foreach ($xml->invoices->invoice as $i) {
                 $cust_xml_id = (int)$i['customer_id'];
@@ -191,7 +245,7 @@ class DemoDataManager {
             }
         }
 
-        // 5. Import Contracts
+        // 6. Import Contracts
         if(isset($xml->contracts->contract)) {
             foreach ($xml->contracts->contract as $con) {
                 $cust_xml_id = (int)$con['customer_id'];
@@ -225,11 +279,20 @@ class DemoDataManager {
         $ids = get_option('studiofy_demo_data_ids');
 
         if ($ids && is_array($ids)) {
-            foreach(['contracts', 'invoices', 'tasks', 'projects', 'customers'] as $key) {
+            // Delete created WP Pages for galleries
+            if (!empty($ids['galleries'])) {
+                $g_in = implode(',', array_map('intval', $ids['galleries']));
+                $pages = $wpdb->get_col("SELECT wp_page_id FROM {$wpdb->prefix}studiofy_galleries WHERE id IN ($g_in) AND wp_page_id IS NOT NULL");
+                foreach($pages as $pid) {
+                    wp_delete_post($pid, true);
+                }
+            }
+
+            foreach(['gallery_files' => 'files', 'galleries' => 'galleries', 'contracts' => 'contracts', 'invoices' => 'invoices', 'tasks' => 'tasks', 'projects' => 'projects', 'customers' => 'customers'] as $table => $key) {
                 if (!empty($ids[$key])) {
-                    $table = $wpdb->prefix . 'studiofy_' . $key;
+                    $tbl = $wpdb->prefix . 'studiofy_' . $table;
                     $in = implode(',', array_map('intval', $ids[$key]));
-                    $wpdb->query("DELETE FROM $table WHERE id IN ($in)");
+                    $wpdb->query("DELETE FROM $tbl WHERE id IN ($in)");
                 }
             }
             
