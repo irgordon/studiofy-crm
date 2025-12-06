@@ -2,7 +2,7 @@
 /**
  * Customer Controller
  * @package Studiofy\Admin
- * @version 2.2.18
+ * @version 2.2.19
  */
 
 declare(strict_types=1);
@@ -62,7 +62,6 @@ class CustomerController {
         }
     }
 
-    // ... render_list same as v2.2.14 ...
     private function render_list(): void {
         global $wpdb;
         $table = $wpdb->prefix . 'studiofy_customers';
@@ -165,7 +164,8 @@ class CustomerController {
         // Parse Address from Comma Separated String
         // Format expected: "Street, City, State, Zip"
         $addr_parts = isset($decrypted_addr) ? array_map('trim', explode(',', $decrypted_addr)) : [];
-        // Fallback to handle cases with fewer commas
+        
+        // Fallback mapping
         $street = $addr_parts[0] ?? '';
         $city   = $addr_parts[1] ?? '';
         $state  = $addr_parts[2] ?? '';
@@ -187,13 +187,13 @@ class CustomerController {
                 <?php wp_nonce_field('save_customer', 'studiofy_nonce'); ?>
                 <?php if ($data && !$is_clone) echo '<input type="hidden" name="id" value="' . $data->id . '">'; ?>
                 
-                <table class="form-table">
-                    <tr><th scope="row"><label for="first_name">First Name *</label></th><td><input type="text" name="first_name" id="first_name" class="regular-text" required value="<?php echo esc_attr($data->first_name ?? ''); ?>"></td></tr>
-                    <tr><th scope="row"><label for="last_name">Last Name *</label></th><td><input type="text" name="last_name" id="last_name" class="regular-text" required value="<?php echo esc_attr($data->last_name ?? ''); ?>"></td></tr>
-                    <tr><th scope="row"><label for="email">Email *</label></th><td><input type="email" name="email" id="email" class="regular-text" required value="<?php echo esc_attr($data->email ?? ''); ?>"></td></tr>
-                    <tr><th scope="row"><label for="phone">Phone</label></th><td><input type="tel" name="phone" id="phone" class="regular-text" value="<?php echo esc_attr($data->phone ?? ''); ?>"></td></tr>
-                    <tr><th scope="row"><label for="company">Company</label></th><td><input type="text" name="company" id="company" class="regular-text" value="<?php echo esc_attr($data->company ?? ''); ?>"></td></tr>
-                    <tr><th scope="row"><label for="status">Status</label></th><td><select name="status" id="status">
+                <table class="form-table" role="presentation">
+                    <tr><th scope="row"><label for="first_name">First Name *</label></th><td><input type="text" name="first_name" id="first_name" class="regular-text" required value="<?php echo esc_attr($data->first_name ?? ''); ?>" title="First Name"></td></tr>
+                    <tr><th scope="row"><label for="last_name">Last Name *</label></th><td><input type="text" name="last_name" id="last_name" class="regular-text" required value="<?php echo esc_attr($data->last_name ?? ''); ?>" title="Last Name"></td></tr>
+                    <tr><th scope="row"><label for="email">Email *</label></th><td><input type="email" name="email" id="email" class="regular-text" required value="<?php echo esc_attr($data->email ?? ''); ?>" title="Email Address"></td></tr>
+                    <tr><th scope="row"><label for="phone">Phone</label></th><td><input type="tel" name="phone" id="phone" class="regular-text" value="<?php echo esc_attr($data->phone ?? ''); ?>" title="Phone Number"></td></tr>
+                    <tr><th scope="row"><label for="company">Company</label></th><td><input type="text" name="company" id="company" class="regular-text" value="<?php echo esc_attr($data->company ?? ''); ?>" title="Company Name"></td></tr>
+                    <tr><th scope="row"><label for="status">Status</label></th><td><select name="status" id="status" title="Customer Status">
                         <option <?php selected($data->status ?? '', 'Lead'); ?>>Lead</option>
                         <option <?php selected($data->status ?? '', 'Active'); ?>>Active</option>
                         <option <?php selected($data->status ?? '', 'Inactive'); ?>>Inactive</option>
@@ -201,12 +201,12 @@ class CustomerController {
                 </table>
                 <hr>
                 <h3>Address</h3>
-                <table class="form-table">
-                    <tr><th scope="row"><label for="addr_street">Street</label></th><td><input type="text" name="addr_street" id="addr_street" class="large-text" value="<?php echo esc_attr($street); ?>" placeholder="Start typing to search..."></td></tr>
+                <table class="form-table" role="presentation">
+                    <tr><th scope="row"><label for="addr_street">Street</label></th><td><input type="text" name="addr_street" id="addr_street" class="large-text" value="<?php echo esc_attr($street); ?>" placeholder="Start typing to search..." title="Street Address"></td></tr>
                     <tr><th scope="row"><label for="addr_city">City/State/Zip</label></th><td>
-                        <input type="text" name="addr_city" id="addr_city" placeholder="City" value="<?php echo esc_attr($city); ?>">
-                        <input type="text" name="addr_state" id="addr_state" placeholder="State" maxlength="2" size="2" value="<?php echo esc_attr($state); ?>">
-                        <input type="text" name="addr_zip" id="addr_zip" placeholder="Zip" maxlength="10" size="10" value="<?php echo esc_attr($zip); ?>">
+                        <input type="text" name="addr_city" id="addr_city" placeholder="City" value="<?php echo esc_attr($city); ?>" title="City">
+                        <input type="text" name="addr_state" id="addr_state" placeholder="State" maxlength="2" size="2" value="<?php echo esc_attr($state); ?>" title="State">
+                        <input type="text" name="addr_zip" id="addr_zip" placeholder="Zip" maxlength="10" size="10" value="<?php echo esc_attr($zip); ?>" title="Zip Code">
                     </td></tr>
                 </table>
                 <hr>
@@ -222,7 +222,7 @@ class CustomerController {
         
         global $wpdb;
         
-        // Concatenate address parts for storage
+        // Combine address for encrypted storage
         $address = implode(', ', array_filter([
             sanitize_text_field($_POST['addr_street'] ?? ''),
             sanitize_text_field($_POST['addr_city'] ?? ''),
