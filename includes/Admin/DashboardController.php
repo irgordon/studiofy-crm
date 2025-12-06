@@ -14,24 +14,24 @@ class DashboardController {
     public function render_page(): void {
         global $wpdb;
         
+        // Short cache time for near real-time updates
         $stats = get_transient('studiofy_dashboard_stats');
         
         if (false === $stats) {
-            // Count logic update: Count ALL records, not just 'Active'
             $stats = [
+                // Count ALL rows for accurate totals
                 'customers' => $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_customers"),
                 'projects'  => $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_projects"),
                 'appts'     => $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_bookings WHERE status='Scheduled'"),
                 'invoices'  => $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_invoices WHERE status='Draft'"),
-                
-                // Revenue Calculation (Paid Invoices)
+                // Revenue: Only Paid invoices
                 'revenue'   => $wpdb->get_var("SELECT SUM(amount) FROM {$wpdb->prefix}studiofy_invoices WHERE status='Paid'")
             ];
             
-            // Fallback for null revenue
-            if (is_null($stats['revenue'])) $stats['revenue'] = 0.00;
+            if (is_null($stats['revenue'])) {
+                $stats['revenue'] = 0.00;
+            }
 
-            // Reduce cache time for better responsiveness
             set_transient('studiofy_dashboard_stats', $stats, 60); 
         }
         
@@ -42,28 +42,36 @@ class DashboardController {
             
             <div class="studiofy-dashboard-grid">
                 <div class="studiofy-stat-card">
-                    <div class="stat-icon-wrapper"><span class="dashicons dashicons-admin-users"></span></div>
+                    <div class="stat-icon-wrapper">
+                        <span class="dashicons dashicons-admin-users"></span>
+                    </div>
                     <div class="stat-content">
                         <div class="stat-label">Total Customers</div>
                         <div class="stat-value"><?php echo esc_html($stats['customers']); ?></div>
                     </div>
                 </div>
                 <div class="studiofy-stat-card">
-                    <div class="stat-icon-wrapper"><span class="dashicons dashicons-portfolio"></span></div>
+                    <div class="stat-icon-wrapper">
+                        <span class="dashicons dashicons-portfolio"></span>
+                    </div>
                     <div class="stat-content">
                         <div class="stat-label">Total Projects</div>
                         <div class="stat-value"><?php echo esc_html($stats['projects']); ?></div>
                     </div>
                 </div>
                 <div class="studiofy-stat-card">
-                    <div class="stat-icon-wrapper"><span class="dashicons dashicons-calendar-alt"></span></div>
+                    <div class="stat-icon-wrapper">
+                        <span class="dashicons dashicons-calendar-alt"></span>
+                    </div>
                     <div class="stat-content">
                         <div class="stat-label">Upcoming Appointments</div>
                         <div class="stat-value"><?php echo esc_html($stats['appts']); ?></div>
                     </div>
                 </div>
                 <div class="studiofy-stat-card">
-                    <div class="stat-icon-wrapper"><span class="dashicons dashicons-media-spreadsheet"></span></div>
+                    <div class="stat-icon-wrapper">
+                        <span class="dashicons dashicons-media-spreadsheet"></span>
+                    </div>
                     <div class="stat-content">
                         <div class="stat-label">Pending Invoices</div>
                         <div class="stat-value"><?php echo esc_html($stats['invoices']); ?></div>
