@@ -2,7 +2,7 @@
 /**
  * Admin Menu Controller
  * @package Studiofy\Admin
- * @version 2.2.1
+ * @version 2.2.12
  */
 
 declare(strict_types=1);
@@ -57,7 +57,6 @@ class Menu {
         wp_enqueue_style('wp-color-picker');
         wp_enqueue_media();
 
-        // Core Admin CSS
         wp_enqueue_style(
             'studiofy-admin-css', 
             STUDIOFY_URL . 'assets/css/admin.css', 
@@ -65,7 +64,6 @@ class Menu {
             studiofy_get_asset_version('assets/css/admin.css')
         );
 
-        // Conditional Load: Gallery CSS (Performance Optimization)
         if (strpos($hook, 'studiofy-galleries') !== false) {
             wp_enqueue_style(
                 'studiofy-gallery-admin-css', 
@@ -75,7 +73,6 @@ class Menu {
             );
         }
 
-        // Core Admin JS
         wp_enqueue_script(
             'studiofy-admin-js', 
             STUDIOFY_URL . 'assets/js/admin.js', 
@@ -84,7 +81,6 @@ class Menu {
             true
         );
 
-        // Conditional Load: Gallery JS
         if (strpos($hook, 'studiofy-galleries') !== false) {
             wp_enqueue_script(
                 'studiofy-gallery-admin-js', 
@@ -94,11 +90,12 @@ class Menu {
                 true
             );
             
-            // Localize Settings
+            // FIXED: Added ajax_url
             wp_localize_script('studiofy-gallery-admin-js', 'studiofyGallerySettings', [
                 'root' => esc_url_raw(rest_url()),
                 'nonce' => wp_create_nonce('wp_rest'),
-                'max_upload_size' => wp_max_upload_size()
+                'max_upload_size' => wp_max_upload_size(),
+                'ajax_url' => admin_url('admin-ajax.php')
             ]);
         }
     }
