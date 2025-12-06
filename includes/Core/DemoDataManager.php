@@ -3,7 +3,7 @@
  * Demo Data Manager
  * Handles XML File Upload & Import.
  * @package Studiofy\Core
- * @version 2.2.6
+ * @version 2.2.7
  */
 
 declare(strict_types=1);
@@ -23,7 +23,6 @@ class DemoDataManager {
         check_admin_referer('import_demo', 'studiofy_nonce');
         if (!current_user_can('manage_options')) wp_die('Unauthorized');
 
-        // Check File Upload
         if (empty($_FILES['demo_xml_file']) || $_FILES['demo_xml_file']['error'] !== UPLOAD_ERR_OK) {
             wp_redirect(admin_url('admin.php?page=studiofy-settings&msg=upload_error'));
             exit;
@@ -31,14 +30,17 @@ class DemoDataManager {
 
         $file_tmp = $_FILES['demo_xml_file']['tmp_name'];
         
-        // Basic XML Check (MIME type can be unreliable on some servers, checking content header)
+        // Basic XML Validation
         $content = file_get_contents($file_tmp);
         if (strpos($content, '<?xml') === false && strpos($content, '<studiofy_demo>') === false) {
-             wp_redirect(admin_url('admin.php?page=studiofy-settings&msg=upload_error'));
+             wp_redirect(admin_url('admin.php?page=studiofy-settings&msg=xml_error'));
              exit;
         }
 
         $this->process_xml_file($file_tmp);
+
+        // Clear Dashboard Cache so new numbers show up immediately
+        delete_transient('studiofy_dashboard_stats');
 
         wp_redirect(admin_url('admin.php?page=studiofy-settings&msg=demo_imported'));
         exit;
@@ -49,6 +51,9 @@ class DemoDataManager {
         if (!current_user_can('manage_options')) wp_die('Unauthorized');
 
         $this->delete_demo_data();
+
+        // Clear Cache
+        delete_transient('studiofy_dashboard_stats');
 
         wp_redirect(admin_url('admin.php?page=studiofy-settings&msg=demo_deleted'));
         exit;
@@ -74,9 +79,13 @@ class DemoDataManager {
         ];
 
         // 1. Import Customers
+        // Map XML ID attribute to real DB ID
         $customer_map = []; 
         if(isset($xml->customers->customer)) {
             foreach ($xml->customers->customer as $c) {
+                // FIX: Access ID via array syntax for attributes
+                $xml_id = (int)$c['id']; 
+
                 $wpdb->insert($wpdb->prefix . 'studiofy_customers', [
                     'first_name' => (string)$c->first_name,
                     'last_name'  => (string)$c->last_name,
@@ -85,11 +94,13 @@ class DemoDataManager {
                     'company'    => (string)$c->company,
                     'address'    => $enc->encrypt((string)$c->address),
                     'status'     => 'Active',
-                    'notes'      => (string)$c->notes
+                    'notes'      => (string)$c->notes,
+                    'created_at' => current_time('mysql')
                 ]);
+                
                 $db_id = $wpdb->insert_id;
                 $ids['customers'][] = $db_id;
-                $customer_map[(int)$c['id']] = $db_id;
+                $customer_map[$xml_id] = $db_id;
             }
         }
 
@@ -97,7 +108,10 @@ class DemoDataManager {
         $project_map = [];
         if(isset($xml->projects->project)) {
             foreach ($xml->projects->project as $p) {
-                $cust_xml_id = (int)$p->customer_id;
+                // FIX: Access via attributes
+                $xml_id = (int)$p['id'];
+                $cust_xml_id = (int)$p['customer_id'];
+                
                 $real_cust_id = $customer_map[$cust_xml_id] ?? 0;
                 
                 if ($real_cust_id) {
@@ -107,11 +121,13 @@ class DemoDataManager {
                         'status'      => (string)$p->status,
                         'budget'      => (float)$p->budget,
                         'tax_status'  => (string)$p->tax_status,
-                        'notes'       => (string)$p->notes
+                        'notes'       => (string)$p->notes,
+                        'created_at'  => current_time('mysql')
                     ]);
+                    
                     $db_id = $wpdb->insert_id;
                     $ids['projects'][] = $db_id;
-                    $project_map[(int)$p['id']] = $db_id;
+                    $project_map[$xml_id] = $db_id;
                 }
             }
         }
@@ -119,8 +135,8 @@ class DemoDataManager {
         // 3. Import Invoices
         if(isset($xml->invoices->invoice)) {
             foreach ($xml->invoices->invoice as $i) {
-                $cust_xml_id = (int)$i->customer_id;
-                $proj_xml_id = (int)$i->project_id;
+                $cust_xml_id = (int)$i['customer_id'];
+                $proj_xml_id = (int)$i['project_id'];
                 
                 $real_cust_id = $customer_map[$cust_xml_id] ?? 0;
                 $real_proj_id = $project_map[$proj_xml_id] ?? 0;
@@ -135,7 +151,8 @@ class DemoDataManager {
                         'status'         => (string)$i->status,
                         'issue_date'     => date('Y-m-d'),
                         'due_date'       => date('Y-m-d', strtotime('+30 days')),
-                        'currency'       => 'USD'
+                        'currency'       => 'USD',
+                        'created_at'     => current_time('mysql')
                     ]);
                     $ids['invoices'][] = $wpdb->insert_id;
                 }
@@ -145,8 +162,8 @@ class DemoDataManager {
         // 4. Import Contracts
         if(isset($xml->contracts->contract)) {
             foreach ($xml->contracts->contract as $con) {
-                $cust_xml_id = (int)$con->customer_id;
-                $proj_xml_id = (int)$con->project_id;
+                $cust_xml_id = (int)$con['customer_id'];
+                $proj_xml_id = (int)$con['project_id'];
 
                 $real_cust_id = $customer_map[$cust_xml_id] ?? 0;
                 $real_proj_id = $project_map[$proj_xml_id] ?? 0;
@@ -160,7 +177,8 @@ class DemoDataManager {
                         'status'       => (string)$con->status,
                         'body_content' => (string)$con->terms,
                         'start_date'   => date('Y-m-d'),
-                        'end_date'     => date('Y-m-d', strtotime('+1 year'))
+                        'end_date'     => date('Y-m-d', strtotime('+1 year')),
+                        'created_at'   => current_time('mysql')
                     ]);
                     $ids['contracts'][] = $wpdb->insert_id;
                 }
