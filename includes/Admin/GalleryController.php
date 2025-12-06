@@ -2,7 +2,7 @@
 /**
  * Gallery Controller
  * @package Studiofy\Admin
- * @version 2.1.11
+ * @version 2.1.12
  */
 
 declare(strict_types=1);
@@ -17,23 +17,20 @@ class GalleryController {
     }
 
     public function register_routes(): void {
-        // GET Files
         register_rest_route('studiofy/v1', '/galleries/(?P<id>\d+)/files', [
             'methods' => 'GET',
             'callback' => [$this, 'get_gallery_files'],
             'permission_callback' => fn() => current_user_can('upload_files')
         ]);
         
-        // DELETE File
         register_rest_route('studiofy/v1', '/galleries/files/(?P<id>\d+)', [
             'methods' => 'DELETE',
             'callback' => [$this, 'delete_file'],
             'permission_callback' => fn() => current_user_can('upload_files')
         ]);
 
-        // UPDATE File Meta
         register_rest_route('studiofy/v1', '/galleries/files/(?P<id>\d+)', [
-            'methods' => 'POST', // Update
+            'methods' => 'POST',
             'callback' => [$this, 'update_file_meta'],
             'permission_callback' => fn() => current_user_can('upload_files')
         ]);
@@ -74,6 +71,7 @@ class GalleryController {
 
     public function render_page(): void {
         global $wpdb;
+        // This query now works because Activator.php fixes the schema
         $galleries = $wpdb->get_results("SELECT g.*, p.post_title as wp_title FROM {$wpdb->prefix}studiofy_galleries g LEFT JOIN {$wpdb->posts} p ON g.wp_page_id = p.ID ORDER BY g.created_at DESC");
         
         ?>
@@ -197,22 +195,19 @@ class GalleryController {
         global $wpdb;
         $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
         
-        // Creating New Gallery
         if ($id === 0) {
             $title = sanitize_text_field($_POST['title']);
             $pass  = sanitize_text_field($_POST['password']);
             $desc  = sanitize_textarea_field($_POST['description']);
             
-            // 1. Create WP Page
             $page_id = wp_insert_post([
                 'post_title'   => $title . ' - Proofing',
-                'post_content' => '[studiofy_proof_gallery]', // Shortcode placeholder
+                'post_content' => '[studiofy_proof_gallery]',
                 'post_status'  => 'publish',
                 'post_type'    => 'page',
                 'post_password'=> $pass
             ]);
 
-            // 2. Create Gallery Record
             $wpdb->insert($wpdb->prefix.'studiofy_galleries', [
                 'title' => $title,
                 'description' => $desc,
@@ -222,44 +217,42 @@ class GalleryController {
             ]);
             $id = $wpdb->insert_id;
 
-            // 3. Update Shortcode with ID
-            wp_update_post([
-                'ID' => $page_id,
-                'post_content' => '[studiofy_proof_gallery id="' . $id . '"]'
-            ]);
+            wp_update_post(['ID' => $page_id, 'post_content' => '[studiofy_proof_gallery id="' . $id . '"]']);
             
             wp_redirect(admin_url('admin.php?page=studiofy-galleries'));
             exit;
         }
 
-        // Handle File Uploads (Existing Logic)
         if (!empty($_FILES['gallery_files']['name'][0])) {
             $upload_dir = wp_upload_dir();
             $base_dir = $upload_dir['basedir'] . '/studiofy_galleries/' . $id;
             $base_url = $upload_dir['baseurl'] . '/studiofy_galleries/' . $id;
+            
             if (!file_exists($base_dir)) mkdir($base_dir, 0755, true);
 
             $files = $_FILES['gallery_files'];
-            for ($i = 0; $i < count($files['name']); $i++) {
+            $count = count($files['name']);
+
+            for ($i = 0; $i < $count; $i++) {
                 if ($files['error'][$i] === 0) {
                     $name = sanitize_file_name($files['name'][$i]);
                     $ext = pathinfo($name, PATHINFO_EXTENSION);
                     $target = $base_dir . '/' . $name;
                     $size = size_format(filesize($files['tmp_name'][$i]));
+                    $dims = '';
+
+                    if(in_array(strtolower($ext), ['jpg','jpeg','png','gif'])) {
+                        $info = getimagesize($files['tmp_name'][$i]);
+                        if($info) $dims = $info[0] . ' x ' . $info[1];
+                    }
                     
                     if (move_uploaded_file($files['tmp_name'][$i], $target)) {
-                        $dims = '';
-                        if(in_array(strtolower($ext), ['jpg','jpeg','png'])) {
-                            $info = getimagesize($target);
-                            $dims = $info ? $info[0].'x'.$info[1] : '';
-                        }
-                        
                         $wpdb->insert($wpdb->prefix.'studiofy_gallery_files', [
                             'gallery_id' => $id,
                             'uploaded_by' => get_current_user_id(),
                             'file_name' => $name,
                             'file_path' => $target,
-                            'file_url' => $base_url . '/' . $name,
+                            'file_url'  => $base_url . '/' . $name,
                             'file_type' => $ext,
                             'dimensions' => $dims,
                             'file_size' => $size,
@@ -269,6 +262,7 @@ class GalleryController {
                 }
             }
         }
-        wp_redirect(admin_url('admin.php?page=studiofy-galleries')); exit;
+        wp_redirect(admin_url('admin.php?page=studiofy-galleries&action=view&id='.$id));
+        exit;
     }
 }
