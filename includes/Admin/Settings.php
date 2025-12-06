@@ -2,7 +2,7 @@
 /**
  * Settings Controller
  * @package Studiofy\Admin
- * @version 2.2.4
+ * @version 2.2.5
  */
 
 declare(strict_types=1);
@@ -22,12 +22,26 @@ class Settings {
     }
 
     public function display_notices(): void {
+        // Native Settings Saved Notice
+        if (isset($_GET['settings-updated']) && $_GET['settings-updated'] == 'true') {
+            echo '<div class="notice notice-success is-dismissible"><p><strong>Settings Saved.</strong></p></div>';
+        }
+
+        // Demo Data Notices
         if (isset($_GET['msg'])) {
             $msg = '';
             $type = 'success';
             switch($_GET['msg']) {
                 case 'demo_imported': $msg = 'Demo data imported successfully.'; break;
                 case 'demo_deleted': $msg = 'Demo data deleted successfully.'; break;
+                case 'upload_error': 
+                    $msg = 'Failed to upload file. Please upload a valid XML file.'; 
+                    $type = 'error';
+                    break;
+                case 'xml_error': 
+                    $msg = 'Invalid XML structure. Please check the file.'; 
+                    $type = 'error';
+                    break;
             }
             if($msg) echo "<div class='notice notice-$type is-dismissible'><p>$msg</p></div>";
         }
@@ -46,8 +60,8 @@ class Settings {
 
         add_settings_section('studiofy_social_section', 'Social Media', [$this, 'render_social_table'], 'studiofy-settings');
         
-        // New Demo Data Section
-        add_settings_section('studiofy_demo_section', 'Demo Data', [$this, 'render_demo_section'], 'studiofy-settings');
+        // Demo Data Section
+        add_settings_section('studiofy_demo_section', 'Demo Data Import', [$this, 'render_demo_section'], 'studiofy-settings');
     }
 
     public function render_page(): void {
@@ -93,28 +107,39 @@ class Settings {
     }
 
     /**
-     * Renders Demo Data Buttons
+     * Renders Demo Data File Upload & Delete
      */
     public function render_demo_section(): void {
         $has_demo = get_option('studiofy_demo_data_ids');
         ?>
-        <p class="description">Import dummy data to test the CRM functionality. You can delete it later.</p>
-        <div style="display: flex; gap: 10px; margin-top: 10px;">
-            <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
+        <p class="description">Upload the official <code>Studiofy_Demo_data.xml</code> file to populate your CRM with test data.</p>
+        
+        <div style="background: #fff; border: 1px solid #ccd0d4; padding: 20px; max-width: 600px; border-radius: 4px; margin-top: 10px;">
+            
+            <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" enctype="multipart/form-data" style="margin-bottom: 20px;">
                 <input type="hidden" name="action" value="studiofy_import_demo">
                 <?php wp_nonce_field('import_demo', 'studiofy_nonce'); ?>
-                <button type="submit" class="button button-secondary" <?php echo $has_demo ? 'disabled' : ''; ?>>
-                    <?php echo $has_demo ? 'Demo Data Imported' : 'Import Demo Data'; ?>
-                </button>
+                
+                <label for="demo_xml_file" style="font-weight: 600; display: block; margin-bottom: 5px;">Select XML File:</label>
+                <input type="file" name="demo_xml_file" id="demo_xml_file" accept=".xml" required>
+                
+                <p class="submit" style="padding:0; margin-top:10px;">
+                    <button type="submit" class="button button-secondary" <?php echo $has_demo ? 'disabled' : ''; ?>>
+                        <?php echo $has_demo ? 'Demo Data Already Imported' : 'Upload & Import Data'; ?>
+                    </button>
+                </p>
             </form>
 
+            <?php if ($has_demo): ?>
+            <hr style="margin: 20px 0;">
             <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" onsubmit="return confirm('Are you sure you want to delete all demo data? This action cannot be undone.');">
                 <input type="hidden" name="action" value="studiofy_delete_demo">
                 <?php wp_nonce_field('delete_demo', 'studiofy_nonce'); ?>
-                <button type="submit" class="button button-link-delete" <?php echo !$has_demo ? 'disabled' : ''; ?>>
-                    Delete Demo Data
+                <button type="submit" class="button button-link-delete" style="color: #d63638;">
+                    Delete Imported Demo Data
                 </button>
             </form>
+            <?php endif; ?>
         </div>
         <?php
     }
