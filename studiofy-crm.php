@@ -20,13 +20,12 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Security Headers (Fixes X-Powered-By & CSP warnings)
+// Security Headers
 add_action('send_headers', function() {
     if (!headers_sent()) {
         header_remove('X-Powered-By');
         header('X-Content-Type-Options: nosniff');
-        // Use CSP instead of X-Frame-Options where possible, but keep XFO for compatibility if needed.
-        // header('Content-Security-Policy: frame-ancestors \'self\''); 
+        header('X-Frame-Options: SAMEORIGIN');
         header('Referrer-Policy: strict-origin-when-cross-origin');
     }
 });
@@ -40,9 +39,6 @@ if (!defined('STUDIOFY_KEY')) {
     define('STUDIOFY_KEY', 'DEF_CHANGE_THIS_IN_WP_CONFIG_TO_RANDOM_32_BYTES');
 }
 
-/**
- * Smart Versioning Helper
- */
 function studiofy_get_asset_version(string $file_path): string {
     if (defined('WP_DEBUG') && WP_DEBUG) {
         $file = STUDIOFY_PATH . $file_path;
@@ -53,7 +49,6 @@ function studiofy_get_asset_version(string $file_path): string {
     return STUDIOFY_VERSION;
 }
 
-// PSR-4 Autoloader
 spl_autoload_register(function (string $class) {
     $prefix = 'Studiofy\\';
     $base_dir = STUDIOFY_PATH . 'includes/';
@@ -71,13 +66,9 @@ spl_autoload_register(function (string $class) {
     }
 });
 
-// Lifecycle Hooks
 register_activation_hook(__FILE__, [Core\Activator::class, 'activate']);
 register_deactivation_hook(__FILE__, [Core\Deactivator::class, 'deactivate']);
 
-/**
- * Dependency Check for Elementor
- */
 function studiofy_check_dependencies(): void {
     if (did_action('elementor/loaded')) return;
 
