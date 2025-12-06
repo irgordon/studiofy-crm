@@ -2,7 +2,7 @@
 /**
  * Gallery Controller
  * @package Studiofy\Admin
- * @version 2.2.16
+ * @version 2.2.17
  */
 
 declare(strict_types=1);
@@ -19,21 +19,9 @@ class GalleryController {
     }
 
     public function register_routes(): void {
-        register_rest_route('studiofy/v1', '/galleries/(?P<id>\d+)/files', [
-            'methods' => 'GET',
-            'callback' => [$this, 'get_gallery_files'],
-            'permission_callback' => fn() => current_user_can('upload_files')
-        ]);
-        register_rest_route('studiofy/v1', '/galleries/files/(?P<id>\d+)', [
-            'methods' => 'DELETE',
-            'callback' => [$this, 'delete_file'],
-            'permission_callback' => fn() => current_user_can('upload_files')
-        ]);
-        register_rest_route('studiofy/v1', '/galleries/files/(?P<id>\d+)', [
-            'methods' => 'POST',
-            'callback' => [$this, 'update_file_meta'],
-            'permission_callback' => fn() => current_user_can('upload_files')
-        ]);
+        register_rest_route('studiofy/v1', '/galleries/(?P<id>\d+)/files', ['methods' => 'GET', 'callback' => [$this, 'get_gallery_files'], 'permission_callback' => fn() => current_user_can('upload_files')]);
+        register_rest_route('studiofy/v1', '/galleries/files/(?P<id>\d+)', ['methods' => 'DELETE', 'callback' => [$this, 'delete_file'], 'permission_callback' => fn() => current_user_can('upload_files')]);
+        register_rest_route('studiofy/v1', '/galleries/files/(?P<id>\d+)', ['methods' => 'POST', 'callback' => [$this, 'update_file_meta'], 'permission_callback' => fn() => current_user_can('upload_files')]);
     }
 
     public function get_gallery_files(\WP_REST_Request $request): \WP_REST_Response {
@@ -80,7 +68,7 @@ class GalleryController {
             </div>
             <hr class="wp-header-end">
 
-            <div class="studiofy-explorer-container">
+            <div class="studiofy-explorer-container" style="height: 500px; margin-bottom: 40px;">
                 <div class="studiofy-explorer-sidebar">
                     <h3>Folders</h3>
                     <ul class="studiofy-folder-list">
@@ -94,7 +82,6 @@ class GalleryController {
                         <?php endforeach; ?>
                     </ul>
                 </div>
-
                 <div class="studiofy-explorer-content">
                     <div class="studiofy-toolbar">
                         <button class="button button-primary" id="btn-upload-media" disabled>Upload Media</button>
@@ -104,20 +91,16 @@ class GalleryController {
                         <div class="studiofy-empty-state-small"><span class="dashicons dashicons-format-gallery"></span><p>Select a gallery folder.</p></div>
                     </div>
                 </div>
-                
                 <div class="studiofy-meta-sidebar" id="meta-sidebar" role="complementary" aria-label="Image Details">
-                    <div class="meta-header">
-                        <h3>Details</h3>
-                        <button class="close-meta" aria-label="Close Sidebar">&times;</button>
-                    </div>
+                    <div class="meta-header"><h3>Details</h3><button class="close-meta" aria-label="Close Sidebar">&times;</button></div>
                     <div id="meta-content" style="display:none;">
                         <div class="meta-preview" id="meta-preview"></div>
                         <div class="meta-form">
-                           <label for="inp-meta-title">Title</label><input type="text" id="inp-meta-title" class="widefat" placeholder="Title" title="Title">
-                           <label for="inp-meta-author">Photographer</label><input type="text" id="inp-meta-author" class="widefat" placeholder="Photographer" title="Photographer">
-                           <label for="inp-meta-project">Project</label><input type="text" id="inp-meta-project" class="widefat" placeholder="Project" title="Project">
-                           <div class="meta-stats"><p><strong>Size:</strong> <span id="meta-size"></span></p><p><strong>Type:</strong> <span id="meta-type"></span></p><p><strong>Dims:</strong> <span id="meta-dims"></span></p></div>
-                           <button class="button button-primary" id="btn-save-meta" style="width:100%; margin-top:10px;">Save Metadata</button>
+                            <label for="inp-meta-title">Title</label><input type="text" id="inp-meta-title" class="widefat" placeholder="Title" title="Title">
+                            <label for="inp-meta-author">Photographer</label><input type="text" id="inp-meta-author" class="widefat" placeholder="Photographer" title="Photographer">
+                            <label for="inp-meta-project">Project</label><input type="text" id="inp-meta-project" class="widefat" placeholder="Project" title="Project">
+                            <div class="meta-stats"><p><strong>Size:</strong> <span id="meta-size"></span></p><p><strong>Type:</strong> <span id="meta-type"></span></p><p><strong>Dims:</strong> <span id="meta-dims"></span></p></div>
+                            <button class="button button-primary" id="btn-save-meta" style="width:100%; margin-top:10px;">Save Metadata</button>
                         </div>
                         <div class="meta-actions">
                              <button class="button" id="btn-view-large">View Larger</button>
@@ -196,6 +179,7 @@ class GalleryController {
                             <input type="text" name="password" id="gallery-pass" class="widefat" placeholder="Leave blank to auto-generate" title="Password">
                         </div>
                     </div>
+                    
                     <div class="studiofy-form-actions">
                         <button type="button" class="button close-modal">Cancel</button>
                         <button type="submit" class="button button-primary">Create Folder</button>
@@ -211,24 +195,26 @@ class GalleryController {
             </div>
         </div>
 
-        <script>jQuery(document).ready(function($){ $('#btn-create-gallery').click(function(){ $('#modal-new-gallery').show().removeClass('studiofy-hidden'); }); $('.close-modal').click(function(){ $(this).closest('.studiofy-modal-overlay').hide().addClass('studiofy-hidden'); }); });</script>
+        <script>jQuery(document).ready(function($){ 
+            $('#btn-create-gallery').click(function(){ $('#modal-new-gallery').show().removeClass('studiofy-hidden'); }); 
+            $('.close-modal').click(function(){ $(this).closest('.studiofy-modal-overlay').hide().addClass('studiofy-hidden'); }); 
+        });</script>
         <?php
     }
 
     public function handle_save(): void {
-        // Check either nonce depending on the form source
+        // Unique Nonce Check
         if (isset($_POST['studiofy_nonce_create']) && wp_verify_nonce($_POST['studiofy_nonce_create'], 'save_gallery')) {
              $is_upload = false;
         } elseif (isset($_POST['studiofy_nonce_upload']) && wp_verify_nonce($_POST['studiofy_nonce_upload'], 'save_gallery')) {
              $is_upload = true;
         } else {
-             wp_die('Security check failed (Duplicate ID Fix Applied)');
+             wp_die('Security check failed');
         }
         
         global $wpdb;
         $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
         
-        // New Gallery
         if ($id === 0 && !$is_upload) {
             $title = sanitize_text_field($_POST['title']);
             $desc  = sanitize_textarea_field($_POST['description']);
@@ -244,7 +230,6 @@ class GalleryController {
             exit;
         }
         
-        // Uploads
         if ($is_upload && !empty($_FILES['gallery_files']['name'][0])) {
              $upload_dir = wp_upload_dir();
              $base_dir = $upload_dir['basedir'] . '/studiofy_galleries/' . $id;
@@ -305,9 +290,10 @@ class GalleryController {
         
         if (!$gallery) wp_send_json_error('Gallery not found');
         
-        // FIX: If page already exists, return success with existing URL instead of error
+        // FIX: Return existing URL if page already exists
         if ($gallery->wp_page_id) {
             $link = get_edit_post_link($gallery->wp_page_id, '');
+            header('Content-Type: application/json');
             wp_send_json_success(['message' => 'Page already exists.', 'redirect_url' => html_entity_decode($link)]);
             return;
         }
