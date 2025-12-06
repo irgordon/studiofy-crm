@@ -40,7 +40,6 @@
 </div>
 
 <style>
-/* modal-project specific styles to ensure grid layout */
 .studiofy-modal-body { display: flex; height: 500px; padding: 0; }
 .studiofy-milestone-list { width: 40%; border-right: 1px solid #ddd; padding: 20px; overflow-y: auto; background: #fafafa; }
 .studiofy-task-editor { width: 60%; padding: 20px; overflow-y: auto; }
