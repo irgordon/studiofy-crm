@@ -1,83 +1,79 @@
 /**
  * Studiofy Admin Core
  * @package Studiofy
- * @version 2.2.3
+ * @version 2.2.18
  */
 jQuery(document).ready(function($){
     
-    // Modal Logic
+    // 1. Modal Logic
     function setupModal(triggerId, modalId) {
         $(triggerId).click(function(e){ e.preventDefault(); $(modalId).removeClass('studiofy-hidden'); });
         $(modalId + ' .close-modal').click(function(e){ e.preventDefault(); $(modalId).addClass('studiofy-hidden'); });
-        $(modalId).click(function(e){
-            if(e.target === this) { $(this).addClass('studiofy-hidden'); }
-        });
+        $(modalId).click(function(e){ if(e.target === this) { $(this).addClass('studiofy-hidden'); } });
     }
     setupModal('#btn-new-customer', '#modal-new-customer');
     setupModal('#btn-new-appt', '#modal-new-appt');
 
-    // WP Color Picker
-    $('.studiofy-color-field').wpColorPicker();
+    // 2. WP Color Picker
+    if($.fn.wpColorPicker) $('.studiofy-color-field').wpColorPicker();
     
-    // Media Uploader
+    // 3. Media Uploader
     $('.studiofy-upload-btn').click(function(e) {
         e.preventDefault();
         var button = $(this);
         var targetId = button.data('target');
-        var custom_uploader = wp.media({
-            title: 'Select Image',
-            button: { text: 'Use this image' },
-            multiple: false
-        }).on('select', function() {
-            var attachment = custom_uploader.state().get('selection').first().toJSON();
-            $(targetId).val(attachment.url);
-        }).open();
+        var custom_uploader = wp.media({ title: 'Select Image', button: { text: 'Use this image' }, multiple: false })
+            .on('select', function() { $(targetId).val(custom_uploader.state().get('selection').first().toJSON().url); }).open();
     });
 
-    // Delete Confirmation
-    $('.delete-link').click(function(){ return confirm('Are you sure you want to delete this item?'); });
+    $('.delete-link').click(function(){ return confirm('Are you sure?'); });
 
-    // Currency Formatter
-    $('#project_budget').on('blur', function() {
-        let val = $(this).val().replace(/[^\d.]/g, ''); // strip non-numeric
-        if (val) {
-            val = parseFloat(val).toFixed(2);
-            // Simple logic: if NaN, empty it
-            if(val !== 'NaN') {
-                $(this).val('$' + val);
-            } else {
-                $(this).val('');
-            }
+    // 4. Phone Auto-Format
+    $('#phone').on('input', function() {
+        var input = $(this).val().replace(/\D/g, '');
+        var formatted = '';
+        if (input.length > 0) {
+            if (input.length <= 3) formatted = input;
+            else if (input.length <= 6) formatted = '(' + input.substring(0, 3) + ') ' + input.substring(3);
+            else formatted = '(' + input.substring(0, 3) + ') ' + input.substring(3, 6) + '-' + input.substring(6, 10);
         }
+        $(this).val(formatted);
     });
 
-    // Customer Form Validation
-    $('#studiofy-customer-form').on('submit', function(e) {
-        let valid = true;
-        let errors = [];
+    // 5. Google Maps Autocomplete
+    function initAutocomplete() {
+        const input = document.getElementById('addr_street');
+        if (!input) return;
 
-        try {
-            const phoneInput = $(this).find('input[name="phone"]');
-            if(phoneInput.length > 0 && phoneInput.val().trim() !== '') {
-                const phone = phoneInput.val();
-                if(!phone.match(/^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im)) {
-                    // Soft warning
-                }
+        const autocomplete = new google.maps.places.Autocomplete(input, {
+            types: ['address'],
+            componentRestrictions: { country: 'us' }, // Restrict to US per requirement
+            fields: ['address_components', 'geometry']
+        });
+
+        autocomplete.addListener('place_changed', function() {
+            const place = autocomplete.getPlace();
+            let street = '', city = '', state = '', zip = '';
+
+            for (const component of place.address_components) {
+                const type = component.types[0];
+                if (type === 'street_number') street = component.long_name + ' ' + street;
+                if (type === 'route') street += component.long_name;
+                if (type === 'locality') city = component.long_name;
+                if (type === 'administrative_area_level_1') state = component.short_name;
+                if (type === 'postal_code') zip = component.long_name;
             }
-            const emailInput = $(this).find('input[name="email"]');
-            if(emailInput.length > 0) {
-                const email = emailInput.val();
-                if(email.trim() === '' || !email.match(/^[^@]+@[^@]+\.[a-zA-Z]{2,}$/)) {
-                    valid = false;
-                    errors.push('A valid email address is required.');
-                }
-            }
-            if(!valid) {
-                e.preventDefault();
-                alert(errors.join('\n'));
-            }
-        } catch (err) {
-            console.error('Validation Script Error:', err);
-        }
-    });
+
+            // Populate fields
+            $('#addr_street').val(street);
+            $('#addr_city').val(city);
+            $('#addr_state').val(state);
+            $('#addr_zip').val(zip);
+        });
+    }
+    
+    // Init if Google Maps script is loaded
+    if (typeof google !== 'undefined' && typeof google.maps !== 'undefined') {
+        initAutocomplete();
+    }
 });
