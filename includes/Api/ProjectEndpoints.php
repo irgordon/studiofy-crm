@@ -2,7 +2,7 @@
 /**
  * Project Details API Routes
  * @package Studiofy\Api
- * @version 2.0.5
+ * @version 2.2.10
  */
 
 declare(strict_types=1);
@@ -39,9 +39,17 @@ class ProjectEndpoints {
         
         $milestones = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_milestones WHERE project_id = %d ORDER BY created_at ASC", $project_id));
         $data = [];
+        
+        // If no milestones exist for project, return empty but valid
+        if (empty($milestones)) {
+            // Optional: Create default milestone? For now return empty.
+        }
+
         foreach ($milestones as $milestone) {
             $tasks = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_tasks WHERE milestone_id = %d", $milestone->id));
-            foreach($tasks as $task) $task->checklist = json_decode($task->checklist_json ?: '[]');
+            foreach($tasks as $task) {
+                $task->checklist = json_decode($task->checklist_json ?: '[]');
+            }
             $milestone->tasks = $tasks;
             $data[] = $milestone;
         }
@@ -54,23 +62,51 @@ class ProjectEndpoints {
         $table = $wpdb->prefix . 'studiofy_tasks';
         $params = $request->get_json_params();
         
+        // Logging for Debugging
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            error_log('Studiofy Task Save: ' . print_r($params, true));
+        }
+
         $data = [
-            'milestone_id' => (int) $params['milestone_id'],
-            'title'        => sanitize_text_field($params['title']),
-            'priority'     => sanitize_text_field($params['priority']),
-            'description'  => sanitize_textarea_field($params['description']),
+            'milestone_id' => (int) ($params['milestone_id'] ?? 0),
+            'title'        => sanitize_text_field($params['title'] ?? ''),
+            'priority'     => sanitize_text_field($params['priority'] ?? 'Medium'),
+            'description'  => sanitize_textarea_field($params['description'] ?? ''),
             'checklist_json' => json_encode($params['checklist'] ?? []),
             'status'       => sanitize_text_field($params['status'] ?? 'pending')
         ];
 
+        // Ensure Milestone Exists. If not, create a default "General" milestone for the project
+        if ($data['milestone_id'] === 0 && !empty($params['project_id'])) {
+             // Logic to find or create a default milestone
+             $proj_id = (int)$params['project_id'];
+             $m_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}studiofy_milestones WHERE project_id = %d LIMIT 1", $proj_id));
+             
+             if (!$m_id) {
+                 $wpdb->insert($wpdb->prefix.'studiofy_milestones', ['project_id' => $proj_id, 'name' => 'General Tasks']);
+                 $m_id = $wpdb->insert_id;
+             }
+             $data['milestone_id'] = $m_id;
+        }
+
+        if ($data['milestone_id'] === 0) {
+            return new WP_REST_Response(['success' => false, 'message' => 'Invalid Milestone ID'], 400);
+        }
+
+        $result = false;
         if (!empty($params['id'])) {
-            $wpdb->update($table, $data, ['id' => (int) $params['id']]);
+            $result = $wpdb->update($table, $data, ['id' => (int) $params['id']]);
             $task_id = (int) $params['id'];
         } else {
-            $wpdb->insert($table, $data);
+            $result = $wpdb->insert($table, array_merge($data, ['created_at' => current_time('mysql')]));
             $task_id = $wpdb->insert_id;
         }
 
-        return new WP_REST_Response(['success' => true, 'id' => $task_id], 200);
+        if ($result === false) {
+             error_log('Studiofy DB Error: ' . $wpdb->last_error);
+             return new WP_REST_Response(['success' => false, 'message' => 'Database Error'], 500);
+        }
+
+        return new WP_REST_Response(['success' => true, 'id' => $task_id, 'data' => $data], 200);
     }
 }
