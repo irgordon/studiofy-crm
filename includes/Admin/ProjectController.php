@@ -2,109 +2,105 @@
 /**
  * Project Controller
  * @package Studiofy\Admin
- * @version 2.1.5
+ * @version 2.2.0
  */
 
 declare(strict_types=1);
 
 namespace Studiofy\Admin;
 
-use Studiofy\Utils\TableHelper;
+use function Studiofy\studiofy_get_asset_version;
 
 class ProjectController {
-    use TableHelper;
 
-    public function init(): void {
-        add_action('admin_post_studiofy_save_project', [$this, 'handle_save']);
-        add_action('admin_post_studiofy_delete_project', [$this, 'handle_delete']);
-        add_action('admin_post_studiofy_bulk_project', [$this, 'handle_bulk']);
-    }
+    public function init(): void {}
 
     public function render_page(): void {
         $action = $_GET['action'] ?? 'list';
         if ($action === 'new' || $action === 'edit') {
             $this->render_form();
         } else {
-            $this->render_list();
+            $this->render_kanban_board();
         }
     }
 
-    private function render_list(): void {
+    public function render_kanban_board(): void {
+        wp_enqueue_script('jquery-ui-sortable');
+        wp_enqueue_script('studiofy-kanban', STUDIOFY_URL . 'assets/js/kanban.js', ['jquery', 'jquery-ui-sortable', 'wp-api-fetch'], studiofy_get_asset_version('assets/js/kanban.js'), true);
+        wp_enqueue_script('studiofy-modal-js', STUDIOFY_URL . 'assets/js/project-modal.js', ['jquery', 'wp-api-fetch'], studiofy_get_asset_version('assets/js/project-modal.js'), true);
+        wp_enqueue_style('studiofy-modal-css', STUDIOFY_URL . 'assets/css/modal.css', [], studiofy_get_asset_version('assets/css/modal.css'));
+
+        wp_localize_script('studiofy-kanban', 'studiofySettings', [
+            'root' => esc_url_raw(rest_url()),
+            'nonce' => wp_create_nonce('wp_rest')
+        ]);
+        
         global $wpdb;
-        
-        $orderby = $_GET['orderby'] ?? 'id';
-        $order = strtoupper($_GET['order'] ?? 'DESC');
-        
-        // Complex query to determine billing status
-        $sql = "SELECT p.*, 
-                (SELECT status FROM {$wpdb->prefix}studiofy_invoices WHERE project_id = p.id LIMIT 1) as inv_status
-                FROM {$wpdb->prefix}studiofy_projects p 
-                ORDER BY $orderby $order";
-                
-        $items = $wpdb->get_results($sql);
+        $table = $wpdb->prefix . 'studiofy_projects';
+        $count = $wpdb->get_var("SELECT COUNT(*) FROM $table");
 
         ?>
         <div class="wrap">
             <h1 class="wp-heading-inline">Projects</h1>
-            <a href="?page=studiofy-projects&action=new" class="page-title-action">Add New</a>
+            <a href="?page=studiofy-projects&action=new" class="page-title-action">New Project</a>
             <hr class="wp-header-end">
 
-            <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
-                <input type="hidden" name="action" value="studiofy_bulk_project">
-                <?php wp_nonce_field('bulk_project', 'studiofy_nonce'); ?>
-
-                <div class="tablenav top">
-                    <div class="alignleft actions bulkactions">
-                        <select name="bulk_action">
-                            <option value="-1">Bulk Actions</option>
-                            <option value="delete">Delete</option>
-                        </select>
-                        <button type="submit" class="button action">Apply</button>
-                    </div>
+            <div class="studiofy-toolbar">
+                <input type="search" placeholder="Search projects..." class="widefat" style="max-width:400px;">
+                <div class="view-toggle">
+                    <button class="button active">Kanban</button>
+                    <button class="button">List</button>
                 </div>
+            </div>
 
-                <table class="wp-list-table widefat fixed striped">
-                    <thead>
-                        <tr>
-                            <td id="cb" class="manage-column column-cb check-column"><input type="checkbox"></td>
-                            <th class="manage-column sortable"><?php echo $this->sort_link('ID', 'id'); ?></th>
-                            <th class="manage-column sortable"><?php echo $this->sort_link('Project Name', 'title'); ?></th>
-                            <th class="manage-column sortable"><?php echo $this->sort_link('Status', 'status'); ?></th>
-                            <th class="manage-column">Billing Status</th>
-                            <th class="manage-column">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if (empty($items)): ?><tr><td colspan="6">No projects found.</td></tr><?php else: foreach ($items as $item): 
-                            $edit_url = "?page=studiofy-projects&action=edit&id={$item->id}";
-                            $del_url = wp_nonce_url(admin_url('admin-post.php?action=studiofy_delete_project&id='.$item->id), 'delete_project_'.$item->id);
-                            
-                            // Billing Status Logic
-                            $billing_status = 'Unbilled';
-                            if ($item->inv_status) {
-                                $billing_status = ucfirst($item->inv_status); // e.g. Paid, Sent, Draft
-                            }
-                        ?>
-                            <tr>
-                                <th scope="row" class="check-column"><input type="checkbox" name="ids[]" value="<?php echo $item->id; ?>"></th>
-                                <td><?php echo $item->id; ?></td>
-                                <td class="has-row-actions column-primary">
-                                    <strong><a href="<?php echo $edit_url; ?>"><?php echo esc_html($item->title); ?></a></strong>
-                                    <div class="row-actions">
-                                        <span class="edit"><a href="<?php echo $edit_url; ?>">Edit</a> | </span>
-                                        <span class="trash"><a href="<?php echo $del_url; ?>" onclick="return confirm('Delete?')" class="submitdelete">Delete</a></span>
-                                    </div>
-                                </td>
-                                <td><span class="studiofy-badge <?php echo esc_attr($item->status); ?>"><?php echo esc_html(str_replace('_',' ',$item->status)); ?></span></td>
-                                <td><?php echo $billing_status; ?></td>
-                                <td><a href="<?php echo $edit_url; ?>" class="button button-small">Manage</a></td>
-                            </tr>
-                        <?php endforeach; endif; ?>
-                    </tbody>
-                </table>
-            </form>
+            <?php if ($count == 0): ?>
+                <div class="studiofy-empty-card">
+                    <div class="empty-icon dashicons dashicons-grid-view"></div>
+                    <h2>No projects yet</h2>
+                    <p>Create your first project to start tracking work, deadlines, and budgets for your clients.</p>
+                    <a href="?page=studiofy-projects&action=new" class="button button-primary button-large">Create Project</a>
+                </div>
+            <?php else: 
+                $this->render_kanban_html();
+            endif; ?>
         </div>
         <?php
+        require_once STUDIOFY_PATH . 'templates/admin/modal-project.php';
+    }
+
+    private function render_kanban_html(): void {
+        $projects = $this->get_projects_by_status();
+        ?>
+        <div class="studiofy-kanban-board">
+            <?php foreach(['todo', 'in_progress', 'future'] as $status): ?>
+            <div class="studiofy-column" data-status="<?php echo $status; ?>">
+                <h2 class="studiofy-col-title"><?php echo ucfirst(str_replace('_',' ',$status)); ?></h2>
+                <div class="studiofy-card-container">
+                    <?php foreach ($projects[$status] as $project): ?>
+                        <div class="studiofy-card" data-id="<?php echo esc_attr($project->id); ?>">
+                            <div class="studiofy-card-header"><strong><?php echo esc_html($project->title); ?></strong></div>
+                            <div class="studiofy-card-body"><p><?php echo esc_html($project->budget ? '$'.$project->budget : ''); ?></p></div>
+                            <div class="studiofy-card-actions"><button class="button button-small" onclick="StudiofyKanban.editProject(<?php echo $project->id; ?>)">Manage</button></div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php
+    }
+
+    private function get_projects_by_status(): array {
+        global $wpdb;
+        $table = $wpdb->prefix . 'studiofy_projects';
+        $results = $wpdb->get_results("SELECT * FROM $table ORDER BY created_at DESC");
+        $sorted = ['todo' => [], 'in_progress' => [], 'future' => []];
+        foreach ($results as $row) {
+            if (isset($sorted[$row->status])) {
+                $sorted[$row->status][] = $row;
+            }
+        }
+        return $sorted;
     }
 
     private function render_form(): void {
@@ -141,7 +137,7 @@ class ProjectController {
     }
 
     public function handle_save(): void {
-        check_admin_referer('save_project', 'studiofy_nonce');
+        if (!isset($_POST['studiofy_nonce']) || !wp_verify_nonce($_POST['studiofy_nonce'], 'save_project')) wp_die('Security check failed');
         global $wpdb;
         $data = [
             'title' => sanitize_text_field($_POST['title']),
@@ -150,28 +146,8 @@ class ProjectController {
             'budget' => (float)$_POST['budget'],
             'notes' => sanitize_textarea_field($_POST['notes']),
         ];
-        
         if(!empty($_POST['id'])) $wpdb->update($wpdb->prefix.'studiofy_projects', $data, ['id'=>(int)$_POST['id']]);
         else $wpdb->insert($wpdb->prefix.'studiofy_projects', $data);
-        
-        wp_redirect(admin_url('admin.php?page=studiofy-projects')); exit;
-    }
-
-    public function handle_delete(): void {
-        check_admin_referer('delete_project_'.$_GET['id']);
-        global $wpdb;
-        $wpdb->delete($wpdb->prefix.'studiofy_projects', ['id'=>(int)$_GET['id']]);
-        wp_redirect(admin_url('admin.php?page=studiofy-projects')); exit;
-    }
-
-    public function handle_bulk(): void {
-        check_admin_referer('bulk_project', 'studiofy_nonce');
-        if ($_POST['bulk_action'] === 'delete' && !empty($_POST['ids'])) {
-            global $wpdb;
-            $ids = array_map('intval', $_POST['ids']);
-            $in = implode(',', $ids);
-            $wpdb->query("DELETE FROM {$wpdb->prefix}studiofy_projects WHERE id IN ($in)");
-        }
         wp_redirect(admin_url('admin.php?page=studiofy-projects')); exit;
     }
 }
