@@ -2,7 +2,7 @@
 /**
  * Dashboard Controller
  * @package Studiofy\Admin
- * @version 2.0.7
+ * @version 2.1.7
  */
 
 declare(strict_types=1);
@@ -27,30 +27,38 @@ class DashboardController {
         }
         
         ?>
-        <div class="wrap">
+        <div class="wrap studiofy-dark-theme">
             <h1>Dashboard</h1>
             <p>Welcome back! Here's what's happening with your business.</p>
             
             <div class="studiofy-dashboard-grid">
                 <div class="studiofy-stat-card">
                     <div class="stat-icon-wrapper"><span class="dashicons dashicons-admin-users"></span></div>
-                    <div class="stat-label">Active Customers</div>
-                    <div class="stat-value"><?php echo esc_html($stats['customers']); ?></div>
+                    <div class="stat-content">
+                        <div class="stat-label">Active Customers</div>
+                        <div class="stat-value"><?php echo esc_html($stats['customers']); ?></div>
+                    </div>
                 </div>
                 <div class="studiofy-stat-card">
                     <div class="stat-icon-wrapper"><span class="dashicons dashicons-portfolio"></span></div>
-                    <div class="stat-label">Active Projects</div>
-                    <div class="stat-value"><?php echo esc_html($stats['projects']); ?></div>
+                    <div class="stat-content">
+                        <div class="stat-label">Active Projects</div>
+                        <div class="stat-value"><?php echo esc_html($stats['projects']); ?></div>
+                    </div>
                 </div>
                 <div class="studiofy-stat-card">
                     <div class="stat-icon-wrapper"><span class="dashicons dashicons-calendar-alt"></span></div>
-                    <div class="stat-label">Appointments</div>
-                    <div class="stat-value"><?php echo esc_html($stats['appts']); ?></div>
+                    <div class="stat-content">
+                        <div class="stat-label">Appointments</div>
+                        <div class="stat-value"><?php echo esc_html($stats['appts']); ?></div>
+                    </div>
                 </div>
                 <div class="studiofy-stat-card">
                     <div class="stat-icon-wrapper"><span class="dashicons dashicons-media-spreadsheet"></span></div>
-                    <div class="stat-label">Pending Invoices</div>
-                    <div class="stat-value"><?php echo esc_html($stats['invoices']); ?></div>
+                    <div class="stat-content">
+                        <div class="stat-label">Pending Invoices</div>
+                        <div class="stat-value"><?php echo esc_html($stats['invoices']); ?></div>
+                    </div>
                 </div>
             </div>
 
@@ -65,10 +73,9 @@ class DashboardController {
                 <div class="postbox">
                     <h2 class="hndle">Quick Actions</h2>
                     <div class="inside action-buttons">
-                        <button class="button button-primary" onclick="location.href='?page=studiofy-customers'">+ New Customer</button>
-                        <button class="button" onclick="location.href='?page=studiofy-projects'">+ New Project</button>
+                        <button class="button button-primary" onclick="location.href='?page=studiofy-customers&action=new'">+ New Customer</button>
+                        <button class="button" onclick="location.href='?page=studiofy-projects&action=new'">+ New Project</button>
                         <button class="button" onclick="location.href='?page=studiofy-invoices&action=create'">+ New Invoice</button>
-                        <button class="button" onclick="location.href='?page=studiofy-contracts&action=create'">+ New Contract</button>
                     </div>
                 </div>
             </div>
