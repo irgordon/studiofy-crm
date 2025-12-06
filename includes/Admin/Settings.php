@@ -2,7 +2,7 @@
 /**
  * Settings Controller
  * @package Studiofy\Admin
- * @version 2.2.14
+ * @version 2.2.17
  */
 
 declare(strict_types=1);
@@ -58,19 +58,24 @@ class Settings {
 
         add_settings_section('studiofy_social_section', 'Social Media', [$this, 'render_social_table'], 'studiofy-settings');
         
-        add_settings_section('studiofy_demo_section', 'Demo Data Import', [$this, 'render_demo_section'], 'studiofy-settings');
+        // NOTE: Demo Data section NOT added here to avoid automatic rendering inside the main form.
     }
 
     public function render_page(): void {
         echo '<div class="wrap"><h1>Settings</h1>';
+        
+        // 1. Main Settings Form (Target: options.php)
         echo '<form method="post" action="options.php">';
         settings_fields($this->optionGroup);
         do_settings_sections('studiofy-settings');
         submit_button('Save Settings');
         echo '</form>';
+
+        // 2. Demo Data Section (Separate, manual render)
         echo '<hr>';
         echo '<h2>Demo Data Import</h2>';
         $this->render_demo_section();
+        
         echo '</div>';
     }
 
@@ -79,7 +84,6 @@ class Settings {
         $val = $options[$args['key']] ?? '';
         $id = 'studiofy_' . $args['key'];
         
-        // A11y: Explicit Label + Title
         echo '<label for="' . esc_attr($id) . '" class="screen-reader-text">' . esc_html($args['label']) . '</label>';
         echo '<input type="text" id="' . esc_attr($id) . '" name="studiofy_branding[' . esc_attr($args['key']) . ']" value="' . esc_attr($val) . '" class="regular-text" title="' . esc_attr($args['label']) . '" placeholder="' . esc_attr($args['label']) . '">';
         
@@ -90,8 +94,6 @@ class Settings {
     public function render_env_field(): void {
          $options = get_option('studiofy_branding');
          $env = $options['square_env'] ?? 'sandbox';
-         
-         // A11y: Explicit Label
          echo '<label for="studiofy_square_env" class="screen-reader-text">Select Environment</label>';
          echo '<select id="studiofy_square_env" name="studiofy_branding[square_env]" title="Select Square Environment"><option value="sandbox" '.selected($env,'sandbox',false).'>Sandbox</option><option value="production" '.selected($env,'production',false).'>Production</option></select>';
          echo '<p class="description" style="color: #2271b1; margin-top: 5px;">Current set value: <strong>' . esc_html(ucfirst($env)) . '</strong></p>';
