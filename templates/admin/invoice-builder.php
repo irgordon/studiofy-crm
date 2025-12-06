@@ -1,6 +1,6 @@
 <div class="wrap">
     <h1>New Invoice</h1>
-    <form method="post" action="<?php echo admin_url('admin_post.php'); ?>">
+    <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
         <input type="hidden" name="action" value="studiofy_save_invoice">
         <?php wp_nonce_field('save_invoice', 'studiofy_nonce'); ?>
 
