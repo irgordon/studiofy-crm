@@ -5,20 +5,16 @@
  */
 jQuery(document).ready(function($) {
     let currentGalleryId = 0;
-    const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB Chunk Size
+    const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB
 
-    // Folder Click
     $('.folder-item').click(function(e) {
         e.stopPropagation();
         $('.folder-item').removeClass('active');
         $(this).addClass('active');
-        
         currentGalleryId = $(this).data('id');
         const hasPage = $(this).data('has-page');
-        
         $('#current-folder-label').text($(this).text().trim());
         $('#btn-upload-media').prop('disabled', false);
-        
         if(hasPage === 'true') {
              $('#btn-create-page').prop('disabled', true).text('Page Exists');
         } else {
@@ -27,7 +23,6 @@ jQuery(document).ready(function($) {
         loadFiles(currentGalleryId);
     });
 
-    // Create Page
     $('#btn-create-page').click(function(e) {
         e.preventDefault();
         const btn = $(this);
@@ -42,7 +37,6 @@ jQuery(document).ready(function($) {
         });
     });
 
-    // Load Files
     function loadFiles(id) {
         $('#file-grid').html('<p style="padding:20px;">Loading...</p>');
         wp.apiFetch({ path: '/studiofy/v1/galleries/' + id + '/files' }).then(renderGrid);
@@ -65,7 +59,7 @@ jQuery(document).ready(function($) {
                 ${thumb ? `<img src="${thumb}" class="file-preview">` : '<div style="height:100%; display:flex; align-items:center; justify-content:center; background:#eee;">RAW</div>'}
                 <button class="file-trash-overlay"><span class="dashicons dashicons-trash"></span></button>
             `;
-            // Add click events... (Truncated for brevity, logic same as before)
+            // Add click events... (Standard event listeners here)
             frag.appendChild(item);
         });
         grid.appendChild(frag);
@@ -85,7 +79,7 @@ jQuery(document).ready(function($) {
         }
 
         $('#modal-upload-progress').addClass('studiofy-hidden');
-        $('#file-input').val(''); // Reset
+        $('#file-input').val(''); 
         loadFiles(currentGalleryId);
     });
 
@@ -100,7 +94,7 @@ jQuery(document).ready(function($) {
 
             const formData = new FormData();
             formData.append('action', 'studiofy_gallery_upload_chunk');
-            formData.append('nonce', studiofyGallerySettings.nonce); // Note: Check nonce name in controller
+            formData.append('nonce', studiofyGallerySettings.nonce);
             formData.append('gallery_id', currentGalleryId);
             formData.append('file_name', file.name);
             formData.append('chunk_index', chunkIdx);
@@ -115,7 +109,6 @@ jQuery(document).ready(function($) {
                 contentType: false,
                 success: function(res) {
                     if (!res.success) throw new Error(res.data);
-                    // Update Progress Bar
                     const overallPercent = ((chunkIdx + 1) / totalChunks) * 100;
                     $('#studiofy-progress-bar').css('width', overallPercent + '%');
                 }
