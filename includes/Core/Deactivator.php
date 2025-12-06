@@ -2,7 +2,7 @@
 /**
  * Deactivator
  * @package Studiofy\Core
- * @version 2.2.16
+ * @version 2.2.17
  */
 
 declare(strict_types=1);
@@ -31,14 +31,6 @@ class Deactivator {
         delete_option('studiofy_do_activation_redirect');
         delete_option('studiofy_demo_data_ids');
         $wpdb->query("DELETE FROM $wpdb->options WHERE option_name LIKE '_transient_studiofy_%'");
-
-        // 4. Note: Tables are NOT dropped on Deactivation (WordPress Standard), 
-        // only on Uninstall (uninstall.php). Deactivation should preserve data if re-activated.
-        // If the requirement "Upon Deactivating... delete" is strict, uncomment below:
-        /*
-        $tables = ['studiofy_customers','studiofy_projects','studiofy_milestones','studiofy_tasks','studiofy_contracts','studiofy_invoices','studiofy_gallery_selections','studiofy_bookings','studiofy_galleries','studiofy_gallery_files'];
-        foreach ($tables as $table) $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}$table");
-        */
 
         flush_rewrite_rules();
     }
