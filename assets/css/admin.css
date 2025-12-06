@@ -5,11 +5,54 @@
  */
 
 /* =========================================
-   1. Dashboard (Fixed Grid)
+   1. General Utilities
+   ========================================= */
+.studiofy-toolbar {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.studiofy-form-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 15px;
+}
+
+.studiofy-col {
+    flex: 1;
+}
+
+.studiofy-col label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.studiofy-form-actions {
+    margin-top: 20px;
+    text-align: right;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: #646970;
+}
+
+.close-modal:hover {
+    color: #d63638;
+}
+
+/* =========================================
+   2. Dashboard Layout
    ========================================= */
 .studiofy-dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); /* Auto-responsive */
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 20px;
     margin-bottom: 20px;
     width: 100%;
@@ -26,167 +69,74 @@
     justify-content: center;
     text-align: center;
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    min-height: 140px; /* Ensure visual consistency */
+    min-height: 140px;
 }
 
-.stat-icon-wrapper { 
-    margin-bottom: 15px; 
+.stat-icon-wrapper {
+    margin-bottom: 15px;
     background: #f0f6fc;
     padding: 10px;
     border-radius: 50%;
 }
 
-.stat-icon-wrapper .dashicons { 
-    font-size: 32px; 
-    width: 32px; 
-    height: 32px; 
-    color: #2271b1; 
+.stat-icon-wrapper .dashicons {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+    color: #2271b1;
     display: block;
 }
 
-.stat-label { 
-    font-size: 13px; 
-    color: #646970; 
-    text-transform: uppercase; 
-    font-weight: 600; 
+.stat-label {
+    font-size: 13px;
+    color: #646970;
+    text-transform: uppercase;
+    font-weight: 600;
     letter-spacing: 0.5px;
 }
 
-.stat-value { 
-    font-size: 32px; 
-    font-weight: 700; 
-    color: #1d2327; 
-    margin-top: 5px; 
+.stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1d2327;
+    margin-top: 5px;
     line-height: 1;
 }
 
-/* Panels */
 .studiofy-dashboard-panels {
     display: flex;
     gap: 20px;
     flex-wrap: wrap;
 }
+
 .studiofy-dashboard-panels .postbox {
     flex: 1;
     min-width: 300px;
 }
 
 /* =========================================
-   2. Calendar / Appointments (Fixed Grid)
+   3. Modal Window (Centered)
    ========================================= */
-.studiofy-calendar-view { 
-    background: #fff; 
-    border: 1px solid #c3c4c7; 
-    padding: 0; 
-    margin-top: 20px;
-}
-
-.calendar-header { 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    padding: 15px; 
-    background: #f0f0f1; 
-    border-bottom: 1px solid #c3c4c7; 
-}
-
-/* Force Grid Structure */
-.studiofy-cal-grid {
-    display: grid !important; 
-    grid-template-columns: repeat(7, 1fr) !important; 
-    background: #c3c4c7; /* Border lines color */
-    gap: 1px; 
-    border-bottom: 1px solid #c3c4c7;
-    width: 100%;
-}
-
-.cal-head { 
-    background: #f6f7f7; 
-    font-weight: 600; 
-    text-align: center; 
-    padding: 10px; 
-    font-size: 13px;
-    color: #50575e;
-}
-
-.cal-day { 
-    background: #fff; 
-    min-height: 120px; 
-    padding: 5px; 
-    position: relative; 
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.cal-day .day-num { 
-    font-weight: 600; 
-    color: #646970; 
-    margin-bottom: 5px; 
-    display: block; 
-    text-align: right;
-    padding-right: 5px;
-}
-
-.cal-day.empty { background: #fcfcfc; }
-
-/* Events in Calendar */
-.calendar-event { 
-    background: #2271b1; 
-    color: #fff; 
-    padding: 4px 6px; 
-    font-size: 11px; 
-    border-radius: 3px; 
-    cursor: pointer; 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: center; 
-    overflow: hidden;
-}
-
-.calendar-event span {
-    white-space: nowrap; 
-    overflow: hidden; 
-    text-overflow: ellipsis;
-}
-
-.delete-event { 
-    color: #fff; 
-    font-weight: bold; 
-    margin-left: 5px; 
-    text-decoration: none; 
-    padding: 0 4px;
-}
-.delete-event:hover { 
-    background: rgba(0,0,0,0.2); 
-    border-radius: 2px;
-}
-
-/* =========================================
-   3. Modal (Centered)
-   ========================================= */
-.studiofy-modal-overlay { 
-    position: fixed; 
-    top: 0; 
-    left: 0; 
-    width: 100vw; 
-    height: 100vh; 
-    background: rgba(0,0,0,0.7); 
-    z-index: 999999; 
-    display: flex;
+.studiofy-modal-overlay {
+    position: fixed;
+    inset: 0; /* top/left/right/bottom: 0 */
+    background: rgba(0,0,0,0.7);
+    z-index: 100000;
+    display: grid;
+    place-items: center;
     justify-content: center;
-    align-items: center;
+    align-content: center;
 }
 
-.studiofy-modal { 
-    background: #fff; 
-    width: 600px; 
-    max-width: 90vw; 
-    max-height: 90vh; 
-    overflow-y: auto; 
-    box-shadow: 0 15px 30px rgba(0,0,0,0.3); 
+.studiofy-modal {
+    background: #fff;
+    width: 600px;
+    max-width: 90vw;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
     border-radius: 4px;
-    position: relative; /* Not absolute */
+    position: relative;
     animation: studiofy-fade-in 0.2s ease-out;
 }
 
@@ -195,44 +145,182 @@
     to { opacity: 1; transform: scale(1); }
 }
 
-.studiofy-modal-header { padding: 15px 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; background: #f6f7f7; }
-.studiofy-modal-body { padding: 20px; }
-.studiofy-hidden { display: none !important; }
+.studiofy-modal-header {
+    padding: 15px 20px;
+    border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f6f7f7;
+}
 
-/* General Utils */
-.studiofy-toolbar { margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-.studiofy-form-row { display: flex; gap: 20px; margin-bottom: 15px; }
-.studiofy-col { flex: 1; }
-.studiofy-col label { display: block; font-weight: 600; margin-bottom: 5px; }
-.studiofy-form-actions { margin-top: 20px; text-align: right; }
-.close-modal { background: none; border: none; font-size: 20px; cursor: pointer; color: #666; }
-.close-modal:hover { color: #d63638; }
+.studiofy-modal-body {
+    padding: 20px;
+}
 
-/* Empty States */
-.studiofy-empty-card { text-align: center; padding: 60px 20px; background: #1d2327; border-radius: 8px; margin-top: 20px; color: #fff; border: 1px solid #333; }
-.studiofy-empty-card .empty-icon { font-size: 64px; width: 64px; height: 64px; color: #646970; margin-bottom: 20px; background: #2c3338; padding: 20px; border-radius: 50%; display:inline-block; }
-.studiofy-empty-card h2 { margin-top: 0; font-size: 24px; color: #fff; font-weight: 600; }
-.studiofy-empty-card p { color: #a7aaad; font-size: 16px; margin-bottom: 30px; max-width: 500px; margin: 0 auto 30px; }
+.studiofy-hidden {
+    display: none !important;
+}
 
-/* Badges */
-.studiofy-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; color: #fff; text-transform:uppercase; }
-.studiofy-badge.lead { background: #2271b1; }
-.studiofy-badge.active { background: #46b450; }
-.studiofy-badge.inactive { background: #999; }
-.studiofy-badge.draft { background: #999; }
-.studiofy-badge.sent { background: #e3a300; color:#000; }
-.studiofy-badge.paid { background: #46b450; }
-.studiofy-badge.scheduled { background: #2271b1; }
-.studiofy-badge.completed { background: #46b450; }
-.studiofy-badge.cancelled { background: #d63638; }
+/* =========================================
+   4. Calendar / Appointments
+   ========================================= */
+.studiofy-calendar-view {
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    padding: 0;
+    margin-top: 20px;
+}
 
+.calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #f0f0f1;
+    border-bottom: 1px solid #c3c4c7;
+}
 
-/* Kanban */
+.studiofy-cal-grid {
+    display: grid !important;
+    grid-template-columns: repeat(7, 1fr) !important;
+    background: #c3c4c7; /* Border lines color */
+    gap: 1px;
+    border-bottom: 1px solid #c3c4c7;
+    width: 100%;
+}
+
+.cal-head {
+    background: #f6f7f7;
+    font-weight: 600;
+    text-align: center;
+    padding: 10px;
+    font-size: 13px;
+    color: #50575e;
+}
+
+.cal-day {
+    background: #fff;
+    min-height: 120px;
+    padding: 5px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.cal-day .day-num {
+    font-weight: 600;
+    color: #646970;
+    margin-bottom: 5px;
+    display: block;
+    text-align: right;
+    padding-right: 5px;
+}
+
+.cal-day.empty {
+    background: #fcfcfc;
+}
+
+.calendar-event {
+    background: #2271b1;
+    color: #fff;
+    padding: 4px 6px;
+    font-size: 11px;
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    overflow: hidden;
+}
+
+.calendar-event span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.calendar-event small {
+    opacity: 0.8;
+    margin-right: 4px;
+}
+
+.delete-event {
+    color: #fff;
+    font-weight: bold;
+    margin-left: 5px;
+    text-decoration: none;
+    padding: 0 4px;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.delete-event:hover {
+    background: rgba(0,0,0,0.2);
+    border-radius: 2px;
+}
+
+/* =========================================
+   5. Empty States
+   ========================================= */
+.studiofy-empty-card {
+    text-align: center;
+    padding: 80px 20px;
+    background: #1d2327; /* Dark Background per screenshot */
+    border-radius: 8px;
+    margin-top: 20px;
+    color: #fff;
+    border: 1px solid #333;
+}
+
+.studiofy-empty-card .empty-icon {
+    font-size: 64px;
+    width: 64px;
+    height: 64px;
+    color: #646970;
+    margin-bottom: 20px;
+    background: #2c3338;
+    padding: 20px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.studiofy-empty-card h2 {
+    margin-top: 0;
+    font-size: 24px;
+    color: #fff;
+    font-weight: 600;
+}
+
+.studiofy-empty-card p {
+    color: #a7aaad;
+    font-size: 16px;
+    margin-bottom: 30px;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Legacy Light Empty State */
+.studiofy-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: #fff;
+    border: 1px dashed #c3c4c7;
+    border-radius: 4px;
+    margin-top: 20px;
+}
+
+/* =========================================
+   6. Kanban Board
+   ========================================= */
 .studiofy-kanban-board {
     display: flex;
     gap: 20px;
     overflow-x: auto;
     padding-bottom: 20px;
+    margin-bottom: 20px;
 }
 
 .studiofy-column {
@@ -251,6 +339,12 @@
     text-transform: uppercase;
     color: #50575e;
     text-align: center;
+    border-bottom: 1px solid #dcdcde;
+    padding-bottom: 10px;
+}
+
+.studiofy-card-container {
+    min-height: 50px;
 }
 
 .studiofy-card {
@@ -261,8 +355,62 @@
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     border-radius: 4px;
     border-left: 4px solid #2271b1;
+    cursor: grab;
+    transition: transform 0.2s;
 }
 
-.studiofy-card-header { font-weight: 600; margin-bottom: 5px; }
-.studiofy-card-body p { margin: 0; color: #646970; font-size: 13px; }
-.studiofy-card-actions { margin-top: 10px; text-align: right; }
+.studiofy-card:active {
+    cursor: grabbing;
+}
+
+.studiofy-card-header {
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #1d2327;
+}
+
+.studiofy-card-body p {
+    margin: 0;
+    color: #646970;
+    font-size: 13px;
+}
+
+.studiofy-card-actions {
+    margin-top: 10px;
+    text-align: right;
+    border-top: 1px solid #f0f0f1;
+    padding-top: 8px;
+}
+
+/* =========================================
+   7. Badges & Tables
+   ========================================= */
+.wp-list-table th { font-weight: 600; }
+.wp-list-table .column-title { width: 30%; }
+.wp-list-table .column-date { width: 15%; }
+
+.studiofy-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    text-transform: uppercase;
+}
+
+/* Status Colors */
+.studiofy-badge.lead { background: #2271b1; }
+.studiofy-badge.active { background: #46b450; }
+.studiofy-badge.inactive { background: #999; }
+.studiofy-badge.draft { background: #999; }
+.studiofy-badge.sent { background: #e3a300; color:#000; }
+.studiofy-badge.paid { background: #46b450; }
+.studiofy-badge.scheduled { background: #2271b1; }
+.studiofy-badge.completed { background: #46b450; }
+.studiofy-badge.cancelled { background: #d63638; }
+.studiofy-badge.todo { background: #999; }
+.studiofy-badge.in_progress { background: #2271b1; }
+.studiofy-badge.future { background: #e3a300; color:#000; }
+.studiofy-badge.unpaid { background: #d63638; }
+.studiofy-badge.partial { background: #e3a300; color:#000; }
