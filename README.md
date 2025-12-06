@@ -1,71 +1,79 @@
 # Studiofy CRM 📸
 ### The Ultimate Business Suite for Professional Photographers
 
-![Version](https://img.shields.io/badge/Version-2.0.4-blue.svg) ![PHP](https://img.shields.io/badge/PHP-8.1%2B-purple.svg) ![Elementor](https://img.shields.io/badge/Elementor-Ready-E93056.svg)
+![Version](https://img.shields.io/badge/Version-2.2.1-blue.svg) ![PHP](https://img.shields.io/badge/PHP-8.1%2B-purple.svg) ![Elementor](https://img.shields.io/badge/Elementor-Required-E93056.svg)
 
 ---
 
-## 🚀 Elevate Your Photography Business
-**Stop juggling a dozen different apps.** Studiofy CRM is the all-in-one powerhouse designed to streamline your workflow, impress your clients, and help you get paid faster.
+## 🚀 Overview
+**Studiofy CRM** is a high-performance, privacy-focused business operating system designed specifically for modern photographers. It transforms your WordPress dashboard into a command center for managing Clients, Projects, Invoices, and Proofing Galleries.
 
-Built specifically for the modern, busy photographer, Studiofy transforms your WordPress dashboard into a high-performance command center. From the first lead to the final gallery delivery, manage every aspect of your studio without leaving your website.
+**New in v2.2.1:** The Gallery module has been re-engineered for **High-Speed Performance**, utilizing DOM fragmentation, lazy loading, and transient caching to ensure your client proofing pages load instantly, even with hundreds of high-res images.
 
 ---
 
-## 🎨 No Code? No Problem. Built for Elementor.
-**Design stunning Client Portals and Booking Pages without writing a single line of HTML or CSS.**
+## 🎨 Built for Elementor
+Studiofy integrates natively with **Elementor**, allowing you to build stunning Client Portals without writing code.
 
-Studiofy CRM integrates natively with **Elementor**, the world's leading visual website builder. We provide custom, drag-and-drop widgets that connect directly to your CRM data.
-
-* **✨ Drag-and-Drop Lead Forms:** Create beautiful inquiry forms that automatically populate your Client Database.
-* **📅 Visual Scheduler:** Drop a booking calendar onto any page. Clients pick a slot, you get the appointment.
-* **🖼️ Stunning Proofing Galleries:** Showcase your work in responsive grids. Clients can select their favorites ("hearts") directly on your site.
-
-**Your website should work as hard as you do.** With Studiofy + Elementor, you have complete design freedom to match your brand's aesthetic.
+* **✨ Lead Forms:** Drag-and-drop inquiry forms that auto-populate your CRM database.
+* **📅 Visual Scheduler:** Frontend booking calendar with availability checks.
+* **🖼️ High-Speed Galleries:** Secure, watermarked proofing grids where clients can "heart" favorites.
 
 ---
 
 ## 🔥 Key Features
 
-### 1. 📇 Intelligent Client Management
-Keep track of every lead, active client, and past customer in one secure, searchable database. Store contact details, shoot notes, and project history with **military-grade encryption** for sensitive data.
+### 1. 📇 Intelligent Customer Management
+* **Centralized Database:** Track leads and active clients.
+* **Encryption:** AES-256 encryption for sensitive PII (Phone/Address).
+* **Quick Actions:** Clone, Edit, and Manage clients via a streamlined UI.
 
-### 2. 📋 Kanban Project Workflow
-Visualize your workload like never before. Drag and drop projects from **"To Do"** to **"In Progress"** to **"Done."** Manage milestones and tasks so you never miss a deadline.
+### 2. ⚡ High-Performance Galleries
+* **Windows-Explorer Style UI:** Manage folders and files with a split-pane interface.
+* **RAW Support:** Upload RAW files for storage; auto-generate previews for JPG/PNG.
+* **Client Proofing:** Create password-protected pages where clients select images.
+* **Zero-Lag:** Optimized DOM manipulation and CSS content-visibility for large galleries.
 
 ### 3. 💸 Smart Invoicing & Payments
-Get paid on time, every time. Create professional invoices with line items and tax calculations.
-* **Square API Integration:** Seamlessly collect credit card payments.
-* **Automated Tracking:** See instantly who has paid and who is pending.
+* **Square API Integration:** Collect payments directly on your site.
+* **Dynamic Line Items:** Add services, products, and calculate tax percentages on the fly.
+* **Status Tracking:** Draft, Sent, Paid statuses with iCal export for due dates.
 
-### 4. ✍️ Digital Contracts & eSignatures
-Ditch the paper and the third-party subscription fees. Send legally binding contracts directly from your dashboard. Clients can sign digitally on any device (mobile, tablet, or desktop).
+### 4. ✍️ Digital Contracts
+* **eSignatures:** Collect legally binding signatures from clients.
+* **Templates:** Pre-filled fields for Event Date, Venue, and Fees.
 
-### 5. 🗓️ Appointment Scheduling
-Eliminate the back-and-forth emails. Set your availability and let clients book sessions in real-time. Syncs with iCal to keep your life organized.
+### 5. 📋 Kanban Project Workflow
+* **Visual Board:** Drag and drop projects between "To Do", "In Progress", and "Future".
+* **Billing Status:** Automatically tracks if a project is Unbilled, Partial, or Paid.
 
 ---
 
 ## 🛠️ Installation
 
-1.  **Download:** Get the `studiofy-crm.zip` file.
-2.  **Upload:** Go to your WordPress Dashboard > Plugins > Add New > Upload Plugin.
-3.  **Activate:** Click "Activate".
-4.  **Setup:** Navigate to **Studiofy CRM > Settings** to configure your branding, logo, and Square API keys.
-5.  **Design:** Open any page with **Elementor**, search for "Studiofy," and start dragging widgets!
+1.  **Upload:** Upload the `studiofy-crm` folder to `/wp-content/plugins/`.
+2.  **Activate:** Activate via the WordPress Plugins menu.
+3.  **Dependency:** Ensure **Elementor** is installed (the plugin will prompt you if missing).
+4.  **Setup:** Go to **Studiofy CRM > Settings** to configure branding and API keys.
 
 ---
 
-## ⚙️ Requirements
+## ⚙️ Recent Changelog
 
-* **WordPress:** 6.6 or higher
-* **PHP:** 8.1 or higher
-* **Elementor:** Required for Frontend Widgets (Free or Pro)
+### v2.2.1 (Performance Update)
+* **Speed:** Implemented `DocumentFragment` batching for Gallery grid rendering (eliminated reflow/repaint lag).
+* **CSS:** Added `content-visibility: auto` for browser rendering optimization.
+* **Caching:** Added Transient caching for Gallery Shortcode output (1-hour cache).
+* **Lazy Load:** Enforced `loading="lazy"` and `decoding="async"` on frontend images.
 
----
+### v2.2.0
+* **UI:** Updated Empty States for Projects, Contracts, and Invoices to match modern UI.
+* **Fix:** Resolved JS syntax errors in Gallery Admin.
 
-## 🔒 Privacy & Security By Design
-Your client's trust is paramount. Studiofy CRM uses AES-256 encryption to secure Personal Identifiable Information (PII) at rest in your database. We prioritize security so you can prioritize your art.
+### v2.1.x
+* **Features:** Added Private Gallery workflow (Auto-page creation + Password protection).
+* **UI:** Reverted Admin Theme to standard WordPress colors for better consistency.
+* **Fix:** Corrected `dbDelta` schema issues for `wp_page_id`.
 
 ---
 
