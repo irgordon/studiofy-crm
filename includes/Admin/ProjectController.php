@@ -2,7 +2,7 @@
 /**
  * Project Controller
  * @package Studiofy\Admin
- * @version 2.2.9
+ * @version 2.2.14
  */
 
 declare(strict_types=1);
@@ -30,11 +30,7 @@ class ProjectController {
         }
     }
 
-    /**
-     * Renders both Kanban and List View
-     */
     public function render_dashboard(): void {
-        // Enqueue Assets
         wp_enqueue_script('jquery-ui-sortable');
         wp_enqueue_script('studiofy-kanban', STUDIOFY_URL . 'assets/js/kanban.js', ['jquery', 'jquery-ui-sortable', 'wp-api-fetch'], studiofy_get_asset_version('assets/js/kanban.js'), true);
         wp_enqueue_script('studiofy-modal-js', STUDIOFY_URL . 'assets/js/project-modal.js', ['jquery', 'wp-api-fetch'], studiofy_get_asset_version('assets/js/project-modal.js'), true);
@@ -63,21 +59,10 @@ class ProjectController {
                     <a href="?page=studiofy-projects&action=new" class="button button-primary button-large">Create Project</a>
                 </div>
             <?php else: ?>
-                
-                <h2 class="nav-tab-wrapper">
-                    <span class="nav-tab nav-tab-active">Visual Board</span>
-                </h2>
-                <div style="margin-top: 20px;">
-                    <?php $this->render_kanban_html(); ?>
-                </div>
-
-                <h2 class="nav-tab-wrapper" style="margin-top: 40px;">
-                    <span class="nav-tab nav-tab-active">Detailed List</span>
-                </h2>
-                <div style="margin-top: 20px;">
-                    <?php $this->render_list_html(); ?>
-                </div>
-
+                <h2 class="nav-tab-wrapper"><span class="nav-tab nav-tab-active">Visual Board</span></h2>
+                <div style="margin-top: 20px;"><?php $this->render_kanban_html(); ?></div>
+                <h2 class="nav-tab-wrapper" style="margin-top: 40px;"><span class="nav-tab nav-tab-active">Detailed List</span></h2>
+                <div style="margin-top: 20px;"><?php $this->render_list_html(); ?></div>
             <?php endif; ?>
         </div>
         <?php
@@ -112,37 +97,28 @@ class ProjectController {
 
     private function render_list_html(): void {
         global $wpdb;
-        
         $orderby = $_GET['orderby'] ?? 'id';
         $order = strtoupper($_GET['order'] ?? 'DESC');
-        
-        // Query Projects with Customer Name and Invoice Status
-        $sql = "SELECT p.*, c.first_name, c.last_name,
-                (SELECT status FROM {$wpdb->prefix}studiofy_invoices WHERE project_id = p.id LIMIT 1) as payment_status
-                FROM {$wpdb->prefix}studiofy_projects p
-                LEFT JOIN {$wpdb->prefix}studiofy_customers c ON p.customer_id = c.id
-                ORDER BY p.$orderby $order";
-                
+        $sql = "SELECT p.*, c.first_name, c.last_name, (SELECT status FROM {$wpdb->prefix}studiofy_invoices WHERE project_id = p.id LIMIT 1) as payment_status FROM {$wpdb->prefix}studiofy_projects p LEFT JOIN {$wpdb->prefix}studiofy_customers c ON p.customer_id = c.id ORDER BY p.$orderby $order";
         $items = $wpdb->get_results($sql);
         ?>
         <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
             <input type="hidden" name="action" value="studiofy_bulk_project">
             <?php wp_nonce_field('bulk_project', 'studiofy_nonce'); ?>
-
             <div class="tablenav top">
                 <div class="alignleft actions bulkactions">
-                    <select name="bulk_action">
+                    <label for="bulk-action-selector-top" class="screen-reader-text">Select bulk action</label>
+                    <select name="bulk_action" id="bulk-action-selector-top">
                         <option value="-1">Bulk Actions</option>
                         <option value="delete">Delete</option>
                     </select>
                     <button type="submit" class="button action">Apply</button>
                 </div>
             </div>
-
             <table class="wp-list-table widefat fixed striped">
                 <thead>
                     <tr>
-                        <td id="cb" class="manage-column column-cb check-column"><input type="checkbox"></td>
+                        <td id="cb" class="manage-column column-cb check-column"><label class="screen-reader-text" for="cb-select-all-1">Select All</label><input id="cb-select-all-1" type="checkbox"></td>
                         <th class="manage-column sortable"><?php echo $this->sort_link('Project ID', 'id'); ?></th>
                         <th class="manage-column sortable"><?php echo $this->sort_link('Project Name', 'title'); ?></th>
                         <th class="manage-column">Customer Name</th>
@@ -155,21 +131,17 @@ class ProjectController {
                     <?php foreach ($items as $item): 
                         $edit_url = "?page=studiofy-projects&action=edit&id={$item->id}";
                         $del_url = wp_nonce_url(admin_url('admin-post.php?action=studiofy_delete_project&id='.$item->id), 'delete_project_'.$item->id);
-                        
                         $payment_label = $item->payment_status ? $item->payment_status : 'Unpaid';
                         $customer_name = $item->first_name ? esc_html($item->first_name . ' ' . $item->last_name) : 'Unknown';
                     ?>
                         <tr>
-                            <th scope="row" class="check-column"><input type="checkbox" name="ids[]" value="<?php echo $item->id; ?>"></th>
+                            <th scope="row" class="check-column"><label class="screen-reader-text" for="cb-select-<?php echo $item->id; ?>">Select <?php echo esc_html($item->title); ?></label><input id="cb-select-<?php echo $item->id; ?>" type="checkbox" name="ids[]" value="<?php echo $item->id; ?>"></th>
                             <td><?php echo $item->id; ?></td>
                             <td><strong><a href="<?php echo $edit_url; ?>"><?php echo esc_html($item->title); ?></a></strong></td>
                             <td><?php echo $customer_name; ?></td>
                             <td><span class="studiofy-badge <?php echo esc_attr($item->status); ?>"><?php echo esc_html(str_replace('_',' ',$item->status)); ?></span></td>
                             <td><span class="studiofy-badge <?php echo strtolower($payment_label); ?>"><?php echo $payment_label; ?></span></td>
-                            <td>
-                                <a href="<?php echo $edit_url; ?>" class="button button-small">Edit</a>
-                                <a href="<?php echo $del_url; ?>" onclick="return confirm('Delete this project?')" class="button button-small" style="color:#b32d2e;">Delete</a>
-                            </td>
+                            <td><a href="<?php echo $edit_url; ?>" class="button button-small">Edit</a> <a href="<?php echo $del_url; ?>" onclick="return confirm('Delete this project?')" class="button button-small" style="color:#b32d2e;">Delete</a></td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -183,11 +155,7 @@ class ProjectController {
         $table = $wpdb->prefix . 'studiofy_projects';
         $results = $wpdb->get_results("SELECT * FROM $table ORDER BY created_at DESC");
         $sorted = ['todo' => [], 'in_progress' => [], 'future' => []];
-        foreach ($results as $row) {
-            if (isset($sorted[$row->status])) {
-                $sorted[$row->status][] = $row;
-            }
-        }
+        foreach ($results as $row) { if (isset($sorted[$row->status])) $sorted[$row->status][] = $row; }
         return $sorted;
     }
 
@@ -196,7 +164,6 @@ class ProjectController {
         $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
         $data = $id ? $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_projects WHERE id = %d", $id)) : null;
         $customers = $wpdb->get_results("SELECT id, first_name, last_name FROM {$wpdb->prefix}studiofy_customers");
-        
         $tax_status = $data ? $data->tax_status : 'taxed';
 
         ?>
@@ -207,24 +174,24 @@ class ProjectController {
                 <?php wp_nonce_field('save_project', 'studiofy_nonce'); ?>
                 <?php if($data) echo '<input type="hidden" name="id" value="'.$data->id.'">'; ?>
 
-                <table class="form-table">
+                <table class="form-table" role="presentation">
                     <tr>
-                        <th scope="row"><label>Project Title *</label></th>
-                        <td><input type="text" name="title" required value="<?php echo esc_attr($data->title ?? ''); ?>" class="regular-text"></td>
+                        <th scope="row"><label for="project_title">Project Title *</label></th>
+                        <td><input type="text" name="title" id="project_title" required value="<?php echo esc_attr($data->title ?? ''); ?>" class="regular-text" title="Project Title"></td>
                     </tr>
                     <tr>
-                        <th scope="row"><label>Customer *</label></th>
+                        <th scope="row"><label for="project_customer">Customer *</label></th>
                         <td>
-                            <select name="customer_id" required>
+                            <select name="customer_id" id="project_customer" required title="Select Customer">
                                 <option value="">Select Customer</option>
                                 <?php foreach($customers as $c) echo "<option value='{$c->id}' ".selected($data->customer_id ?? 0, $c->id, false).">{$c->first_name} {$c->last_name}</option>"; ?>
                             </select>
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><label>Status</label></th>
+                        <th scope="row"><label for="project_status">Status</label></th>
                         <td>
-                            <select name="status">
+                            <select name="status" id="project_status" title="Project Status">
                                 <option value="todo" <?php selected($data->status ?? '', 'todo'); ?>>To Do</option>
                                 <option value="in_progress" <?php selected($data->status ?? '', 'in_progress'); ?>>In Progress</option>
                                 <option value="future" <?php selected($data->status ?? '', 'future'); ?>>Future</option>
@@ -232,23 +199,24 @@ class ProjectController {
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><label>Budget</label></th>
+                        <th scope="row"><label for="project_budget">Budget</label></th>
                         <td>
-                            <input type="text" name="budget" id="project_budget" class="regular-text" placeholder="$0.00" value="<?php echo esc_attr($data->budget ? '$'.number_format((float)$data->budget, 2) : ''); ?>">
+                            <input type="text" name="budget" id="project_budget" class="regular-text" placeholder="$0.00" value="<?php echo esc_attr($data->budget ? '$'.number_format((float)$data->budget, 2) : ''); ?>" title="Budget Amount">
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><label>Tax Status</label></th>
+                        <th scope="row">Tax Status</th>
                         <td>
                             <fieldset>
-                                <label><input type="radio" name="tax_status" value="taxed" <?php checked($tax_status, 'taxed'); ?>> Taxable Project</label><br>
-                                <label><input type="radio" name="tax_status" value="exempt" <?php checked($tax_status, 'exempt'); ?>> Tax Exempt</label>
+                                <legend class="screen-reader-text"><span>Tax Status</span></legend>
+                                <label for="tax_taxed"><input type="radio" name="tax_status" id="tax_taxed" value="taxed" <?php checked($tax_status, 'taxed'); ?>> Taxable Project</label><br>
+                                <label for="tax_exempt"><input type="radio" name="tax_status" id="tax_exempt" value="exempt" <?php checked($tax_status, 'exempt'); ?>> Tax Exempt</label>
                             </fieldset>
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><label>Notes</label></th>
-                        <td><textarea name="notes" rows="5" class="large-text"><?php echo esc_textarea($data->notes ?? ''); ?></textarea></td>
+                        <th scope="row"><label for="project_notes">Notes</label></th>
+                        <td><textarea name="notes" id="project_notes" rows="5" class="large-text" title="Project Notes"><?php echo esc_textarea($data->notes ?? ''); ?></textarea></td>
                     </tr>
                 </table>
                 
@@ -264,9 +232,7 @@ class ProjectController {
     public function handle_save(): void {
         if (!isset($_POST['studiofy_nonce']) || !wp_verify_nonce($_POST['studiofy_nonce'], 'save_project')) wp_die('Security check failed');
         global $wpdb;
-        
         $budget = isset($_POST['budget']) ? preg_replace('/[^\d.]/', '', $_POST['budget']) : 0;
-        
         $data = [
             'title' => sanitize_text_field($_POST['title']),
             'customer_id' => (int)$_POST['customer_id'],
@@ -275,12 +241,9 @@ class ProjectController {
             'tax_status' => sanitize_text_field($_POST['tax_status']),
             'notes' => sanitize_textarea_field($_POST['notes']),
         ];
-        
         if(!empty($_POST['id'])) $wpdb->update($wpdb->prefix.'studiofy_projects', $data, ['id'=>(int)$_POST['id']]);
         else $wpdb->insert($wpdb->prefix.'studiofy_projects', $data);
-        
-        wp_redirect(admin_url('admin.php?page=studiofy-projects'));
-        exit;
+        wp_redirect(admin_url('admin.php?page=studiofy-projects')); exit;
     }
 
     public function handle_delete(): void {
