@@ -52,7 +52,7 @@ class InvoiceController {
         echo '<hr class="wp-header-end">';
         
         if ($count == 0) {
-            // Updated Empty State to match other modules
+            // Corrected Empty State UI
             echo '<div class="studiofy-empty-card">';
             echo '<div class="empty-icon dashicons dashicons-media-spreadsheet"></div>';
             echo '<h2>No invoices yet</h2>';
@@ -104,17 +104,19 @@ class InvoiceController {
         $projects = $wpdb->get_results("SELECT id, title FROM {$wpdb->prefix}studiofy_projects");
         $inv_num = $inv ? $inv->invoice_number : 'INV-' . strtoupper(uniqid());
         
-        // FIX: Check if line_items is not null/empty before decoding to prevent Fatal Error
+        // FIX: Check if line_items is not empty before decoding
         $line_items = [];
         if ($inv && !empty($inv->line_items)) {
-            $line_items = json_decode($inv->line_items, true);
-            if (!is_array($line_items)) {
-                $line_items = []; // Fallback if decode fails
+            $decoded = json_decode($inv->line_items, true);
+            if (is_array($decoded)) {
+                $line_items = $decoded;
             }
         }
         
         $tax_amount = $inv ? (float)$inv->tax_amount : 0;
         $subtotal = $inv ? (float)$inv->amount - $tax_amount : 0;
+        
+        // Calculate rate based on stored amount for display if needed, or default to 0
         $tax_rate = ($subtotal > 0) ? ($tax_amount / $subtotal) * 100 : 0;
         
         require_once STUDIOFY_PATH . 'templates/admin/invoice-builder.php';
@@ -124,7 +126,7 @@ class InvoiceController {
         check_admin_referer('save_invoice', 'studiofy_nonce');
         global $wpdb;
         
-        // Null Coalescing for safety
+        // FIX: Use Null Coalescing (??) for ALL POST inputs to prevent ltrim(null) warnings
         $items = $_POST['items'] ?? [];
         $subtotal = 0;
         if (is_array($items)) {
