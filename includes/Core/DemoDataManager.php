@@ -3,7 +3,7 @@
  * Demo Data Manager
  * Handles XML File Upload & Import.
  * @package Studiofy\Core
- * @version 2.2.7
+ * @version 2.2.9
  */
 
 declare(strict_types=1);
@@ -79,11 +79,10 @@ class DemoDataManager {
         ];
 
         // 1. Import Customers
-        // Map XML ID attribute to real DB ID
         $customer_map = []; 
         if(isset($xml->customers->customer)) {
             foreach ($xml->customers->customer as $c) {
-                // FIX: Access ID via array syntax for attributes
+                // Access via array syntax for attributes
                 $xml_id = (int)$c['id']; 
 
                 $wpdb->insert($wpdb->prefix . 'studiofy_customers', [
@@ -108,7 +107,6 @@ class DemoDataManager {
         $project_map = [];
         if(isset($xml->projects->project)) {
             foreach ($xml->projects->project as $p) {
-                // FIX: Access via attributes
                 $xml_id = (int)$p['id'];
                 $cust_xml_id = (int)$p['customer_id'];
                 
@@ -188,7 +186,11 @@ class DemoDataManager {
         update_option('studiofy_demo_data_ids', $ids);
     }
 
-    private function delete_demo_data(): void {
+    /**
+     * Deletes Imported Demo Data.
+     * Public visibility so it can be called by Deactivator.
+     */
+    public function delete_demo_data(): void {
         global $wpdb;
         $ids = get_option('studiofy_demo_data_ids');
 
