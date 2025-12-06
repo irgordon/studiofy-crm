@@ -81,18 +81,21 @@ class GalleryController {
 
         if (!empty($_FILES['file_chunk']['tmp_name'])) {
             $in = fopen($_FILES['file_chunk']['tmp_name'], 'rb');
+            
+            // Open temp file in 'append' mode (binary)
             $out = fopen($temp_file, $chunk_idx === 0 ? 'wb' : 'ab'); 
 
             if ($in && $out) {
                 while (!feof($in)) {
-                    fwrite($out, fread($in, 8192)); 
+                    fwrite($out, fread($in, 8192)); // 8KB Buffer
                 }
                 fclose($in);
                 fclose($out);
             } else {
                 wp_send_json_error('Server Write Error');
             }
-            unlink($_FILES['file_chunk']['tmp_name']);
+            
+            unlink($_FILES['file_chunk']['tmp_name']); // Cleanup temp chunk
         }
 
         if ($chunk_idx === ($total_chunks - 1)) {
