@@ -1,7 +1,7 @@
 /**
  * Studiofy Gallery Explorer
  * @package Studiofy
- * @version 2.2.12
+ * @version 2.2.15
  */
 jQuery(document).ready(function($) {
     let currentGalleryId = 0;
@@ -30,13 +30,13 @@ jQuery(document).ready(function($) {
         clearSelection();
     });
 
-    // 2. Create Page Click (FIXED AJAX URL)
+    // 2. Create Page Click
     $('#btn-create-page').click(function(e) {
         e.preventDefault();
         const btn = $(this);
         btn.text('Creating...').prop('disabled', true);
 
-        // Uses localized ajax_url from Menu.php
+        // Uses localized ajax_url
         $.post(studiofyGallerySettings.ajax_url, {
             action: 'studiofy_create_gallery_page',
             id: currentGalleryId,
@@ -81,15 +81,19 @@ jQuery(document).ready(function($) {
             const item = document.createElement('div');
             item.className = 'studiofy-file-item';
             item.dataset.id = f.id;
+            // Accessibility
+            item.setAttribute('role', 'button');
+            item.setAttribute('aria-label', f.file_name);
+            item.setAttribute('tabindex', '0');
 
             const preview = thumb 
-                ? `<img src="${thumb}" class="file-preview" loading="lazy">`
+                ? `<img src="${thumb}" class="file-preview" loading="lazy" alt="${f.file_name}">`
                 : `<div style="height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#eee; color:#555; font-weight:bold;"><span>${f.file_type.toUpperCase()}</span></div>`;
 
             item.innerHTML = `
                 <span class="file-type-overlay">${f.file_type}</span>
                 ${preview}
-                <div class="file-trash-overlay"><span class="dashicons dashicons-trash"></span></div>
+                <button class="file-trash-overlay" aria-label="Delete File"><span class="dashicons dashicons-trash"></span></button>
             `;
             
             item.addEventListener('click', function(e) {
@@ -130,7 +134,7 @@ jQuery(document).ready(function($) {
         $('#meta-dims').text(f.dimensions || 'N/A');
         
         const isImg = ['jpg','jpeg','png','gif'].includes(f.file_type.toLowerCase());
-        $('#meta-preview').html(isImg ? `<img src="${f.file_url}" loading="lazy">` : '');
+        $('#meta-preview').html(isImg ? `<img src="${f.file_url}" loading="lazy" alt="Preview">` : '');
         
         $('#btn-save-meta').off('click').click(function() {
             const btn = $(this);
@@ -198,7 +202,20 @@ jQuery(document).ready(function($) {
     });
 
     $('#file-input').change(function() {
-        if(this.files.length > 0) $('#upload-form').submit();
+        const files = this.files;
+        const max = parseInt(studiofyGallerySettings.max_upload_size);
+        
+        for(let i=0; i<files.length; i++) {
+            if(files[i].size > max) {
+                alert(`File ${files[i].name} is too large.`);
+                $(this).val('');
+                return;
+            }
+        }
+        
+        if(files.length > 0) {
+            $('#upload-form').submit();
+        }
     });
 
     $('#file-grid').click(function(e) {
