@@ -2,14 +2,14 @@
 /**
  * Plugin Name: Studiofy CRM
  * Description: A comprehensive Elementor Addon and CRM for Photographers.
- * Version: 2.2.11
+ * Version: 2.2.14
  * Author: Ian R. Gordon
  * Text Domain: studiofy
  * Requires PHP: 8.1
  * Requires at least: 6.6
  * Elementor tested up to: 3.25.0
  * @package Studiofy
- * @version 2.2.11
+ * @version 2.2.14
  */
 
 declare(strict_types=1);
@@ -20,8 +20,19 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('STUDIOFY_VERSION', '2.2.11');
-define('STUDIOFY_DB_VERSION', '2.13');
+// Security Headers (Fixes X-Powered-By & CSP warnings)
+add_action('send_headers', function() {
+    if (!headers_sent()) {
+        header_remove('X-Powered-By');
+        header('X-Content-Type-Options: nosniff');
+        // Use CSP instead of X-Frame-Options where possible, but keep XFO for compatibility if needed.
+        // header('Content-Security-Policy: frame-ancestors \'self\''); 
+        header('Referrer-Policy: strict-origin-when-cross-origin');
+    }
+});
+
+define('STUDIOFY_VERSION', '2.2.14');
+define('STUDIOFY_DB_VERSION', '2.12');
 define('STUDIOFY_PATH', plugin_dir_path(__FILE__));
 define('STUDIOFY_URL', plugin_dir_url(__FILE__));
 
@@ -29,6 +40,9 @@ if (!defined('STUDIOFY_KEY')) {
     define('STUDIOFY_KEY', 'DEF_CHANGE_THIS_IN_WP_CONFIG_TO_RANDOM_32_BYTES');
 }
 
+/**
+ * Smart Versioning Helper
+ */
 function studiofy_get_asset_version(string $file_path): string {
     if (defined('WP_DEBUG') && WP_DEBUG) {
         $file = STUDIOFY_PATH . $file_path;
@@ -39,6 +53,7 @@ function studiofy_get_asset_version(string $file_path): string {
     return STUDIOFY_VERSION;
 }
 
+// PSR-4 Autoloader
 spl_autoload_register(function (string $class) {
     $prefix = 'Studiofy\\';
     $base_dir = STUDIOFY_PATH . 'includes/';
@@ -56,9 +71,13 @@ spl_autoload_register(function (string $class) {
     }
 });
 
+// Lifecycle Hooks
 register_activation_hook(__FILE__, [Core\Activator::class, 'activate']);
 register_deactivation_hook(__FILE__, [Core\Deactivator::class, 'deactivate']);
 
+/**
+ * Dependency Check for Elementor
+ */
 function studiofy_check_dependencies(): void {
     if (did_action('elementor/loaded')) return;
 
@@ -78,14 +97,6 @@ function studiofy_check_dependencies(): void {
     });
 }
 add_action('plugins_loaded', 'Studiofy\\studiofy_check_dependencies');
-
-// Auto-Update DB Schema if version changes
-function studiofy_update_db_check(): void {
-    if (get_option('studiofy_db_version') != STUDIOFY_DB_VERSION) {
-        \Studiofy\Core\Activator::activate();
-    }
-}
-add_action('plugins_loaded', 'Studiofy\\studiofy_update_db_check');
 
 function run_studiofy(): void {
     if (version_compare(PHP_VERSION, '8.1', '<')) return;
