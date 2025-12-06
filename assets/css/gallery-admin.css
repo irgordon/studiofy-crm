@@ -1,133 +1,40 @@
 /**
- * Studiofy Gallery Admin CSS
+ * Studiofy Gallery CSS
  * @package Studiofy
- * @version 2.1.8
+ * @version 2.1.9
  */
 
-.studiofy-explorer-wrap {
-    height: calc(100vh - 100px);
-    display: flex;
-    flex-direction: column;
-}
+.studiofy-explorer-wrap { height: calc(100vh - 100px); display: flex; flex-direction: column; }
+.studiofy-explorer-container { display: flex; flex: 1; background: #fff; border: 1px solid #c3c4c7; margin-top: 10px; overflow: hidden; }
 
-.studiofy-explorer-container {
-    display: flex;
-    flex: 1;
-    background: #fff;
-    border: 1px solid #c3c4c7;
-    margin-top: 10px;
-    position: relative;
-    overflow: hidden;
-}
-
-/* Sidebar (Folders) */
-.studiofy-explorer-sidebar {
-    width: 250px;
-    background: #f6f7f7;
-    border-right: 1px solid #c3c4c7;
-    overflow-y: auto;
-    padding: 10px;
-}
-
-.studiofy-folder-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-}
-
-.folder-item {
-    padding: 8px 10px;
-    cursor: pointer;
-    border-radius: 4px;
-    color: #1d2327;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
+/* Sidebar */
+.studiofy-explorer-sidebar { width: 250px; background: #f6f7f7; border-right: 1px solid #c3c4c7; overflow-y: auto; padding: 10px; }
+.folder-item { padding: 8px 10px; cursor: pointer; border-radius: 4px; color: #1d2327; display: flex; align-items: center; gap: 8px; }
 .folder-item:hover { background: #e5e5e5; }
 .folder-item.active { background: #2271b1; color: white; }
-.folder-item .dashicons { color: #8c8f94; }
 .folder-item.active .dashicons { color: white; }
 
-/* Main Content (Grid) */
-.studiofy-explorer-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
+/* Grid */
+.studiofy-explorer-content { flex: 1; display: flex; flex-direction: column; }
+.studiofy-toolbar { padding: 10px 20px; border-bottom: 1px solid #c3c4c7; background: #fff; display: flex; align-items: center; }
+.studiofy-file-grid { flex: 1; padding: 20px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px; align-content: start; background: #f0f0f1; }
 
-.studiofy-toolbar {
-    padding: 10px 20px;
-    border-bottom: 1px solid #c3c4c7;
-    background: #fff;
-    display: flex;
-    align-items: center;
-}
+/* Items & Hover Effects */
+.studiofy-file-item { background: #fff; border: 1px solid #dcdcde; border-radius: 4px; overflow: hidden; cursor: pointer; position: relative; aspect-ratio: 1; transition: box-shadow 0.2s; }
+.studiofy-file-item.selected { box-shadow: 0 0 0 3px #2271b1; }
+.file-preview { width: 100%; height: 100%; object-fit: cover; }
 
-.studiofy-file-grid {
-    flex: 1;
-    padding: 20px;
-    overflow-y: auto;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 15px;
-    align-content: start;
-    background: #f0f0f1;
-}
+/* Trash Overlay */
+.file-trash-overlay { position: absolute; top: 5px; right: 5px; background: #d63638; color: white; border-radius: 50%; width: 24px; height: 24px; display: none; align-items: center; justify-content: center; z-index: 10; }
+.studiofy-file-item:hover .file-trash-overlay { display: flex; }
+.file-trash-overlay .dashicons { font-size: 14px; width: 14px; height: 14px; }
 
-/* File Item */
-.studiofy-file-item {
-    background: #fff;
-    border: 1px solid #dcdcde;
-    border-radius: 4px;
-    overflow: hidden;
-    cursor: pointer;
-    position: relative;
-    aspect-ratio: 1;
-}
-
-.studiofy-file-item.selected {
-    box-shadow: 0 0 0 3px #2271b1;
-}
-
-.file-preview {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.file-type-badge {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background: rgba(0,0,0,0.7);
-    color: white;
-    font-size: 10px;
-    padding: 2px 4px;
-    border-radius: 2px;
-    text-transform: uppercase;
-}
-
-/* Meta Sidebar (Right) */
-.studiofy-meta-sidebar {
-    width: 300px;
-    background: #f6f7f7;
-    border-left: 1px solid #c3c4c7;
-    padding: 20px;
-    overflow-y: auto;
-    display: none; /* Hidden by default */
-    position: relative;
-}
-
-.studiofy-meta-sidebar.open { display: block; }
-
-.meta-preview img {
-    width: 100%;
-    height: auto;
-    border: 1px solid #ddd;
-    margin-bottom: 15px;
-}
-
-.meta-info p { margin: 8px 0; font-size: 13px; word-break: break-word; }
-.close-meta { position: absolute; top: 10px; right: 10px; border: none; background: none; font-size: 20px; cursor: pointer; }
+/* Meta Sidebar */
+.studiofy-meta-sidebar { width: 300px; background: #fff; border-left: 1px solid #c3c4c7; padding: 20px; overflow-y: auto; display: block; position: relative; }
+.meta-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+.meta-preview img { width: 100%; height: auto; border: 1px solid #ddd; margin-bottom: 15px; }
+.meta-info p { margin: 8px 0; font-size: 13px; word-break: break-all; }
+.meta-actions { margin-top: 20px; display: flex; gap: 5px; flex-wrap: wrap; }
+.meta-actions button { flex: 1; }
+.studiofy-empty-state-small { text-align: center; color: #888; padding-top: 50px; }
+.studiofy-empty-state-small .dashicons { font-size: 48px; width: 48px; height: 48px; margin-bottom: 10px; }
