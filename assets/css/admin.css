@@ -1,7 +1,7 @@
 /**
  * Studiofy Admin CSS
  * @package Studiofy
- * @version 2.1.7
+ * @version 2.1.8
  */
 
 /* 1. Dashboard Flex Layout (Fixed) */
@@ -75,3 +75,27 @@
 .studiofy-badge.lead { background: #2271b1; }
 .studiofy-badge.active { background: #46b450; }
 .studiofy-badge.draft { background: #999; }
+
+/* Calendar Fixes */
+.studiofy-cal-grid {
+    display: grid; 
+    grid-template-columns: repeat(7, 1fr); 
+    background: #c3c4c7; 
+    gap: 1px; 
+    border: 1px solid #c3c4c7;
+}
+.cal-head { 
+    background: #f6f7f7; 
+    font-weight: 600; 
+    text-align: center; 
+    padding: 10px; 
+}
+.cal-day { 
+    background: #fff; 
+    min-height: 100px; 
+    padding: 10px; 
+    position: relative; 
+}
+.cal-day .day-num { font-weight: bold; color: #666; margin-bottom: 5px; display: block; }
+.cal-day.empty { background: #f9f9f9; }
+.calendar-header { display: flex; justify-content: space-between; align-items: center; padding: 15px; background: #fff; border: 1px solid #c3c4c7; border-bottom: none; }
