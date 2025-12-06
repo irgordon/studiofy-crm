@@ -2,7 +2,7 @@
 /**
  * Contract Controller
  * @package Studiofy\Admin
- * @version 2.1.3
+ * @version 2.2.0
  */
 
 declare(strict_types=1);
@@ -62,7 +62,7 @@ class ContractController {
         echo '</div>';
 
         if ($count == 0 && empty($search)) {
-            echo '<div class="studiofy-empty-state">';
+            echo '<div class="studiofy-empty-card">';
             echo '<div class="empty-icon dashicons dashicons-edit"></div>';
             echo '<h2>No contracts yet</h2>';
             echo '<p>Create your first contract with digital signature capture. Generate professional PDFs and send to clients.</p>';
@@ -93,53 +93,13 @@ class ContractController {
         $contract = ($id > 0) ? $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_contracts WHERE id = %d", $id)) : null;
         $customers = $wpdb->get_results("SELECT id, first_name, last_name FROM {$wpdb->prefix}studiofy_customers ORDER BY last_name ASC");
         $projects = $wpdb->get_results("SELECT id, title FROM {$wpdb->prefix}studiofy_projects ORDER BY created_at DESC");
-        
-        // Base Template based on Wedding Contract Screenshot
-        $base_template = <<<EOT
-<h2 style="text-align: center;">Wedding Photography Contract</h2>
-<p>This Wedding Photography Contract ("Contract") is made effective as of <strong>[Date]</strong> ("Effective Date"), by and between <strong>[Photographer Name]</strong> ("Photographer"), and <strong>[Client Name]</strong> ("Client").</p>
-
-<h3>Events</h3>
-<p>This Contract provides for photography services at the wedding of <strong>[Couple Names]</strong> at <strong>[Venue]</strong> on <strong>[Event Date]</strong>.</p>
-
-<h3>Description of Services</h3>
-<p>The Photographer will provide the following photography services ("Services"):</p>
-<ul style="background:#f0f0f0; padding:10px;">
-<li>Portrait photo services for 5 hours.</li>
-<li>Engagement photos.</li>
-</ul>
-
-<h3>Performance of Services</h3>
-<p>(a) The Photographer agrees to take photographs as per the Client's stated requests.</p>
-<p>(b) The Photographer agrees to use high technical quality.</p>
-<p>(c) The Photographer shall provide <strong>[Deliverables]</strong> within <strong>30 days</strong>.</p>
-
-<h3>Payment</h3>
-<p>The Client agrees to pay the Photographer a total sum of <strong>$[Amount]</strong>.</p>
-<p>Deposit: A non-refundable deposit of <strong>$[Deposit Amount]</strong> is due upon signing.</p>
-
-<h3>Cancellation Policy</h3>
-<p>All deposit fees are non-refundable. A minimum of 72 hours notice is required for cancellation.</p>
-
-<hr>
-<h3>Signatures</h3>
-<p>This Agreement shall be signed by both parties.</p>
-EOT;
-
-        // If new contract, use base template. If editing, use DB content.
-        $content_to_edit = ($contract && !empty($contract->body_content)) ? $contract->body_content : $base_template;
-
         require_once STUDIOFY_PATH . 'templates/admin/contract-builder.php';
     }
 
     private function render_view(int $id): void {
         global $wpdb;
         $contract = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_contracts WHERE id = %d", $id));
-        
-        if (!$contract) {
-            echo '<div class="notice notice-error"><p>Contract not found.</p></div>';
-            return;
-        }
+        if (!$contract) { echo '<div class="notice notice-error"><p>Contract not found.</p></div>'; return; }
         
         wp_enqueue_script('studiofy-signature', STUDIOFY_URL . 'assets/js/signature-pad.js', [], studiofy_get_asset_version('assets/js/signature-pad.js'), true);
         wp_enqueue_style('studiofy-contract-css', STUDIOFY_URL . 'assets/css/contract.css', [], studiofy_get_asset_version('assets/css/contract.css'));
@@ -150,7 +110,6 @@ EOT;
     public function handle_save(): void {
         check_admin_referer('save_contract', 'studiofy_nonce');
         global $wpdb;
-        
         $data = [
             'title' => sanitize_text_field($_POST['title']),
             'customer_id' => (int)$_POST['customer_id'],
@@ -159,31 +118,17 @@ EOT;
             'end_date' => sanitize_text_field($_POST['end_date']),
             'amount' => (float)$_POST['amount'],
             'status' => sanitize_text_field($_POST['status']),
-            'body_content' => wp_kses_post($_POST['body_content']), // Allow HTML
+            'body_content' => wp_kses_post($_POST['body_content']),
         ];
-
-        if (!empty($_POST['contract_id'])) {
-            $wpdb->update($wpdb->prefix . 'studiofy_contracts', $data, ['id' => (int)$_POST['contract_id']]);
-        } else {
-            $wpdb->insert($wpdb->prefix . 'studiofy_contracts', $data);
-        }
-        
-        wp_redirect(admin_url('admin.php?page=studiofy-contracts'));
-        exit;
+        if (!empty($_POST['contract_id'])) $wpdb->update($wpdb->prefix . 'studiofy_contracts', $data, ['id' => (int)$_POST['contract_id']]);
+        else $wpdb->insert($wpdb->prefix . 'studiofy_contracts', $data);
+        wp_redirect(admin_url('admin.php?page=studiofy-contracts')); exit;
     }
 
     public function handle_signature(): void {
         global $wpdb;
         $id = (int) $_POST['contract_id'];
-        
-        $wpdb->update($wpdb->prefix . 'studiofy_contracts', [
-            'signature_data' => $_POST['signature_data'],
-            'signed_name' => sanitize_text_field($_POST['signed_name']),
-            'signed_at' => current_time('mysql'),
-            'status' => 'signed'
-        ], ['id' => $id]);
-        
-        wp_redirect(admin_url('admin.php?page=studiofy-contracts&action=view&id=' . $id));
-        exit;
+        $wpdb->update($wpdb->prefix . 'studiofy_contracts', ['signature_data' => $_POST['signature_data'], 'signed_name' => sanitize_text_field($_POST['signed_name']), 'signed_at' => current_time('mysql'), 'status' => 'signed'], ['id' => $id]);
+        wp_redirect(admin_url('admin.php?page=studiofy-contracts&action=view&id=' . $id)); exit;
     }
 }
