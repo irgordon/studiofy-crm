@@ -13,13 +13,13 @@
                 <div class="studiofy-col"><label>Client *</label>
                     <select name="customer_id" required class="widefat">
                         <option value="">Select client</option>
-                        <?php foreach($customers as $c) echo "<option value='{$c->id}'>{$c->first_name} {$c->last_name}</option>"; ?>
+                        <?php foreach($customers as $c) echo "<option value='{$c->id}' " . selected($contract->customer_id ?? 0, $c->id, false) . ">{$c->first_name} {$c->last_name}</option>"; ?>
                     </select>
                 </div>
                 <div class="studiofy-col"><label>Project (Optional)</label>
                     <select name="project_id" class="widefat">
                         <option value="">Select project</option>
-                        <?php foreach($projects as $p) echo "<option value='{$p->id}'>{$p->title}</option>"; ?>
+                        <?php foreach($projects as $p) echo "<option value='{$p->id}' " . selected($contract->project_id ?? 0, $p->id, false) . ">{$p->title}</option>"; ?>
                     </select>
                 </div>
             </div>
@@ -33,16 +33,25 @@
             <div style="margin-top:10px;">
                 <label>Status</label>
                 <select name="status" class="widefat">
-                    <option value="Draft">Draft</option><option value="Active">Active</option>
+                    <option value="Draft" <?php selected($contract->status ?? '', 'Draft'); ?>>Draft</option>
+                    <option value="Active" <?php selected($contract->status ?? '', 'Active'); ?>>Active</option>
                 </select>
             </div>
         </div>
 
         <div class="studiofy-panel" style="margin-top:20px;">
-            <h3>Contract Terms</h3>
-            <?php wp_editor($contract->body_content ?? '', 'body_content', ['media_buttons' => false, 'textarea_rows' => 15]); ?>
+            <h3>Contract Content & Terms</h3>
+            <p>Use the editor below to customize the legal text. You can add or remove clauses.</p>
+            <?php 
+            // Use the variable passed from controller
+            wp_editor($content_to_edit, 'body_content', [
+                'media_buttons' => false, 
+                'textarea_rows' => 25,
+                'teeny' => false
+            ]); 
+            ?>
         </div>
 
-        <?php submit_button('Create Contract'); ?>
+        <?php submit_button('Save Contract'); ?>
     </form>
 </div>
