@@ -2,7 +2,7 @@
 /**
  * Settings Controller
  * @package Studiofy\Admin
- * @version 2.2.13
+ * @version 2.2.14
  */
 
 declare(strict_types=1);
@@ -58,7 +58,6 @@ class Settings {
 
         add_settings_section('studiofy_social_section', 'Social Media', [$this, 'render_social_table'], 'studiofy-settings');
         
-        // Demo Data Section
         add_settings_section('studiofy_demo_section', 'Demo Data Import', [$this, 'render_demo_section'], 'studiofy-settings');
     }
 
@@ -78,8 +77,9 @@ class Settings {
     public function field_text(array $args): void {
         $options = get_option('studiofy_branding');
         $val = $options[$args['key']] ?? '';
-        // Accessibility: Added ID, Title, and associated Label
         $id = 'studiofy_' . $args['key'];
+        
+        // A11y: Explicit Label + Title
         echo '<label for="' . esc_attr($id) . '" class="screen-reader-text">' . esc_html($args['label']) . '</label>';
         echo '<input type="text" id="' . esc_attr($id) . '" name="studiofy_branding[' . esc_attr($args['key']) . ']" value="' . esc_attr($val) . '" class="regular-text" title="' . esc_attr($args['label']) . '" placeholder="' . esc_attr($args['label']) . '">';
         
@@ -90,7 +90,8 @@ class Settings {
     public function render_env_field(): void {
          $options = get_option('studiofy_branding');
          $env = $options['square_env'] ?? 'sandbox';
-         // Accessibility: Added ID, Label, Title
+         
+         // A11y: Explicit Label
          echo '<label for="studiofy_square_env" class="screen-reader-text">Select Environment</label>';
          echo '<select id="studiofy_square_env" name="studiofy_branding[square_env]" title="Select Square Environment"><option value="sandbox" '.selected($env,'sandbox',false).'>Sandbox</option><option value="production" '.selected($env,'production',false).'>Production</option></select>';
          echo '<p class="description" style="color: #2271b1; margin-top: 5px;">Current set value: <strong>' . esc_html(ucfirst($env)) . '</strong></p>';
