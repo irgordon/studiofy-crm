@@ -15,7 +15,7 @@ class GalleryController {
         add_action('admin_post_studiofy_save_gallery', [$this, 'handle_save']);
         add_action('admin_post_studiofy_delete_gallery', [$this, 'handle_delete_gallery']);
         add_action('wp_ajax_studiofy_create_gallery_page', [$this, 'ajax_create_page']);
-        add_action('wp_ajax_studiofy_gallery_upload_chunk', [$this, 'handle_chunk_upload']); // New Chunk Handler
+        add_action('wp_ajax_studiofy_gallery_upload_chunk', [$this, 'handle_chunk_upload']);
         add_action('rest_api_init', [$this, 'register_routes']);
     }
 
@@ -58,58 +58,46 @@ class GalleryController {
 
     /**
      * Handle Chunked Uploads via Streaming
-     * @see https://developer.yahoo.com/performance/rules.html (Flush buffer, memory mgmt)
      */
     public function handle_chunk_upload(): void {
-        // 1. Security Check
         check_ajax_referer('save_gallery', 'nonce');
         if (!current_user_can('upload_files')) wp_send_json_error('Unauthorized');
 
-        // 2. Parameters
         $gallery_id = (int)$_POST['gallery_id'];
         $file_name  = sanitize_file_name($_POST['file_name']);
         $chunk_idx  = (int)$_POST['chunk_index'];
         $total_chunks = (int)$_POST['total_chunks'];
 
-        // 3. Validation (Extensions)
         $ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
         $allowed = ['jpg', 'jpeg', 'png', 'gif', 'cr2', 'nef', 'arw', 'dng', 'orf', 'raf'];
         if (!in_array($ext, $allowed)) wp_send_json_error('Invalid file type.');
 
-        // 4. Setup Directories
         $upload_dir = wp_upload_dir();
         $target_dir = $upload_dir['basedir'] . '/studiofy_galleries/' . $gallery_id;
         if (!file_exists($target_dir)) mkdir($target_dir, 0755, true);
 
-        // Temp path for re-assembly
         $temp_file = $target_dir . '/' . $file_name . '.part';
         $final_file = $target_dir . '/' . $file_name;
 
-        // 5. Append Chunk (Streaming Logic)
         if (!empty($_FILES['file_chunk']['tmp_name'])) {
             $in = fopen($_FILES['file_chunk']['tmp_name'], 'rb');
-            
-            // Open temp file in 'append' mode (binary)
             $out = fopen($temp_file, $chunk_idx === 0 ? 'wb' : 'ab'); 
 
             if ($in && $out) {
                 while (!feof($in)) {
-                    fwrite($out, fread($in, 8192)); // 8KB Buffer
+                    fwrite($out, fread($in, 8192)); 
                 }
                 fclose($in);
                 fclose($out);
             } else {
                 wp_send_json_error('Server Write Error');
             }
-            
-            unlink($_FILES['file_chunk']['tmp_name']); // Cleanup temp chunk
+            unlink($_FILES['file_chunk']['tmp_name']);
         }
 
-        // 6. Finalize if Last Chunk
         if ($chunk_idx === ($total_chunks - 1)) {
             rename($temp_file, $final_file);
             
-            // Generate Metadata
             $filesize = size_format(filesize($final_file));
             $dims = '';
             if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) {
@@ -117,7 +105,6 @@ class GalleryController {
                 $dims = $info ? $info[0] . 'x' . $info[1] : '';
             }
 
-            // DB Insert
             global $wpdb;
             $wpdb->insert($wpdb->prefix . 'studiofy_gallery_files', [
                 'gallery_id' => $gallery_id,
@@ -250,6 +237,20 @@ class GalleryController {
         $wpdb->insert($wpdb->prefix.'studiofy_galleries', ['title' => $title, 'description' => $desc, 'password' => $pass, 'status' => 'active']);
         wp_redirect(admin_url('admin.php?page=studiofy-galleries'));
         exit;
+    }
+
+    public function handle_delete_gallery(): void {
+        check_admin_referer('del_gal_' . $_GET['id']);
+        global $wpdb;
+        $id = (int)$_GET['id'];
+        $page_id = $wpdb->get_var($wpdb->prepare("SELECT wp_page_id FROM {$wpdb->prefix}studiofy_galleries WHERE id = %d", $id));
+        if ($page_id) wp_delete_post($page_id, true);
+        $wpdb->delete($wpdb->prefix.'studiofy_galleries', ['id' => $id]);
+        $wpdb->delete($wpdb->prefix.'studiofy_gallery_files', ['gallery_id' => $id]);
+        $upload = wp_upload_dir();
+        $dir = $upload['basedir'] . '/studiofy_galleries/' . $id;
+        if(is_dir($dir)) { array_map('unlink', glob("$dir/*.*")); rmdir($dir); }
+        wp_redirect(admin_url('admin.php?page=studiofy-galleries')); exit;
     }
 
     public function ajax_create_page(): void {
