@@ -2,7 +2,7 @@
 /**
  * Booking Controller
  * @package Studiofy\Admin
- * @version 2.0.7
+ * @version 2.1.2
  */
 
 declare(strict_types=1);
@@ -46,6 +46,7 @@ class BookingController {
                     <?php 
                     $days_in_month = cal_days_in_month(CAL_GREGORIAN, $current_month, $current_year);
                     $first_day_idx = date('w', mktime(0, 0, 0, $current_month, 1, $current_year));
+                    
                     for($i=0; $i<$first_day_idx; $i++) echo "<div class='calendar-day empty'></div>";
                     
                     for($i=1; $i<=$days_in_month; $i++) {
@@ -53,7 +54,9 @@ class BookingController {
                         $bookings = $wpdb->get_results($wpdb->prepare("SELECT title FROM {$wpdb->prefix}studiofy_bookings WHERE booking_date = %s", $date_str));
                         
                         echo "<div class='calendar-day'><span class='day-num'>$i</span>";
-                        foreach($bookings as $b) echo "<div class='calendar-event'>" . esc_html($b->title) . "</div>";
+                        foreach($bookings as $b) {
+                            echo "<div class='calendar-event'>" . esc_html($b->title) . "</div>";
+                        }
                         echo "</div>";
                     }
                     ?>
@@ -64,7 +67,7 @@ class BookingController {
         <div id="modal-new-appt" class="studiofy-modal-overlay studiofy-hidden">
             <div class="studiofy-modal">
                 <div class="studiofy-modal-header"><h2>New Appointment</h2><button class="close-modal">&times;</button></div>
-                <form method="post" action="<?php echo admin_url('admin_post.php'); ?>" class="studiofy-modal-body">
+                <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" class="studiofy-modal-body">
                     <input type="hidden" name="action" value="studiofy_save_booking">
                     <?php wp_nonce_field('save_booking', 'studiofy_nonce'); ?>
                     
