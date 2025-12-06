@@ -1,29 +1,14 @@
 /**
  * Studiofy Admin Core
  * @package Studiofy
- * @version 2.1.0
+ * @version 2.1.1
  */
 jQuery(document).ready(function($){
     
-    // Modal Logic
-    function setupModal(triggerId, modalId) {
-        $(triggerId).click(function(e){ e.preventDefault(); $(modalId).removeClass('studiofy-hidden'); });
-        $(modalId + ' .close-modal').click(function(e){ e.preventDefault(); $(modalId).addClass('studiofy-hidden'); });
-        
-        // Close on overlay click
-        $(modalId).click(function(e){
-            if(e.target === this) {
-                $(this).addClass('studiofy-hidden');
-            }
-        });
-    }
-    setupModal('#btn-new-customer', '#modal-new-customer');
-    setupModal('#btn-new-appt', '#modal-new-appt');
-
-    // WP Color Picker
+    // 1. WP Color Picker
     $('.studiofy-color-field').wpColorPicker();
     
-    // Media Uploader
+    // 2. Media Uploader
     $('.studiofy-upload-btn').click(function(e) {
         e.preventDefault();
         var button = $(this);
@@ -38,48 +23,46 @@ jQuery(document).ready(function($){
         }).open();
     });
 
-    // Delete Confirmation
+    // 3. Delete Confirmation
     $('.delete-link').click(function(){ return confirm('Are you sure you want to delete this item?'); });
 
-    // Customer Form Validation - FIXED
-    $('#studiofy-customer-form').on('submit', function(e) {
-        let valid = true;
-        let errors = [];
-
-        try {
-            // Phone Validation
-            const phoneInput = $(this).find('input[name="phone"]');
-            if(phoneInput.length > 0 && phoneInput.val().trim() !== '') {
-                const phone = phoneInput.val();
-                // Allow +, -, (, ), space, and numbers
-                if(!phone.match(/^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im)) {
-                    // Soft warning - usually better to allow saving even if format is weird, 
-                    // but if strict validation is required:
-                    // valid = false; errors.push('Invalid phone format.');
-                }
+    // 4. Phone Auto-Formatter (US Format)
+    // Listens for input on any field with ID "phone"
+    $('#phone').on('input', function() {
+        var input = $(this).val().replace(/\D/g, ''); // Strip non-digits
+        var formatted = '';
+        
+        if (input.length > 0) {
+            // (123
+            if (input.length <= 3) {
+                formatted = input;
+            } 
+            // (123) 456
+            else if (input.length <= 6) {
+                formatted = '(' + input.substring(0, 3) + ') ' + input.substring(3);
+            } 
+            // (123) 456-7890
+            else {
+                formatted = '(' + input.substring(0, 3) + ') ' + input.substring(3, 6) + '-' + input.substring(6, 10);
             }
+        }
+        
+        $(this).val(formatted);
+    });
 
-            // Email Validation
-            const emailInput = $(this).find('input[name="email"]');
-            if(emailInput.length > 0) {
-                const email = emailInput.val();
-                if(email.trim() === '' || !email.match(/^[^@]+@[^@]+\.[a-zA-Z]{2,}$/)) {
-                    valid = false;
-                    errors.push('A valid email address is required.');
-                }
-            }
+    // 5. Email Visual Feedback
+    $('#email').on('blur', function() {
+        var email = $(this).val();
+        var errorField = $('#email-error');
+        var regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Basic email regex
 
-            if(!valid) {
-                e.preventDefault();
-                alert(errors.join('\n'));
-            } else {
-                // Console log for debugging if submission hangs
-                console.log('Validation passed. Submitting to admin_post.php...');
-            }
-
-        } catch (err) {
-            console.error('Validation Script Error:', err);
-            // Do not prevent default here, allow PHP to handle it if JS fails
+        if(email.length > 0 && !regex.test(email)) {
+            $(this).css('border-color', '#d63638');
+            errorField.text('Please enter a valid email address.');
+            errorField.show();
+        } else {
+            $(this).css('border-color', ''); // Reset
+            errorField.hide();
         }
     });
 });
