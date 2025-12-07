@@ -2,7 +2,7 @@
 /**
  * Project Controller
  * @package Studiofy\Admin
- * @version 2.2.49
+ * @version 2.2.51
  */
 
 declare(strict_types=1);
@@ -19,6 +19,8 @@ class ProjectController {
         add_action('admin_post_studiofy_save_project', [$this, 'handle_save']);
         add_action('admin_post_studiofy_delete_project', [$this, 'handle_delete']);
         add_action('admin_post_studiofy_bulk_project', [$this, 'handle_bulk']);
+        // New: AJAX handler for quick task delete from Kanban
+        add_action('wp_ajax_studiofy_delete_task_ajax', [$this, 'handle_delete_task_ajax']);
     }
 
     public function render_page(): void {
@@ -38,7 +40,8 @@ class ProjectController {
 
         wp_localize_script('studiofy-kanban', 'studiofySettings', [
             'root' => esc_url_raw(rest_url()),
-            'nonce' => wp_create_nonce('wp_rest')
+            'nonce' => wp_create_nonce('wp_rest'),
+            'ajax_url' => admin_url('admin-ajax.php') // Needed for new delete action
         ]);
         
         global $wpdb;
@@ -93,10 +96,13 @@ class ProjectController {
                 
                 <div class="studiofy-card-container">
                     <?php foreach ($projects[$key] as $project): 
+                        // Fetch tasks (Prioritize Urgent/High)
                         $tasks = $wpdb->get_results($wpdb->prepare(
                             "SELECT t.* FROM {$wpdb->prefix}studiofy_tasks t 
                              JOIN {$wpdb->prefix}studiofy_milestones m ON t.milestone_id = m.id 
-                             WHERE m.project_id = %d ORDER BY t.created_at DESC LIMIT 3", 
+                             WHERE m.project_id = %d AND t.status != 'completed'
+                             ORDER BY CASE WHEN t.priority = 'Urgent' THEN 1 WHEN t.priority = 'High' THEN 2 ELSE 3 END, t.created_at DESC 
+                             LIMIT 3", 
                             $project->id
                         ));
                     ?>
@@ -110,24 +116,31 @@ class ProjectController {
                                     <?php echo esc_html($project->budget ? '$'.number_format((float)$project->budget, 0) : '-'); ?>
                                 </div>
                             </div>
+                            
                             <div class="studiofy-card-tasks">
                                 <?php if (!empty($tasks)): ?>
                                     <ul class="task-preview-list">
                                         <?php foreach ($tasks as $t): 
-                                            $is_proof = (strpos($t->title, 'Proofs Approved') !== false);
+                                            // Highlight Proofing Tasks
+                                            $is_proof = (strpos($t->title, 'Proof') !== false) || (strpos($t->title, 'Approved') !== false);
                                             $style = $is_proof ? 'style="color: #d63638; font-weight: bold;"' : '';
-                                            $icon = $t->status === 'completed' ? 'dashicons-yes' : 'dashicons-minus';
                                         ?>
-                                            <li <?php echo $style; ?>>
-                                                <span class="dashicons <?php echo $icon; ?>" style="font-size:14px; width:14px; height:14px;"></span> 
-                                                <?php echo esc_html($t->title); ?>
+                                            <li <?php echo $style; ?> class="task-item" data-task-id="<?php echo $t->id; ?>">
+                                                <span class="task-title-text">
+                                                    <span class="dashicons dashicons-minus" style="font-size:12px; width:12px; height:12px; line-height:1.2;"></span> 
+                                                    <?php echo esc_html($t->title); ?>
+                                                </span>
+                                                <button type="button" class="btn-delete-task-inline" title="Delete Task" aria-label="Delete">
+                                                    <span class="dashicons dashicons-trash"></span>
+                                                </button>
                                             </li>
                                         <?php endforeach; ?>
                                     </ul>
                                 <?php else: ?>
-                                    <p style="font-size:11px; color:#999; margin:5px 0;">No active tasks.</p>
+                                    <p style="font-size:11px; color:#999; margin:5px 0;">No pending tasks.</p>
                                 <?php endif; ?>
                             </div>
+
                             <div class="studiofy-card-actions">
                                 <button class="button button-small" onclick="StudiofyModal.open(<?php echo $project->id; ?>)">Manage</button>
                             </div>
@@ -139,9 +152,25 @@ class ProjectController {
         </div>
         <style>
             .task-preview-list { margin: 10px 0; padding: 0; list-style: none; font-size: 11px; color: #50575e; border-top: 1px solid #f0f0f1; padding-top: 5px; }
-            .task-preview-list li { margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .task-preview-list li { margin-bottom: 3px; display: flex; justify-content: space-between; align-items: center; }
+            .task-title-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85%; }
+            .btn-delete-task-inline { background: none; border: none; padding: 0; cursor: pointer; color: #d63638; visibility: hidden; opacity: 0.6; }
+            .task-preview-list li:hover .btn-delete-task-inline { visibility: visible; }
+            .btn-delete-task-inline:hover { opacity: 1; }
+            .btn-delete-task-inline .dashicons { font-size: 14px; width: 14px; height: 14px; }
         </style>
         <?php
+    }
+
+    // New AJAX Handler for Inline Delete
+    public function handle_delete_task_ajax(): void {
+        check_ajax_referer('wp_rest', 'nonce');
+        if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
+        
+        $task_id = (int)$_POST['task_id'];
+        global $wpdb;
+        $wpdb->delete($wpdb->prefix.'studiofy_tasks', ['id' => $task_id]);
+        wp_send_json_success(['message' => 'Task deleted']);
     }
 
     private function render_list_html(): void {
@@ -201,7 +230,6 @@ class ProjectController {
         global $wpdb;
         $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
         
-        // Fix: Default initialization
         if ($id) {
             $data = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_projects WHERE id = %d", $id));
         } else {
@@ -224,7 +252,6 @@ class ProjectController {
                 <input type="hidden" name="action" value="studiofy_save_project">
                 <?php wp_nonce_field('save_project', 'studiofy_nonce'); ?>
                 <?php if($data->id) echo '<input type="hidden" name="id" value="'.$data->id.'">'; ?>
-                
                 <table class="form-table">
                     <tr><th scope="row"><label>Title *</label></th><td><input type="text" name="title" required value="<?php echo esc_attr($data->title); ?>" class="regular-text"></td></tr>
                     <tr><th scope="row"><label>Customer *</label></th><td><select name="customer_id" required><option value="">Select</option><?php foreach($customers as $c) echo "<option value='{$c->id}' ".selected($data->customer_id, $c->id, false).">{$c->first_name} {$c->last_name}</option>"; ?></select></td></tr>
