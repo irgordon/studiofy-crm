@@ -2,7 +2,7 @@
 /**
  * Settings Controller
  * @package Studiofy\Admin
- * @version 2.2.18
+ * @version 2.2.36
  */
 
 declare(strict_types=1);
@@ -56,17 +56,13 @@ class Settings {
         add_settings_field('square_token', 'Square Access Token', [$this, 'field_text'], 'studiofy-settings', 'studiofy_branding_section', ['key' => 'square_access_token', 'label' => 'Square Token']);
         add_settings_field('square_env', 'Square Environment', [$this, 'render_env_field'], 'studiofy-settings', 'studiofy_branding_section');
         
-        // Google Maps API Key for Address Validation
         add_settings_field('google_maps_key', 'Google Maps API Key', [$this, 'field_text'], 'studiofy-settings', 'studiofy_branding_section', ['key' => 'google_maps_key', 'label' => 'Google Maps API Key']);
 
         add_settings_section('studiofy_social_section', 'Social Media', [$this, 'render_social_table'], 'studiofy-settings');
-        
-        // Demo Data Section (Rendered manually below)
     }
 
     public function render_page(): void {
         echo '<div class="wrap"><h1>Settings</h1>';
-        
         echo '<form method="post" action="options.php">';
         settings_fields($this->optionGroup);
         do_settings_sections('studiofy-settings');
@@ -76,13 +72,13 @@ class Settings {
         echo '<hr>';
         echo '<h2>Demo Data Import</h2>';
         $this->render_demo_section();
-        
         echo '</div>';
     }
 
     public function field_text(array $args): void {
         $options = get_option('studiofy_branding');
-        $val = $options[$args['key']] ?? '';
+        // FIX: Ensure value is string (cast to string)
+        $val = isset($options[$args['key']]) ? (string)$options[$args['key']] : '';
         $id = 'studiofy_' . $args['key'];
         
         echo '<label for="' . esc_attr($id) . '" class="screen-reader-text">' . esc_html($args['label']) . '</label>';
@@ -94,7 +90,7 @@ class Settings {
 
     public function render_env_field(): void {
          $options = get_option('studiofy_branding');
-         $env = $options['square_env'] ?? 'sandbox';
+         $env = isset($options['square_env']) ? (string)$options['square_env'] : 'sandbox';
          echo '<label for="studiofy_square_env" class="screen-reader-text">Select Environment</label>';
          echo '<select id="studiofy_square_env" name="studiofy_branding[square_env]" title="Select Square Environment"><option value="sandbox" '.selected($env,'sandbox',false).'>Sandbox</option><option value="production" '.selected($env,'production',false).'>Production</option></select>';
          echo '<p class="description" style="color: #2271b1; margin-top: 5px;">Current set value: <strong>' . esc_html(ucfirst($env)) . '</strong></p>';
@@ -102,7 +98,7 @@ class Settings {
 
     public function field_logo(): void {
         $options = get_option('studiofy_branding');
-        $logo = $options['business_logo'] ?? '';
+        $logo = isset($options['business_logo']) ? (string)$options['business_logo'] : '';
         echo '<div class="studiofy-media-uploader">';
         echo '<label for="studiofy_business_logo" class="screen-reader-text">Business Logo URL</label>';
         echo '<input type="text" id="studiofy_business_logo" name="studiofy_branding[business_logo]" value="' . esc_attr($logo) . '" class="regular-text" title="Logo URL" placeholder="Image URL">';
@@ -112,13 +108,15 @@ class Settings {
 
     public function render_social_table(): void {
         $options = get_option('studiofy_branding');
-        $socials = $options['social_media'] ?? [['network' => 'Instagram', 'url' => '']];
+        $socials = isset($options['social_media']) && is_array($options['social_media']) ? $options['social_media'] : [['network' => 'Instagram', 'url' => '']];
         echo '<table class="wp-list-table widefat fixed striped table-view-list" role="presentation">';
         echo '<thead><tr><th scope="col">Network Name</th><th scope="col">URL</th><th scope="col">Actions</th></tr></thead><tbody id="studiofy-social-tbody">';
         foreach ($socials as $index => $row) {
+            $net = isset($row['network']) ? (string)$row['network'] : '';
+            $url = isset($row['url']) ? (string)$row['url'] : '';
             echo "<tr>
-                <td><label for='social_net_$index' class='screen-reader-text'>Network Name</label><input type='text' id='social_net_$index' name='studiofy_branding[social_media][$index][network]' value='".esc_attr($row['network'])."' class='regular-text' title='Network Name' placeholder='Network'></td>
-                <td><label for='social_url_$index' class='screen-reader-text'>Network URL</label><input type='url' id='social_url_$index' name='studiofy_branding[social_media][$index][url]' value='".esc_attr($row['url'])."' class='regular-text' title='Network URL' placeholder='https://...'></td>
+                <td><label for='social_net_$index' class='screen-reader-text'>Network Name</label><input type='text' id='social_net_$index' name='studiofy_branding[social_media][$index][network]' value='".esc_attr($net)."' class='regular-text' title='Network Name' placeholder='Network'></td>
+                <td><label for='social_url_$index' class='screen-reader-text'>Network URL</label><input type='url' id='social_url_$index' name='studiofy_branding[social_media][$index][url]' value='".esc_attr($url)."' class='regular-text' title='Network URL' placeholder='https://...'></td>
                 <td><button type='button' class='button button-small delete-row' aria-label='Delete Row'>Delete</button></td>
             </tr>";
         }
