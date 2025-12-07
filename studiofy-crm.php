@@ -2,14 +2,14 @@
 /**
  * Plugin Name: Studiofy CRM
  * Description: A comprehensive Elementor Addon and CRM for Photographers.
- * Version: 2.3.5
+ * Version: 2.3.8
  * Author: Ian R. Gordon
  * Text Domain: studiofy
  * Requires PHP: 8.1
  * Requires at least: 6.6
  * Elementor tested up to: 3.25.0
  * @package Studiofy
- * @version 2.3.5
+ * @version 2.3.8
  */
 
 declare(strict_types=1);
@@ -30,8 +30,8 @@ add_action('send_headers', function() {
     }
 });
 
-define('STUDIOFY_VERSION', '2.3.5');
-define('STUDIOFY_DB_VERSION', '2.20'); // Bumped for Signature Columns
+define('STUDIOFY_VERSION', '2.3.8');
+define('STUDIOFY_DB_VERSION', '2.20');
 define('STUDIOFY_PATH', plugin_dir_path(__FILE__));
 define('STUDIOFY_URL', plugin_dir_url(__FILE__));
 
@@ -78,10 +78,11 @@ function studiofy_check_dependencies(): void {
 
         $plugin = 'elementor/elementor.php';
         $installed = get_plugins();
-        $url = isset($installed[$plugin]) 
+        $is_installed = isset($installed[$plugin]);
+        $url = $is_installed 
             ? wp_nonce_url('plugins.php?action=activate&plugin='.$plugin, 'activate-plugin_'.$plugin)
             : wp_nonce_url(self_admin_url('update.php?action=install-plugin&plugin=elementor'), 'install-plugin_elementor');
-        $text = isset($installed[$plugin]) ? 'Activate Elementor' : 'Install Elementor Now';
+        $text = $is_installed ? 'Activate Elementor' : 'Install Elementor Now';
 
         echo '<div class="notice notice-error"><p><strong>Studiofy CRM</strong> requires <strong>Elementor</strong> for frontend features.</p><p><a href="'.$url.'" class="button button-primary">'.$text.'</a></p></div>';
     });
