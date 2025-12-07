@@ -1,47 +1,54 @@
 /**
- * Studiofy Modal CSS
+ * Modal & Task CSS
  * @package Studiofy
- * @version 2.0.4
+ * @version 2.2.56
  */
 
+/* Modal Base */
+.studiofy-modal-overlay { 
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: rgba(0,0,0,0.6); z-index: 9999; 
+    display: flex; justify-content: center; align-items: center; 
+}
 .studiofy-hidden { display: none !important; }
 
-#studiofy-modal-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.6); z-index: 9999;
-    display: flex; justify-content: center; align-items: center;
+.studiofy-modal { 
+    background: #fff; width: 800px; max-width: 95%; max-height: 90vh; 
+    border-radius: 6px; box-shadow: 0 5px 30px rgba(0,0,0,0.2); 
+    display: flex; flex-direction: column; overflow: hidden;
 }
 
-.studiofy-modal {
-    background: #fff; width: 900px; height: 80%;
-    display: flex; flex-direction: column;
-    border-radius: 4px; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+.studiofy-modal-header { 
+    padding: 15px 20px; background: #f6f7f7; border-bottom: 1px solid #dcdcde; 
+    display: flex; justify-content: space-between; align-items: center; 
+}
+.studiofy-modal-header h2 { margin: 0; font-size: 18px; }
+
+.studiofy-modal-body { 
+    padding: 20px; overflow-y: auto; flex: 1; 
 }
 
-.studiofy-modal-header {
-    padding: 15px 20px; border-bottom: 1px solid #ddd;
-    display: flex; justify-content: space-between; align-items: center;
+/* Fix for Table Spacing */
+.task-grid-container table { 
+    border: 1px solid #dcdcde; 
+    width: 100%; 
+    border-collapse: collapse; 
 }
+.task-grid-container th, .task-grid-container td { 
+    padding: 12px; 
+    vertical-align: middle; 
+}
+.task-grid-container th { 
+    background: #f0f0f1; 
+    text-align: left; 
+    font-weight: 600; 
+}
+.task-grid-container tr:nth-child(even) { background: #fcfcfc; }
 
-.studiofy-modal-body {
-    display: flex; flex: 1; overflow: hidden;
-}
-
-.studiofy-milestone-list {
-    width: 35%; border-right: 1px solid #ddd; padding: 20px;
-    background: #f9f9f9; overflow-y: auto;
-}
-
-.studiofy-task-editor {
-    width: 65%; padding: 20px; overflow-y: auto;
-}
-
-.studiofy-task-item {
-    background: #fff; padding: 10px; border: 1px solid #ddd;
-    margin-bottom: 5px; cursor: pointer; border-radius: 3px;
-    display: flex; justify-content: space-between;
-}
-
-.studiofy-task-item:hover {
-    background: #f0f6fc; border-color: #2271b1;
-}
+/* Status Badges in Modal */
+.studiofy-badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; text-transform: uppercase; font-weight: bold; }
+.studiofy-badge.created { background: #dcdcde; color: #50575e; }
+.studiofy-badge.pending { background: #f0f0f1; color: #50575e; }
+.studiofy-badge.inprogress { background: #2271b1; color: #fff; }
+.studiofy-badge.completed { background: #46b450; color: #fff; text-decoration: none !important; }
+.studiofy-badge.urgent { background: #d63638; color: #fff; }
