@@ -2,7 +2,7 @@
 /**
  * Settings Controller
  * @package Studiofy\Admin
- * @version 2.2.41
+ * @version 2.2.42
  */
 
 declare(strict_types=1);
@@ -76,10 +76,7 @@ class Settings {
     }
 
     public function field_text(array $args): void {
-        // FIX: Force array type to prevent "Access offset on bool" error
         $options = (array) get_option('studiofy_branding', []);
-        
-        // FIX: Cast to string for escaping functions
         $val = isset($options[$args['key']]) ? (string)$options[$args['key']] : '';
         $id = 'studiofy_' . $args['key'];
         
@@ -114,7 +111,6 @@ class Settings {
         echo '<table class="wp-list-table widefat fixed striped table-view-list" role="presentation">';
         echo '<thead><tr><th scope="col">Network Name</th><th scope="col">URL</th><th scope="col">Actions</th></tr></thead><tbody id="studiofy-social-tbody">';
         foreach ($socials as $index => $row) {
-            // FIX: String casting
             $net = isset($row['network']) ? (string)$row['network'] : '';
             $url = isset($row['url']) ? (string)$row['url'] : '';
             echo "<tr>
