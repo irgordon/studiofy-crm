@@ -2,7 +2,7 @@
 /**
  * Activator
  * @package Studiofy\Core
- * @version 2.2.20
+ * @version 2.2.29
  */
 
 declare(strict_types=1);
@@ -32,12 +32,12 @@ class Activator {
             'studiofy_bookings' => "CREATE TABLE {$wpdb->prefix}studiofy_bookings (id mediumint(9) NOT NULL AUTO_INCREMENT, customer_id mediumint(9) NULL, guest_name varchar(100) NULL, guest_email varchar(100) NULL, title varchar(255) NOT NULL, location varchar(255) NULL, notes longtext NULL, booking_date date NOT NULL, booking_time time NOT NULL, status varchar(20) DEFAULT 'Scheduled' NOT NULL, created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL, PRIMARY KEY (id)) $charset_collate;",
             'studiofy_gallery_selections' => "CREATE TABLE {$wpdb->prefix}studiofy_gallery_selections (id mediumint(9) NOT NULL AUTO_INCREMENT, gallery_id bigint(20) UNSIGNED NOT NULL, attachment_id bigint(20) UNSIGNED NOT NULL, status varchar(20) DEFAULT 'selected' NOT NULL, created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL, PRIMARY KEY (id)) $charset_collate;",
             
-            // UPDATED CONTRACTS TABLE
+            // FIXED: Added 'signed_at' datetime column
             'studiofy_contracts' => "CREATE TABLE {$wpdb->prefix}studiofy_contracts (
                 id mediumint(9) NOT NULL AUTO_INCREMENT,
                 customer_id mediumint(9) NOT NULL,
                 project_id mediumint(9) NULL,
-                linked_post_id bigint(20) UNSIGNED NULL, -- Elementor CPT ID
+                linked_post_id bigint(20) UNSIGNED NULL, 
                 title varchar(255) NOT NULL,
                 amount decimal(10,2) DEFAULT 0.00,
                 start_date date NULL,
@@ -45,6 +45,7 @@ class Activator {
                 body_content longtext NOT NULL,
                 signature_data longtext NULL,
                 signed_name varchar(100) NULL,
+                signed_at datetime NULL, -- NEW COLUMN
                 status varchar(20) DEFAULT 'draft' NOT NULL,
                 created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL,
                 PRIMARY KEY (id)
