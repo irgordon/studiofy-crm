@@ -2,7 +2,7 @@
 /**
  * Dashboard Controller
  * @package Studiofy\Admin
- * @version 2.2.55
+ * @version 2.2.56
  */
 
 declare(strict_types=1);
@@ -14,50 +14,76 @@ class DashboardController {
     public function render_page(): void {
         global $wpdb;
         
-        // --- Proofing Feed Logic ---
-        // 1. Get recent selections (Limit 10)
-        $selections = $wpdb->get_results("
-            SELECT s.*, g.title as gallery_title, p.title as project_title, f.file_name, f.created_at as file_created, s.gallery_id 
-            FROM {$wpdb->prefix}studiofy_gallery_selections s 
-            JOIN {$wpdb->prefix}studiofy_galleries g ON s.gallery_id = g.id 
-            LEFT JOIN {$wpdb->prefix}studiofy_projects p ON (SELECT id FROM {$wpdb->prefix}studiofy_projects WHERE customer_id = g.customer_id LIMIT 1) = p.id
-            JOIN {$wpdb->prefix}studiofy_gallery_files f ON s.attachment_id = f.id
-            WHERE s.status = 'approved'
-            ORDER BY s.created_at DESC LIMIT 10
-        ");
-
-        // 2. Calculate #0100 IDs for display
-        $feed_items = [];
-        foreach($selections as $sel) {
-            // Fetch ALL files for this gallery to determine index
-            // (Cached query could optimize this, but direct SQL is safe for Admin Dashboard volume)
-            $all_files = $wpdb->get_col($wpdb->prepare(
-                "SELECT id FROM {$wpdb->prefix}studiofy_gallery_files WHERE gallery_id = %d ORDER BY created_at DESC", 
-                $sel->gallery_id
-            ));
-            
-            $index = array_search($sel->attachment_id, $all_files);
-            $visual_id = ($index !== false) ? '#' . sprintf('%04d', 100 + $index) : '#????';
-            
-            $feed_items[] = (object) [
-                'project' => $sel->project_title ?: 'Unassigned Project',
-                'gallery' => $sel->gallery_title,
-                'image_id' => $visual_id,
-                'date' => date('M j, g:ia', strtotime($sel->created_at))
-            ];
-        }
-
-        // --- Standard Stats ---
+        // --- 1. Main Stats (Optimized Single Query) ---
         $stats = get_transient('studiofy_dashboard_stats');
+        
         if (false === $stats) {
+            // Combine counts into one query for performance
+            $sql = "SELECT 
+                (SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_customers) as customers,
+                (SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_projects) as projects,
+                (SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_bookings WHERE status='Scheduled') as appts,
+                (SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_invoices WHERE status='Draft') as invoices,
+                (SELECT SUM(amount) FROM {$wpdb->prefix}studiofy_invoices WHERE status='Paid') as revenue";
+            
+            $result = $wpdb->get_row($sql);
+            
             $stats = [
-                'customers' => (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_customers"),
-                'projects'  => (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_projects"),
-                'appts'     => (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_bookings WHERE status='Scheduled'"),
-                'invoices'  => (int) $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->prefix}studiofy_invoices WHERE status='Draft'"),
-                'revenue'   => (float) $wpdb->get_var("SELECT SUM(amount) FROM {$wpdb->prefix}studiofy_invoices WHERE status='Paid'")
+                'customers' => (int) ($result->customers ?? 0),
+                'projects'  => (int) ($result->projects ?? 0),
+                'appts'     => (int) ($result->appts ?? 0),
+                'invoices'  => (int) ($result->invoices ?? 0),
+                'revenue'   => (float) ($result->revenue ?? 0.00)
             ];
+            
+            // Cache for 60 seconds
             set_transient('studiofy_dashboard_stats', $stats, 60); 
+        }
+        
+        // --- 2. Proofing Feed (Cached) ---
+        $feed_items = get_transient('studiofy_dashboard_feed');
+        
+        if (false === $feed_items) {
+            $selections = $wpdb->get_results("
+                SELECT s.*, g.title as gallery_title, p.title as project_title, f.file_name, f.created_at as file_created, s.gallery_id 
+                FROM {$wpdb->prefix}studiofy_gallery_selections s 
+                JOIN {$wpdb->prefix}studiofy_galleries g ON s.gallery_id = g.id 
+                LEFT JOIN {$wpdb->prefix}studiofy_projects p ON (SELECT id FROM {$wpdb->prefix}studiofy_projects WHERE customer_id = g.customer_id LIMIT 1) = p.id
+                JOIN {$wpdb->prefix}studiofy_gallery_files f ON s.attachment_id = f.id
+                WHERE s.status = 'approved'
+                ORDER BY s.created_at DESC LIMIT 10
+            ");
+
+            $feed_items = [];
+            if (!empty($selections)) {
+                // Batch fetch file lists for ID calculation to avoid N+1 queries
+                $gallery_ids = array_unique(array_column($selections, 'gallery_id'));
+                $gallery_file_maps = [];
+                
+                if (!empty($gallery_ids)) {
+                    $g_in = implode(',', array_map('intval', $gallery_ids));
+                    $all_files_raw = $wpdb->get_results("SELECT id, gallery_id FROM {$wpdb->prefix}studiofy_gallery_files WHERE gallery_id IN ($g_in) ORDER BY created_at DESC");
+                    
+                    foreach ($all_files_raw as $f) {
+                        $gallery_file_maps[$f->gallery_id][] = $f->id;
+                    }
+                }
+
+                foreach($selections as $sel) {
+                    $all_files = $gallery_file_maps[$sel->gallery_id] ?? [];
+                    $index = array_search($sel->attachment_id, $all_files);
+                    $visual_id = ($index !== false) ? '#' . sprintf('%04d', 100 + $index) : '#????';
+                    
+                    $feed_items[] = (object) [
+                        'project' => $sel->project_title ?: 'Unassigned Project',
+                        'gallery' => $sel->gallery_title,
+                        'image_id' => $visual_id,
+                        'date' => date('M j, g:ia', strtotime($sel->created_at))
+                    ];
+                }
+            }
+            // Cache feed for 5 minutes
+            set_transient('studiofy_dashboard_feed', $feed_items, 300);
         }
         
         ?>
