@@ -7,54 +7,50 @@
 
         <div class="studiofy-panel">
             <div class="studiofy-form-row">
-                <div class="studiofy-col"><label>Invoice Number</label><input type="text" name="invoice_number" value="<?php echo esc_attr($inv_num); ?>" readonly class="widefat"></div>
-                <div class="studiofy-col"><label>Status</label>
-                    <select name="status" class="widefat">
-                        <option value="Draft" <?php selected($inv->status??'', 'Draft'); ?>>Draft</option>
-                        <option value="Sent" <?php selected($inv->status??'', 'Sent'); ?>>Sent</option>
-                        <option value="Paid" <?php selected($inv->status??'', 'Paid'); ?>>Paid</option>
-                    </select>
-                </div>
+                <div class="studiofy-col"><label for="inv_num">Invoice Number</label><input type="text" name="invoice_number" id="inv_num" value="<?php echo esc_attr($inv_num); ?>" readonly class="widefat"></div>
+                <div class="studiofy-col"><label for="inv_status">Status</label><select name="status" id="inv_status" class="widefat"><option>Draft</option><option>Sent</option><option>Paid</option></select></div>
             </div>
             <div class="studiofy-form-row">
-                <div class="studiofy-col"><label>Customer *</label>
-                    <select name="customer_id" required class="widefat">
-                        <option value="">Select Customer</option>
-                        <?php foreach($customers as $c) echo "<option value='{$c->id}' ".selected($inv->customer_id??0, $c->id, false).">{$c->first_name} {$c->last_name}</option>"; ?>
-                    </select>
-                </div>
-                <div class="studiofy-col"><label>Project</label>
-                    <select name="project_id" class="widefat">
-                        <option value="">Select Project</option>
-                        <?php foreach($projects as $p) echo "<option value='{$p->id}' ".selected($inv->project_id??0, $p->id, false).">{$p->title}</option>"; ?>
-                    </select>
-                </div>
+                <div class="studiofy-col"><label for="inv_cust">Customer</label><select name="customer_id" id="inv_cust" required class="widefat"><option value="">Select</option><?php foreach($customers as $c) echo "<option value='{$c->id}' ".selected($inv->customer_id ?? 0, $c->id, false).">{$c->first_name} {$c->last_name}</option>"; ?></select></div>
+                <div class="studiofy-col"><label for="inv_proj">Project</label><select name="project_id" id="inv_proj" class="widefat"><option value="">Select</option><?php foreach($projects as $p) echo "<option value='{$p->id}' ".selected($inv->project_id ?? 0, $p->id, false).">{$p->title}</option>"; ?></select></div>
             </div>
             <div class="studiofy-form-row">
-                <div class="studiofy-col"><label>Issue Date</label><input type="date" name="issue_date" value="<?php echo $inv->issue_date??date('Y-m-d'); ?>" class="widefat"></div>
-                <div class="studiofy-col"><label>Due Date</label><input type="date" name="due_date" value="<?php echo $inv->due_date??''; ?>" class="widefat"></div>
+                <div class="studiofy-col"><label for="inv_issue">Issue Date</label><input type="date" name="issue_date" id="inv_issue" class="widefat" value="<?php echo $inv->issue_date ?? date('Y-m-d'); ?>"></div>
+                <div class="studiofy-col"><label for="inv_due">Due Date</label><input type="date" name="due_date" id="inv_due" class="widefat" value="<?php echo $inv->due_date ?? date('Y-m-d', strtotime('+30 days')); ?>"></div>
             </div>
         </div>
 
-        <div class="studiofy-panel" style="margin-top:20px;">
-            <h3>Line Items <button type="button" class="button" id="add-item" style="float:right;">+ Add Item</button></h3>
+        <div class="studiofy-panel">
+            <h3>Line Items</h3>
+            <div style="margin-bottom:10px;">
+                <label for="item_select" class="screen-reader-text">Add from Library</label>
+                <select id="item_select" style="max-width:200px;">
+                    <option value="">+ Add from Library</option>
+                    <?php foreach($saved_items as $si) echo "<option value='{$si->id}' data-rate='{$si->rate}' data-desc='".esc_attr($si->description)."'>".esc_html($si->title)."</option>"; ?>
+                </select>
+                <button type="button" class="button" id="add-item-btn">+ Add Blank Row</button>
+            </div>
+
             <table class="widefat fixed striped">
                 <thead><tr><th>Description</th><th width="10%">Qty</th><th width="15%">Rate</th><th width="15%">Amount</th><th width="5%"></th></tr></thead>
                 <tbody id="line-items-body">
-                    <?php if(!empty($line_items)): foreach($line_items as $k => $i): ?>
+                    <?php if(!empty($line_items)) foreach($line_items as $idx => $item): ?>
                     <tr>
-                        <td><input type="text" name="items[<?php echo $k; ?>][desc]" class="widefat" value="<?php echo esc_attr($i['desc']); ?>"></td>
-                        <td><input type="number" name="items[<?php echo $k; ?>][qty]" class="widefat qty" value="<?php echo esc_attr($i['qty']); ?>"></td>
-                        <td><input type="number" step="0.01" name="items[<?php echo $k; ?>][rate]" class="widefat rate" value="<?php echo esc_attr($i['rate']); ?>"></td>
-                        <td><input type="text" name="items[<?php echo $k; ?>][amount]" class="widefat amount" readonly value="<?php echo number_format($i['qty']*$i['rate'], 2); ?>"></td>
-                        <td><span class="dashicons dashicons-trash remove-row" style="cursor:pointer; color:red;"></span></td>
+                        <td><input type="text" name="items[<?php echo $idx; ?>][desc]" class="widefat item-desc" value="<?php echo esc_attr($item['desc']); ?>"></td>
+                        <td><input type="number" name="items[<?php echo $idx; ?>][qty]" class="widefat item-qty" value="<?php echo esc_attr($item['qty']); ?>"></td>
+                        <td><input type="number" step="0.01" name="items[<?php echo $idx; ?>][rate]" class="widefat item-rate" value="<?php echo esc_attr($item['rate']); ?>"></td>
+                        <td><span class="item-total">$<?php echo number_format($item['qty']*$item['rate'], 2); ?></span></td>
+                        <td><button type="button" class="button-link-delete remove-row">&times;</button></td>
                     </tr>
-                    <?php endforeach; endif; ?>
+                    <?php endforeach; ?>
                 </tbody>
             </table>
+            
             <div style="text-align:right; padding:10px; font-size:16px;">
-                Tax Rate (%): <input type="number" name="tax_rate" id="tax-rate" step="0.1" value="0" style="width:70px;"><br>
-                <strong>Total: $<span id="invoice-total"><?php echo $inv ? $inv->amount : '0.00'; ?></span></strong>
+                <label for="tax-rate">Tax Rate (%):</label> 
+                <input type="number" name="tax_rate" id="tax-rate" step="0.01" value="<?php echo $tax_rate; ?>" style="width:70px;">
+                <br>
+                <strong>Total: $<span id="invoice-total"><?php echo number_format($subtotal + $tax_amount, 2); ?></span></strong>
             </div>
         </div>
 
@@ -64,40 +60,46 @@
 
 <script>
 jQuery(document).ready(function($){
-    let idx = <?php echo count($line_items ?? []); ?>;
-    
-    function addRow() {
-        const row = `<tr>
-            <td><input type="text" name="items[${idx}][desc]" class="widefat" placeholder="Item"></td>
-            <td><input type="number" name="items[${idx}][qty]" class="widefat qty" value="1"></td>
-            <td><input type="number" step="0.01" name="items[${idx}][rate]" class="widefat rate" value="0.00"></td>
-            <td><input type="text" name="items[${idx}][amount]" class="widefat amount" readonly value="0.00"></td>
-            <td><span class="dashicons dashicons-trash remove-row" style="cursor:pointer; color:red;"></span></td>
-        </tr>`;
-        $('#line-items-body').append(row);
-        idx++;
-    }
-    
-    $('#add-item').click(addRow);
-    $(document).on('click', '.remove-row', function(){ $(this).closest('tr').remove(); calc(); });
-    $(document).on('input', '.qty, .rate, #tax-rate', calc);
+    let rowIdx = <?php echo count($line_items); ?>;
 
-    function calc() {
-        let subtotal = 0;
-        $('.qty').each(function(){
-            const row = $(this).closest('tr');
-            const qty = parseFloat(row.find('.qty').val()) || 0;
-            const rate = parseFloat(row.find('.rate').val()) || 0;
-            const amt = qty * rate;
-            row.find('.amount').val(amt.toFixed(2));
-            subtotal += amt;
-        });
-        
-        const taxRate = parseFloat($('#tax-rate').val()) || 0;
-        const taxAmt = subtotal * (taxRate / 100);
-        $('#invoice-total').text((subtotal + taxAmt).toFixed(2));
+    function addRow(desc = '', qty = 1, rate = 0) {
+        let html = `<tr>
+            <td><input type="text" name="items[${rowIdx}][desc]" class="widefat item-desc" value="${desc}"></td>
+            <td><input type="number" name="items[${rowIdx}][qty]" class="widefat item-qty" value="${qty}"></td>
+            <td><input type="number" step="0.01" name="items[${rowIdx}][rate]" class="widefat item-rate" value="${rate}"></td>
+            <td><span class="item-total">$0.00</span></td>
+            <td><button type="button" class="button-link-delete remove-row">&times;</button></td>
+        </tr>`;
+        $('#line-items-body').append(html);
+        rowIdx++;
+        calcTotal();
     }
-    
-    if(idx === 0) addRow();
+
+    $('#add-item-btn').click(function(){ addRow(); });
+
+    $('#item_select').change(function(){
+        let opt = $(this).find(':selected');
+        if(opt.val() !== '') {
+            addRow(opt.text() + ' - ' + opt.data('desc'), 1, opt.data('rate'));
+            $(this).val('');
+        }
+    });
+
+    $(document).on('click', '.remove-row', function(){ $(this).closest('tr').remove(); calcTotal(); });
+    $(document).on('input', '.item-qty, .item-rate, #tax-rate', function(){ calcTotal(); });
+
+    function calcTotal() {
+        let sub = 0;
+        $('#line-items-body tr').each(function(){
+            let qty = parseFloat($(this).find('.item-qty').val()) || 0;
+            let rate = parseFloat($(this).find('.item-rate').val()) || 0;
+            let amt = qty * rate;
+            $(this).find('.item-total').text('$' + amt.toFixed(2));
+            sub += amt;
+        });
+        let tax = parseFloat($('#tax-rate').val()) || 0;
+        let total = sub + (sub * (tax/100));
+        $('#invoice-total').text(total.toFixed(2));
+    }
 });
 </script>
