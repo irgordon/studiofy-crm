@@ -2,7 +2,7 @@
 /**
  * Dashboard Controller
  * @package Studiofy\Admin
- * @version 2.2.38
+ * @version 2.2.50
  */
 
 declare(strict_types=1);
@@ -14,6 +14,7 @@ class DashboardController {
     public function render_page(): void {
         global $wpdb;
         
+        // Cache Stats for performance (60 seconds)
         $stats = get_transient('studiofy_dashboard_stats');
         
         if (false === $stats) {
@@ -30,8 +31,37 @@ class DashboardController {
         
         ?>
         <div class="wrap studiofy-dark-theme">
-            <h1>Dashboard</h1>
-            <p>Welcome back! Here's what's happening with your business.</p>
+            <div class="studiofy-dashboard-header">
+                <div class="header-content">
+                    <h1>Welcome to Studiofy CRM</h1>
+                    <p class="welcome-text">Thank you for choosing Studiofy to manage your photography business. This dashboard provides a quick snapshot of your current active projects, invoices, and contracts, helping you stay organized and focused on creating art.</p>
+                    <a href="https://github.com/irgordon/studiofy-crm" target="_blank" class="button button-secondary">Visit Studiofy CRM Website</a>
+                </div>
+                <div class="header-logo">
+                    <svg width="150" height="120" viewBox="0 0 500 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="lens_gradient_dash" x1="200" y1="130" x2="300" y2="230" gradientUnits="userSpaceOnUse">
+                                <stop stop-color="#4f94d4"/> <stop offset="1" stop-color="#2271b1"/> 
+                            </linearGradient>
+                        </defs>
+                        <g id="Camera_Icon">
+                            <rect x="100" y="80" width="300" height="200" rx="20" fill="black"/>
+                            <path d="M180 80 L210 40 H290 L320 80 H180 Z" fill="black"/>
+                            <rect x="120" y="70" width="40" height="10" rx="2" fill="black"/>
+                            <circle cx="250" cy="180" r="85" fill="white"/> <circle cx="250" cy="180" r="75" fill="black"/> <circle cx="250" cy="180" r="60" fill="url(#lens_gradient_dash)"/>
+                            <ellipse cx="270" cy="160" rx="20" ry="12" transform="rotate(-45 270 160)" fill="white" fill-opacity="0.4"/>
+                            <circle cx="230" cy="200" r="5" fill="white" fill-opacity="0.2"/>
+                            <rect x="115" y="100" width="15" height="160" rx="5" fill="#333333"/>
+                        </g>
+                        <g id="Typography">
+                            <text x="250" y="340" font-family="Arial, Helvetica, sans-serif" font-size="60" text-anchor="middle" fill="black">
+                                <tspan font-weight="900" letter-spacing="2">STUDIOFY</tspan> 
+                                <tspan font-weight="400" letter-spacing="4"> CRM</tspan>
+                            </text>
+                        </g>
+                    </svg>
+                </div>
+            </div>
             
             <div class="studiofy-dashboard-grid">
                 <div class="studiofy-stat-card">
