@@ -2,7 +2,7 @@
 /**
  * Project Controller
  * @package Studiofy\Admin
- * @version 2.2.47
+ * @version 2.2.49
  */
 
 declare(strict_types=1);
@@ -93,7 +93,6 @@ class ProjectController {
                 
                 <div class="studiofy-card-container">
                     <?php foreach ($projects[$key] as $project): 
-                        // UPDATED: Fetch first 3 tasks
                         $tasks = $wpdb->get_results($wpdb->prepare(
                             "SELECT t.* FROM {$wpdb->prefix}studiofy_tasks t 
                              JOIN {$wpdb->prefix}studiofy_milestones m ON t.milestone_id = m.id 
@@ -111,12 +110,10 @@ class ProjectController {
                                     <?php echo esc_html($project->budget ? '$'.number_format((float)$project->budget, 0) : '-'); ?>
                                 </div>
                             </div>
-                            
                             <div class="studiofy-card-tasks">
                                 <?php if (!empty($tasks)): ?>
                                     <ul class="task-preview-list">
                                         <?php foreach ($tasks as $t): 
-                                            // Check for "Proofs Approved" to highlight red
                                             $is_proof = (strpos($t->title, 'Proofs Approved') !== false);
                                             $style = $is_proof ? 'style="color: #d63638; font-weight: bold;"' : '';
                                             $icon = $t->status === 'completed' ? 'dashicons-yes' : 'dashicons-minus';
@@ -131,7 +128,6 @@ class ProjectController {
                                     <p style="font-size:11px; color:#999; margin:5px 0;">No active tasks.</p>
                                 <?php endif; ?>
                             </div>
-
                             <div class="studiofy-card-actions">
                                 <button class="button button-small" onclick="StudiofyModal.open(<?php echo $project->id; ?>)">Manage</button>
                             </div>
@@ -204,23 +200,38 @@ class ProjectController {
     private function render_form(): void {
         global $wpdb;
         $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-        $data = $id ? $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_projects WHERE id = %d", $id)) : null;
+        
+        // Fix: Default initialization
+        if ($id) {
+            $data = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_projects WHERE id = %d", $id));
+        } else {
+            $data = new \stdClass();
+            $data->id = 0;
+            $data->title = '';
+            $data->customer_id = 0;
+            $data->status = 'todo';
+            $data->budget = '';
+            $data->tax_status = 'taxed';
+            $data->notes = '';
+        }
+
         $customers = $wpdb->get_results("SELECT id, first_name, last_name FROM {$wpdb->prefix}studiofy_customers");
-        $tax_status = $data ? $data->tax_status : 'taxed';
+        $tax_status = $data->tax_status;
         ?>
         <div class="wrap">
-            <h1><?php echo $data ? 'Edit Project' : 'New Project'; ?></h1>
+            <h1><?php echo $id ? 'Edit Project' : 'New Project'; ?></h1>
             <form method="post" action="<?php echo admin_url('admin-post.php'); ?>" class="studiofy-card-form">
                 <input type="hidden" name="action" value="studiofy_save_project">
                 <?php wp_nonce_field('save_project', 'studiofy_nonce'); ?>
-                <?php if($data) echo '<input type="hidden" name="id" value="'.$data->id.'">'; ?>
+                <?php if($data->id) echo '<input type="hidden" name="id" value="'.$data->id.'">'; ?>
+                
                 <table class="form-table">
-                    <tr><th scope="row"><label>Title *</label></th><td><input type="text" name="title" required value="<?php echo esc_attr($data->title ?? ''); ?>" class="regular-text"></td></tr>
-                    <tr><th scope="row"><label>Customer *</label></th><td><select name="customer_id" required><option value="">Select</option><?php foreach($customers as $c) echo "<option value='{$c->id}' ".selected($data->customer_id ?? 0, $c->id, false).">{$c->first_name} {$c->last_name}</option>"; ?></select></td></tr>
-                    <tr><th scope="row"><label>Status</label></th><td><select name="status"><option value="todo" <?php selected($data->status ?? '', 'todo'); ?>>To Do</option><option value="in_progress" <?php selected($data->status ?? '', 'in_progress'); ?>>In Progress</option><option value="future" <?php selected($data->status ?? '', 'future'); ?>>Future</option></select></td></tr>
+                    <tr><th scope="row"><label>Title *</label></th><td><input type="text" name="title" required value="<?php echo esc_attr($data->title); ?>" class="regular-text"></td></tr>
+                    <tr><th scope="row"><label>Customer *</label></th><td><select name="customer_id" required><option value="">Select</option><?php foreach($customers as $c) echo "<option value='{$c->id}' ".selected($data->customer_id, $c->id, false).">{$c->first_name} {$c->last_name}</option>"; ?></select></td></tr>
+                    <tr><th scope="row"><label>Status</label></th><td><select name="status"><option value="todo" <?php selected($data->status, 'todo'); ?>>To Do</option><option value="in_progress" <?php selected($data->status, 'in_progress'); ?>>In Progress</option><option value="future" <?php selected($data->status, 'future'); ?>>Future</option></select></td></tr>
                     <tr><th scope="row"><label>Budget</label></th><td><input type="text" name="budget" class="regular-text" placeholder="$0.00" value="<?php echo esc_attr($data->budget ? '$'.number_format((float)$data->budget, 2) : ''); ?>"></td></tr>
                     <tr><th scope="row">Tax</th><td><label><input type="radio" name="tax_status" value="taxed" <?php checked($tax_status, 'taxed'); ?>> Taxable</label> <label><input type="radio" name="tax_status" value="exempt" <?php checked($tax_status, 'exempt'); ?>> Exempt</label></td></tr>
-                    <tr><th scope="row"><label>Notes</label></th><td><textarea name="notes" rows="5" class="large-text"><?php echo esc_textarea($data->notes ?? ''); ?></textarea></td></tr>
+                    <tr><th scope="row"><label>Notes</label></th><td><textarea name="notes" rows="5" class="large-text"><?php echo esc_textarea($data->notes); ?></textarea></td></tr>
                 </table>
                 <p class="submit"><button type="submit" class="button button-primary">Save Project</button> <a href="<?php echo admin_url('admin.php?page=studiofy-projects'); ?>" class="button">Cancel</a></p>
             </form>
