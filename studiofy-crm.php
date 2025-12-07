@@ -2,14 +2,14 @@
 /**
  * Plugin Name: Studiofy CRM
  * Description: A comprehensive Elementor Addon and CRM for Photographers.
- * Version: 2.2.34
+ * Version: 2.2.35
  * Author: Ian R. Gordon
  * Text Domain: studiofy
  * Requires PHP: 8.1
  * Requires at least: 6.6
  * Elementor tested up to: 3.25.0
  * @package Studiofy
- * @version 2.2.34
+ * @version 2.2.35
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ add_action('send_headers', function() {
     }
 });
 
-define('STUDIOFY_VERSION', '2.2.34');
+define('STUDIOFY_VERSION', '2.2.35');
 define('STUDIOFY_DB_VERSION', '2.16');
 define('STUDIOFY_PATH', plugin_dir_path(__FILE__));
 define('STUDIOFY_URL', plugin_dir_url(__FILE__));
@@ -97,13 +97,10 @@ function studiofy_update_db_check(): void {
 }
 add_action('plugins_loaded', 'Studiofy\\studiofy_update_db_check');
 
-/**
- * Register CPT and Force Elementor Support
- */
 function studiofy_register_cpt(): void {
     register_post_type('studiofy_doc', [
         'labels' => ['name' => 'Contract Docs', 'singular_name' => 'Contract Doc'],
-        'public' => true, // Changed to true to ensure Elementor can load preview
+        'public' => true, 
         'show_ui' => true, 
         'show_in_menu' => false, 
         'supports' => ['title', 'editor', 'elementor'],
@@ -113,7 +110,7 @@ function studiofy_register_cpt(): void {
 }
 add_action('init', 'Studiofy\\studiofy_register_cpt');
 
-// FIX: Force Elementor to recognize studiofy_doc
+// Force Elementor support
 add_action('elementor/init', function() {
     add_post_type_support('studiofy_doc', 'elementor');
 });
