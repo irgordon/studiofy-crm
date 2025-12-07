@@ -18,67 +18,9 @@ class GalleryShortcode {
         add_action('wp_ajax_nopriv_studiofy_submit_proof', [$this, 'handle_submit']);
     }
 
-    public function enqueue_assets(): void {
-        wp_register_style('studiofy-gallery-front', STUDIOFY_URL . 'assets/css/gallery.css', [], STUDIOFY_VERSION);
-        wp_register_script('studiofy-gallery-front-js', STUDIOFY_URL . 'assets/js/gallery-front.js', ['jquery'], STUDIOFY_VERSION, true);
-        
-        wp_localize_script('studiofy-gallery-front-js', 'studiofyProofSettings', [
-            'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('studiofy_proof_submit')
-        ]);
-    }
-
-    public function render($atts): string {
-        $atts = shortcode_atts(['id' => 0], $atts);
-        $gallery_id = (int) $atts['id'];
-
-        if (!$gallery_id) return '<p>Gallery ID not provided.</p>';
-
-        global $wpdb;
-        $gallery = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_galleries WHERE id = %d", $gallery_id));
-        if (!$gallery) return '<p>Gallery not found.</p>';
-
-        $files = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_gallery_files WHERE gallery_id = %d ORDER BY created_at DESC", $gallery_id));
-
-        wp_enqueue_style('studiofy-gallery-front');
-        wp_enqueue_script('studiofy-gallery-front-js');
-
-        ob_start();
-        ?>
-        <div class="studiofy-frontend-gallery" id="gallery-proof-<?php echo $gallery_id; ?>">
-            <div class="gallery-header">
-                <h2><?php echo esc_html($gallery->title); ?></h2>
-                <p><?php echo esc_html($gallery->description); ?></p>
-            </div>
-            
-            <?php if (empty($files)): ?>
-                <p>No images found in this gallery.</p>
-            <?php else: ?>
-                <div class="studiofy-actions-top">
-                    <button class="button studiofy-submit-proof" data-id="<?php echo $gallery_id; ?>">Submit Selections</button>
-                </div>
-
-                <div class="studiofy-grid">
-                    <?php foreach ($files as $file): ?>
-                        <div class="studiofy-grid-item" data-file-id="<?php echo $file->id; ?>">
-                            <img src="<?php echo esc_url($file->file_url); ?>" alt="<?php echo esc_attr($file->file_name); ?>" loading="lazy">
-                            <div class="proof-overlay">
-                                <button class="proof-btn approve" aria-label="Approve">✓</button>
-                                <button class="proof-btn reject" aria-label="Reject">✗</button>
-                            </div>
-                            <div class="status-indicator"></div>
-                        </div>
-                    <?php endforeach; ?>
-                </div>
-
-                <div class="studiofy-actions-bottom">
-                    <button class="button studiofy-submit-proof" data-id="<?php echo $gallery_id; ?>">Submit Selections to Photographer</button>
-                </div>
-            <?php endif; ?>
-        </div>
-        <?php
-        return ob_get_clean();
-    }
+    // ... (enqueue_assets, render - same as v2.2.27, untruncated in actual file) ...
+    public function enqueue_assets(): void { wp_register_style('studiofy-gallery-front', STUDIOFY_URL . 'assets/css/gallery.css', [], STUDIOFY_VERSION); wp_register_script('studiofy-gallery-front-js', STUDIOFY_URL . 'assets/js/gallery-front.js', ['jquery'], STUDIOFY_VERSION, true); wp_localize_script('studiofy-gallery-front-js', 'studiofyProofSettings', [ 'ajax_url' => admin_url('admin-ajax.php'), 'nonce' => wp_create_nonce('studiofy_proof_submit') ]); }
+    public function render($atts): string { $atts = shortcode_atts(['id' => 0], $atts); $gallery_id = (int) $atts['id']; if (!$gallery_id) return '<p>Gallery ID not provided.</p>'; global $wpdb; $gallery = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_galleries WHERE id = %d", $gallery_id)); if (!$gallery) return '<p>Gallery not found.</p>'; $files = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_gallery_files WHERE gallery_id = %d ORDER BY created_at DESC", $gallery_id)); wp_enqueue_style('studiofy-gallery-front'); wp_enqueue_script('studiofy-gallery-front-js'); ob_start(); ?> <div class="studiofy-frontend-gallery" id="gallery-proof-<?php echo $gallery_id; ?>"> <div class="gallery-header"> <h2><?php echo esc_html($gallery->title); ?></h2> <p><?php echo esc_html($gallery->description); ?></p> </div> <?php if (empty($files)): ?> <p>No images found in this gallery.</p> <?php else: ?> <div class="studiofy-actions-top"> <button class="button studiofy-submit-proof" data-id="<?php echo $gallery_id; ?>">Submit Selections</button> </div> <div class="studiofy-grid"> <?php foreach ($files as $file): ?> <div class="studiofy-grid-item" data-file-id="<?php echo $file->id; ?>"> <img src="<?php echo esc_url($file->file_url); ?>" alt="<?php echo esc_attr($file->file_name); ?>" loading="lazy"> <div class="proof-overlay"> <button class="proof-btn approve" aria-label="Approve">✓</button> <button class="proof-btn reject" aria-label="Reject">✗</button> </div> <div class="status-indicator"></div> </div> <?php endforeach; ?> </div> <div class="studiofy-actions-bottom"> <button class="button studiofy-submit-proof" data-id="<?php echo $gallery_id; ?>">Submit Selections to Photographer</button> </div> <?php endif; ?> </div> <?php return ob_get_clean(); }
 
     public function handle_submit(): void {
         check_ajax_referer('studiofy_proof_submit', 'nonce');
@@ -109,27 +51,27 @@ class GalleryShortcode {
         $message = "Client has submitted selections for gallery: {$gallery->title}.\nTotal Approved: $approved_count";
         wp_mail($admin_email, $subject, $message);
 
-        // 3. Kanban Integration (UPDATED: High Priority, Specific Title)
+        // 3. Kanban Integration (UPDATED)
         if ($gallery->customer_id) {
-            // Find linked Project
+            // Find ANY active project, not just "in_progress", to ensure task is created
             $project_row = $wpdb->get_row($wpdb->prepare(
                 "SELECT id, title FROM {$wpdb->prefix}studiofy_projects WHERE customer_id = %d ORDER BY created_at DESC LIMIT 1", 
                 $gallery->customer_id
             ));
 
             if ($project_row) {
-                // Ensure Milestone
-                $m_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}studiofy_milestones WHERE project_id = %d LIMIT 1", $project_row->id));
+                // Ensure Milestone "General Tasks" exists
+                $m_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}studiofy_milestones WHERE project_id = %d AND name = 'General Tasks' LIMIT 1", $project_row->id));
                 if (!$m_id) {
                     $wpdb->insert($wpdb->prefix.'studiofy_milestones', ['project_id' => $project_row->id, 'name' => 'General Tasks']);
                     $m_id = $wpdb->insert_id;
                 }
 
-                // Add "Proofs Approved" Task
+                // Create Task
                 $wpdb->insert($wpdb->prefix.'studiofy_tasks', [
                     'milestone_id' => $m_id,
-                    'title' => 'Proofs Approved: ' . $project_row->title, // Requested Format
-                    'priority' => 'Urgent', // High priority
+                    'title' => 'Proofs Approved: ' . $project_row->title,
+                    'priority' => 'Urgent', 
                     'description' => "Client selected $approved_count images from {$gallery->title}. Proceed to editing.",
                     'status' => 'pending', 
                     'created_at' => current_time('mysql')
