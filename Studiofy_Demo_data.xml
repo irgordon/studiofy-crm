@@ -30,31 +30,11 @@
     </tasks>
     
     <galleries>
-        <gallery id="1" customer_id="1">
-            <title>John Doe - Portrait Proofing</title>
-            <description>Please select your favorite 5 images for retouching.</description>
-            <password>demo123</password>
-        </gallery>
-        <gallery id="2" customer_id="2">
-            <title>Smith Wedding - Highlights</title>
-            <description>Ceremony and Reception highlights.</description>
-            <password>wedding2025</password>
-        </gallery>
-        <gallery id="3" customer_id="3">
-            <title>Commercial Product Launch</title>
-            <description>High-res product shots for catalog.</description>
-            <password>launch25</password>
-        </gallery>
-        <gallery id="4" customer_id="4">
-            <title>Ms. Davis - Boudoir</title>
-            <description>Private gallery. Password protected.</description>
-            <password>secret456</password>
-        </gallery>
-        <gallery id="5" customer_id="9">
-            <title>TechStart Headshots</title>
-            <description>Team headshots for website.</description>
-            <password>techstart</password>
-        </gallery>
+        <gallery id="1" customer_id="1"><title>John Doe - Portrait Proofing</title><description>Please select your favorite 5 images for retouching.</description><password>demo123</password></gallery>
+        <gallery id="2" customer_id="2"><title>Smith Wedding - Highlights</title><description>Ceremony and Reception highlights.</description><password>wedding2025</password></gallery>
+        <gallery id="3" customer_id="3"><title>Commercial Product Launch</title><description>High-res product shots for catalog.</description><password>launch25</password></gallery>
+        <gallery id="4" customer_id="4"><title>Ms. Davis - Boudoir</title><description>Private gallery. Password protected.</description><password>secret456</password></gallery>
+        <gallery id="5" customer_id="9"><title>TechStart Headshots</title><description>Team headshots for website.</description><password>techstart</password></gallery>
     </galleries>
 
     <gallery_files>
@@ -70,59 +50,7 @@
         <file gallery_id="1" url="https://picsum.photos/800/800?random=10"><name>portrait_10.jpg</name></file>
         <file gallery_id="1" url="https://picsum.photos/800/800?random=11"><name>portrait_11.jpg</name></file>
         <file gallery_id="1" url="https://picsum.photos/800/800?random=12"><name>portrait_12.jpg</name></file>
-        
-        <file gallery_id="2" url="https://picsum.photos/800/800?random=13"><name>wedding_01.jpg</name></file>
-        <file gallery_id="2" url="https://picsum.photos/800/800?random=14"><name>wedding_02.jpg</name></file>
-        <file gallery_id="2" url="https://picsum.photos/800/800?random=15"><name>wedding_03.jpg</name></file>
-        <file gallery_id="2" url="https://picsum.photos/800/800?random=16"><name>wedding_04.jpg</name></file>
-        <file gallery_id="2" url="https://picsum.photos/800/800?random=17"><name>wedding_05.jpg</name></file>
-        <file gallery_id="2" url="https://picsum.photos/800/800?random=18"><name>wedding_06.jpg</name></file>
-        <file gallery_id="2" url="https://picsum.photos/800/800?random=19"><name>wedding_07.jpg</name></file>
-        <file gallery_id="2" url="https://picsum.photos/800/800?random=20"><name>wedding_08.jpg</name></file>
-        <file gallery_id="2" url="https://picsum.photos/800/800?random=21"><name>wedding_09.jpg</name></file>
-        <file gallery_id="2" url="https://picsum.photos/800/800?random=22"><name>wedding_10.jpg</name></file>
-        <file gallery_id="2" url="https://picsum.photos/800/800?random=23"><name>wedding_11.jpg</name></file>
-        <file gallery_id="2" url="https://picsum.photos/800/800?random=24"><name>wedding_12.jpg</name></file>
-
-        <file gallery_id="3" url="https://picsum.photos/800/800?random=25"><name>comm_01.jpg</name></file>
-        <file gallery_id="3" url="https://picsum.photos/800/800?random=26"><name>comm_02.jpg</name></file>
-        <file gallery_id="3" url="https://picsum.photos/800/800?random=27"><name>comm_03.jpg</name></file>
-        <file gallery_id="3" url="https://picsum.photos/800/800?random=28"><name>comm_04.jpg</name></file>
-        <file gallery_id="3" url="https://picsum.photos/800/800?random=29"><name>comm_05.jpg</name></file>
-        <file gallery_id="3" url="https://picsum.photos/800/800?random=30"><name>comm_06.jpg</name></file>
-        <file gallery_id="3" url="https://picsum.photos/800/800?random=31"><name>comm_07.jpg</name></file>
-        <file gallery_id="3" url="https://picsum.photos/800/800?random=32"><name>comm_08.jpg</name></file>
-        <file gallery_id="3" url="https://picsum.photos/800/800?random=33"><name>comm_09.jpg</name></file>
-        <file gallery_id="3" url="https://picsum.photos/800/800?random=34"><name>comm_10.jpg</name></file>
-        <file gallery_id="3" url="https://picsum.photos/800/800?random=35"><name>comm_11.jpg</name></file>
-        <file gallery_id="3" url="https://picsum.photos/800/800?random=36"><name>comm_12.jpg</name></file>
-
-        <file gallery_id="4" url="https://picsum.photos/800/800?random=37"><name>boud_01.jpg</name></file>
-        <file gallery_id="4" url="https://picsum.photos/800/800?random=38"><name>boud_02.jpg</name></file>
-        <file gallery_id="4" url="https://picsum.photos/800/800?random=39"><name>boud_03.jpg</name></file>
-        <file gallery_id="4" url="https://picsum.photos/800/800?random=40"><name>boud_04.jpg</name></file>
-        <file gallery_id="4" url="https://picsum.photos/800/800?random=41"><name>boud_05.jpg</name></file>
-        <file gallery_id="4" url="https://picsum.photos/800/800?random=42"><name>boud_06.jpg</name></file>
-        <file gallery_id="4" url="https://picsum.photos/800/800?random=43"><name>boud_07.jpg</name></file>
-        <file gallery_id="4" url="https://picsum.photos/800/800?random=44"><name>boud_08.jpg</name></file>
-        <file gallery_id="4" url="https://picsum.photos/800/800?random=45"><name>boud_09.jpg</name></file>
-        <file gallery_id="4" url="https://picsum.photos/800/800?random=46"><name>boud_10.jpg</name></file>
-        <file gallery_id="4" url="https://picsum.photos/800/800?random=47"><name>boud_11.jpg</name></file>
-        <file gallery_id="4" url="https://picsum.photos/800/800?random=48"><name>boud_12.jpg</name></file>
-
-        <file gallery_id="5" url="https://picsum.photos/800/800?random=49"><name>tech_01.jpg</name></file>
-        <file gallery_id="5" url="https://picsum.photos/800/800?random=50"><name>tech_02.jpg</name></file>
-        <file gallery_id="5" url="https://picsum.photos/800/800?random=51"><name>tech_03.jpg</name></file>
-        <file gallery_id="5" url="https://picsum.photos/800/800?random=52"><name>tech_04.jpg</name></file>
-        <file gallery_id="5" url="https://picsum.photos/800/800?random=53"><name>tech_05.jpg</name></file>
-        <file gallery_id="5" url="https://picsum.photos/800/800?random=54"><name>tech_06.jpg</name></file>
-        <file gallery_id="5" url="https://picsum.photos/800/800?random=55"><name>tech_07.jpg</name></file>
-        <file gallery_id="5" url="https://picsum.photos/800/800?random=56"><name>tech_08.jpg</name></file>
-        <file gallery_id="5" url="https://picsum.photos/800/800?random=57"><name>tech_09.jpg</name></file>
-        <file gallery_id="5" url="https://picsum.photos/800/800?random=58"><name>tech_10.jpg</name></file>
-        <file gallery_id="5" url="https://picsum.photos/800/800?random=59"><name>tech_11.jpg</name></file>
-        <file gallery_id="5" url="https://picsum.photos/800/800?random=60"><name>tech_12.jpg</name></file>
-    </gallery_files>
+        </gallery_files>
 
     <invoices>
         <invoice customer_id="1" project_id="1"><title>Deposit - Portrait</title><amount>355.00</amount><status>Paid</status></invoice>
@@ -133,8 +61,48 @@
     </invoices>
 
     <contracts>
-        <contract customer_id="1" project_id="1"><title>Portrait Agreement</title><amount>400.00</amount><status>signed</status><terms>Standard portrait terms.</terms></contract>
-        <contract customer_id="2" project_id="2"><title>Wedding Contract</title><amount>5000.00</amount><status>draft</status><terms>Wedding photography exclusive rights.</terms></contract>
-        <contract customer_id="3" project_id="3"><title>Commercial License</title><amount>12250.00</amount><status>active</status><terms>Commercial usage rights granted.</terms></contract>
+        <contract customer_id="1" project_id="1"><title>Portrait Agreement</title><amount>400.00</amount><status>signed</status>
+            <terms><![CDATA[
+            <div class="studiofy-contract-template">
+            <h2 style="text-align: center;">PHOTOGRAPHY CONTRACT</h2>
+            <h3>1. The Parties</h3><p>This Service Contract (the “Agreement”) made on [DATE] is by and between the Photographer and the Client.</p>
+            <h3>2. Term</h3><p>The term of this Agreement shall commence on [DATE] and terminate upon completion of the Services.</p>
+            <h3>3. Services</h3><p>The Service Provider agrees to provide photography services as discussed.</p>
+            <h3>4. Payment Amount</h3><p>The Client agrees to pay the Service Provider the following compensation: <strong>Total Amount: $400.00</strong></p>
+            <h3>5. Retainer</h3><p>The Client is REQUIRED to pay a Retainer in the amount of $200.00. This Retainer is Non-Refundable.</p>
+            <h3>6. Copyright and Ownership</h3><p>All photographs taken by the Service Provider shall remain the property of the Service Provider.</p>
+            <h3>7. Model Release</h3><p>The Service Provider shall have the right to use the photographs for marketing purposes.</p>
+            <h3>8. Liability & Indemnification</h3><p>If the Service Provider is unable to perform due to causes outside control, liability is limited to return of payments.</p>
+            <h3>9. Independent Contractor</h3><p>The Service Provider is an independent contractor and not an employee of the Client.</p>
+            <h3>10. Governing Law</h3><p>This Agreement shall be governed under the laws of the State.</p>
+            <h3>11. Entire Agreement</h3><p>This Agreement constitutes the entire agreement between the Parties.</p>
+            </div>
+            ]]></terms>
+        </contract>
+        
+        <contract customer_id="2" project_id="2"><title>Wedding Contract</title><amount>5000.00</amount><status>draft</status>
+            <terms><![CDATA[
+            <div class="studiofy-contract-template">
+            <h2 style="text-align: center;">WEDDING PHOTOGRAPHY CONTRACT</h2>
+            <h3>1. The Parties</h3><p>This Service Contract (the “Agreement”) made on [DATE] is by and between the Photographer and the Client.</p>
+            <h3>2. Services</h3><p>Full day wedding coverage (8 hours). Second shooter included.</p>
+            <h3>3. Payment</h3><p>Total: $5,000.00. 50% Retainer due upon signing.</p>
+            <h3>4. Copyright</h3><p>Photographer retains copyright. Client receives print rights for personal use.</p>
+            <h3>5. Cancellation</h3><p>Retainer is non-refundable if cancelled within 90 days of event.</p>
+            </div>
+            ]]></terms>
+        </contract>
+
+        <contract customer_id="3" project_id="3"><title>Commercial License</title><amount>12250.00</amount><status>active</status>
+            <terms><![CDATA[
+            <div class="studiofy-contract-template">
+            <h2 style="text-align: center;">COMMERCIAL PHOTOGRAPHY LICENSE</h2>
+            <h3>1. Grant of Rights</h3><p>Photographer grants Client exclusive, worldwide usage rights for 2 years.</p>
+            <h3>2. Services</h3><p>Product photography for catalog and web use.</p>
+            <h3>3. Payment</h3><p>Total Fee: $12,250.00. Payable Net 30.</p>
+            <h3>4. Indemnification</h3><p>Client agrees to indemnify Photographer against claims arising from use of images.</p>
+            </div>
+            ]]></terms>
+        </contract>
     </contracts>
 </studiofy_demo>
