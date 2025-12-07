@@ -2,7 +2,7 @@
 /**
  * Settings Controller
  * @package Studiofy\Admin
- * @version 2.2.37
+ * @version 2.2.39
  */
 
 declare(strict_types=1);
@@ -76,7 +76,6 @@ class Settings {
     }
 
     public function field_text(array $args): void {
-        // FIX: Force array return to prevent bool access errors on fresh install
         $options = (array) get_option('studiofy_branding', []);
         $val = isset($options[$args['key']]) ? (string)$options[$args['key']] : '';
         $id = 'studiofy_' . $args['key'];
