@@ -2,14 +2,14 @@
 /**
  * Plugin Name: Studiofy CRM
  * Description: A comprehensive Elementor Addon and CRM for Photographers.
- * Version: 2.2.42
+ * Version: 2.2.43
  * Author: Ian R. Gordon
  * Text Domain: studiofy
  * Requires PHP: 8.1
  * Requires at least: 6.6
  * Elementor tested up to: 3.25.0
  * @package Studiofy
- * @version 2.2.42
+ * @version 2.2.43
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ add_action('send_headers', function() {
     }
 });
 
-define('STUDIOFY_VERSION', '2.2.42');
+define('STUDIOFY_VERSION', '2.2.43');
 define('STUDIOFY_DB_VERSION', '2.16');
 define('STUDIOFY_PATH', plugin_dir_path(__FILE__));
 define('STUDIOFY_URL', plugin_dir_url(__FILE__));
@@ -98,7 +98,7 @@ function studiofy_update_db_check(): void {
 add_action('plugins_loaded', 'Studiofy\\studiofy_update_db_check');
 
 function studiofy_register_cpt(): void {
-    // 1. Contract Docs (Hidden Elementor Bridge)
+    // 1. Contract Docs (Bridge CPT)
     register_post_type('studiofy_doc', [
         'labels' => ['name' => 'Contract Docs', 'singular_name' => 'Contract Doc'],
         'public' => true, 
@@ -109,18 +109,18 @@ function studiofy_register_cpt(): void {
         'map_meta_cap' => true,
     ]);
 
-    // 2. Private Gallery Pages (NEW: Hidden from Menus)
-    register_post_type('studiofy_gallery_page', [
+    // 2. Private Galleries (FIXED: Renamed to 'studiofy_gal' to fit 20-char limit)
+    register_post_type('studiofy_gal', [
         'labels' => ['name' => 'Client Galleries', 'singular_name' => 'Client Gallery'],
-        'public' => true, // Must be public to be viewed
+        'public' => true, 
         'show_ui' => true, 
-        'show_in_menu' => false, // Hide from Admin Menu
-        'show_in_nav_menus' => false, // CRITICAL: Hide from Appearance > Menus
-        'exclude_from_search' => true, // Hide from Site Search
+        'show_in_menu' => false, 
+        'show_in_nav_menus' => false, 
+        'exclude_from_search' => true, 
         'supports' => ['title', 'editor', 'elementor'],
         'capability_type' => 'page',
         'map_meta_cap' => true,
-        'rewrite' => ['slug' => 'proof'], // Pretty URL: /proof/gallery-name
+        'rewrite' => ['slug' => 'proof'], 
     ]);
 }
 add_action('init', 'Studiofy\\studiofy_register_cpt');
@@ -128,7 +128,7 @@ add_action('init', 'Studiofy\\studiofy_register_cpt');
 // Force Elementor support for both CPTs
 add_action('elementor/init', function() {
     add_post_type_support('studiofy_doc', 'elementor');
-    add_post_type_support('studiofy_gallery_page', 'elementor');
+    add_post_type_support('studiofy_gal', 'elementor');
 });
 
 function run_studiofy(): void {
