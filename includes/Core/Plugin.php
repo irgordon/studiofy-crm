@@ -2,7 +2,7 @@
 /**
  * Main Controller
  * @package Studiofy\Core
- * @version 2.2.56
+ * @version 2.3.5
  */
 
 declare(strict_types=1);
@@ -20,26 +20,23 @@ use Studiofy\Api\InvoiceRoutes;
 use Studiofy\Core\DemoDataManager;
 use Studiofy\Frontend\GalleryShortcode; 
 use Studiofy\Frontend\ContractShortcode;
-use Studiofy\Frontend\PaymentShortcode; // NEW
+use Studiofy\Frontend\PaymentShortcode;
+use Studiofy\Frontend\SignatureShortcode; // NEW
 
 class Plugin {
     
     public function run(): void {
-        // Admin UI
         (new Menu())->init();
-        
-        // Core Logic
         (new DemoDataManager())->init();
 
         // Frontend Logic 
         (new GalleryShortcode())->init();
         (new ContractShortcode())->init();
-        (new PaymentShortcode())->init(); // NEW
+        (new PaymentShortcode())->init();
+        (new SignatureShortcode())->init(); // NEW
 
-        // Modules
         (new GalleryController())->init();
         
-        // REST APIs
         (new CustomerRoutes())->init();
         (new BookingRoutes())->init();
         (new KanbanRoutes())->init();
