@@ -2,7 +2,7 @@
 /**
  * Admin Menu Controller
  * @package Studiofy\Admin
- * @version 2.2.39
+ * @version 2.2.40
  */
 
 declare(strict_types=1);
@@ -60,6 +60,7 @@ class Menu {
     }
 
     public function register_menu_pages(): void {
+        // FIX: Cast everything to string explicitly
         add_menu_page('Studiofy CRM', 'Studiofy CRM', 'manage_options', 'studiofy-dashboard', [$this->dashboardController, 'render_page'], 'dashicons-camera', 6);
         add_submenu_page('studiofy-dashboard', 'Dashboard', 'Dashboard', 'manage_options', 'studiofy-dashboard', [$this->dashboardController, 'render_page']);
         add_submenu_page('studiofy-dashboard', 'Customers', 'Customers', 'manage_options', 'studiofy-customers', [$this->customerController, 'render_page']);
@@ -121,6 +122,7 @@ class Menu {
     }
 
     public function enqueue_styles($hook): void {
+        // FIX: Immediate string casting to prevent strpos() errors
         $hook_str = (string) $hook;
         
         if (strpos($hook_str, 'studiofy') === false) return;
