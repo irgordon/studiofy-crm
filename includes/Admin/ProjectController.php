@@ -2,7 +2,7 @@
 /**
  * Project Controller
  * @package Studiofy\Admin
- * @version 2.2.54
+ * @version 2.2.55
  */
 
 declare(strict_types=1);
@@ -33,17 +33,42 @@ class ProjectController {
 
     public function render_dashboard(): void {
         wp_enqueue_script('jquery-ui-sortable');
-        wp_enqueue_script('studiofy-kanban', STUDIOFY_URL . 'assets/js/kanban.js', ['jquery', 'jquery-ui-sortable', 'wp-api-fetch'], studiofy_get_asset_version('assets/js/kanban.js'), true);
         
-        // FIX: Ensure this script is loaded dependent on jQuery and API Fetch
-        wp_enqueue_script('studiofy-modal-js', STUDIOFY_URL . 'assets/js/project-modal.js', ['jquery', 'wp-api-fetch'], studiofy_get_asset_version('assets/js/project-modal.js'), true);
+        wp_enqueue_script(
+            'studiofy-kanban', 
+            STUDIOFY_URL . 'assets/js/kanban.js', 
+            ['jquery', 'jquery-ui-sortable', 'wp-api-fetch'], 
+            studiofy_get_asset_version('assets/js/kanban.js'), 
+            true
+        );
         
-        // Removed studiofy-modal-css enqueue as styles are in admin.css
+        wp_enqueue_script(
+            'studiofy-modal-js', 
+            STUDIOFY_URL . 'assets/js/project-modal.js', 
+            ['jquery', 'wp-api-fetch'], 
+            studiofy_get_asset_version('assets/js/project-modal.js'), 
+            true
+        );
+        
+        wp_enqueue_style(
+            'studiofy-modal-css', 
+            STUDIOFY_URL . 'assets/css/modal.css', 
+            [], 
+            studiofy_get_asset_version('assets/css/modal.css')
+        );
+
+        // Fetch Users for Task Assignment
+        $users = get_users(['fields' => ['ID', 'display_name']]);
+        $user_list = [];
+        foreach($users as $u) {
+            $user_list[] = ['id' => $u->ID, 'name' => $u->display_name];
+        }
 
         wp_localize_script('studiofy-kanban', 'studiofySettings', [
             'root' => esc_url_raw(rest_url()),
             'nonce' => wp_create_nonce('wp_rest'),
-            'ajax_url' => admin_url('admin-ajax.php')
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'users' => $user_list
         ]);
         
         global $wpdb;
@@ -64,18 +89,23 @@ class ProjectController {
                     <a href="?page=studiofy-projects&action=new" class="button button-primary button-large">Create Project</a>
                 </div>
             <?php else: ?>
-                <h2 class="nav-tab-wrapper"><span class="nav-tab nav-tab-active">Kanban Board</span></h2>
+                <h2 class="nav-tab-wrapper">
+                    <span class="nav-tab nav-tab-active">Kanban Board</span>
+                </h2>
                 <div style="margin-top: 20px;">
                     <?php $this->render_kanban_html(); ?>
                 </div>
-                <h2 class="nav-tab-wrapper" style="margin-top: 40px;"><span class="nav-tab nav-tab-active">Project List</span></h2>
+
+                <h2 class="nav-tab-wrapper" style="margin-top: 40px;">
+                    <span class="nav-tab nav-tab-active">Project List</span>
+                </h2>
                 <div style="margin-top: 20px;">
                     <?php $this->render_list_html(); ?>
                 </div>
             <?php endif; ?>
         </div>
         <?php
-        // Critical: Include the modal HTML structure
+        // Include Modal Template
         require_once STUDIOFY_PATH . 'templates/admin/modal-project.php';
     }
 
@@ -99,6 +129,7 @@ class ProjectController {
                 
                 <div class="studiofy-card-container">
                     <?php foreach ($projects[$key] as $project): 
+                        // Fetch tasks (Prioritize Urgent/High)
                         $tasks = $wpdb->get_results($wpdb->prepare(
                             "SELECT t.* FROM {$wpdb->prefix}studiofy_tasks t 
                              JOIN {$wpdb->prefix}studiofy_milestones m ON t.milestone_id = m.id 
@@ -123,7 +154,8 @@ class ProjectController {
                                 <?php if (!empty($tasks)): ?>
                                     <ul class="task-preview-list">
                                         <?php foreach ($tasks as $t): 
-                                            $is_proof = (strpos($t->title, 'Proofs Approved') !== false) || (strpos($t->title, 'Proof') !== false);
+                                            // Highlight Proofing Tasks
+                                            $is_proof = (strpos($t->title, 'Proof') !== false) || (strpos($t->title, 'Approved') !== false);
                                             $style = $is_proof ? 'style="color: #d63638; font-weight: bold;"' : '';
                                         ?>
                                             <li <?php echo $style; ?> class="task-item" data-task-id="<?php echo $t->id; ?>">
@@ -152,23 +184,61 @@ class ProjectController {
             <?php endforeach; ?>
         </div>
         <style>
-            .task-preview-list { margin: 10px 0; padding: 0; list-style: none; font-size: 11px; color: #50575e; border-top: 1px solid #f0f0f1; padding-top: 5px; }
-            .task-preview-list li { margin-bottom: 3px; display: flex; justify-content: space-between; align-items: center; }
-            .task-title-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 85%; }
-            .btn-delete-task-inline { background: none; border: none; padding: 0; cursor: pointer; color: #d63638; visibility: hidden; opacity: 0.6; }
-            .task-preview-list li:hover .btn-delete-task-inline { visibility: visible; }
-            .btn-delete-task-inline:hover { opacity: 1; }
-            .btn-delete-task-inline .dashicons { font-size: 14px; width: 14px; height: 14px; }
+            .task-preview-list { 
+                margin: 10px 0; 
+                padding: 0; 
+                list-style: none; 
+                font-size: 11px; 
+                color: #50575e; 
+                border-top: 1px solid #f0f0f1; 
+                padding-top: 5px; 
+            }
+            .task-preview-list li { 
+                margin-bottom: 3px; 
+                display: flex; 
+                justify-content: space-between; 
+                align-items: center; 
+            }
+            .task-title-text { 
+                white-space: nowrap; 
+                overflow: hidden; 
+                text-overflow: ellipsis; 
+                max-width: 85%; 
+            }
+            .btn-delete-task-inline { 
+                background: none; 
+                border: none; 
+                padding: 0; 
+                cursor: pointer; 
+                color: #d63638; 
+                visibility: hidden; 
+                opacity: 0.6; 
+            }
+            .task-preview-list li:hover .btn-delete-task-inline { 
+                visibility: visible; 
+            }
+            .btn-delete-task-inline:hover { 
+                opacity: 1; 
+            }
+            .btn-delete-task-inline .dashicons { 
+                font-size: 14px; 
+                width: 14px; 
+                height: 14px; 
+            }
         </style>
         <?php
     }
 
     public function handle_delete_task_ajax(): void {
         check_ajax_referer('wp_rest', 'nonce');
-        if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error('Unauthorized');
+        }
+        
         $task_id = (int)$_POST['task_id'];
         global $wpdb;
-        $wpdb->delete($wpdb->prefix.'studiofy_tasks', ['id' => $task_id]);
+        $wpdb->delete($wpdb->prefix . 'studiofy_tasks', ['id' => $task_id]);
+        
         wp_send_json_success(['message' => 'Task deleted']);
     }
 
@@ -176,12 +246,19 @@ class ProjectController {
         global $wpdb;
         $orderby = $_GET['orderby'] ?? 'id';
         $order = strtoupper($_GET['order'] ?? 'DESC');
-        $sql = "SELECT p.*, c.first_name, c.last_name, (SELECT status FROM {$wpdb->prefix}studiofy_invoices WHERE project_id = p.id LIMIT 1) as payment_status FROM {$wpdb->prefix}studiofy_projects p LEFT JOIN {$wpdb->prefix}studiofy_customers c ON p.customer_id = c.id ORDER BY p.$orderby $order";
+        
+        $sql = "SELECT p.*, c.first_name, c.last_name, 
+                (SELECT status FROM {$wpdb->prefix}studiofy_invoices WHERE project_id = p.id LIMIT 1) as payment_status 
+                FROM {$wpdb->prefix}studiofy_projects p 
+                LEFT JOIN {$wpdb->prefix}studiofy_customers c ON p.customer_id = c.id 
+                ORDER BY p.$orderby $order";
+                
         $items = $wpdb->get_results($sql);
         ?>
         <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
             <input type="hidden" name="action" value="studiofy_bulk_project">
             <?php wp_nonce_field('bulk_project', 'studiofy_nonce'); ?>
+            
             <div class="tablenav top">
                 <div class="alignleft actions bulkactions">
                     <select name="bulk_action">
@@ -191,8 +268,19 @@ class ProjectController {
                     <button type="submit" class="button action">Apply</button>
                 </div>
             </div>
+            
             <table class="wp-list-table widefat fixed striped">
-                <thead><tr><td id="cb" class="manage-column column-cb check-column"><input type="checkbox"></td><th class="manage-column sortable"><?php echo $this->sort_link('Project ID', 'id'); ?></th><th class="manage-column sortable"><?php echo $this->sort_link('Project Name', 'title'); ?></th><th class="manage-column">Customer Name</th><th class="manage-column sortable"><?php echo $this->sort_link('Status', 'status'); ?></th><th class="manage-column">Payment Status</th><th class="manage-column">Actions</th></tr></thead>
+                <thead>
+                    <tr>
+                        <td id="cb" class="manage-column column-cb check-column"><input type="checkbox" id="cb-select-all-1"></td>
+                        <th class="manage-column sortable"><?php echo $this->sort_link('Project ID', 'id'); ?></th>
+                        <th class="manage-column sortable"><?php echo $this->sort_link('Project Name', 'title'); ?></th>
+                        <th class="manage-column">Customer Name</th>
+                        <th class="manage-column sortable"><?php echo $this->sort_link('Status', 'status'); ?></th>
+                        <th class="manage-column">Payment Status</th>
+                        <th class="manage-column">Actions</th>
+                    </tr>
+                </thead>
                 <tbody>
                     <?php foreach ($items as $item): 
                         $edit_url = "?page=studiofy-projects&action=edit&id={$item->id}";
@@ -207,7 +295,10 @@ class ProjectController {
                             <td><?php echo $customer_name; ?></td>
                             <td><span class="studiofy-badge <?php echo esc_attr($item->status); ?>"><?php echo esc_html(str_replace('_',' ',$item->status)); ?></span></td>
                             <td><span class="studiofy-badge <?php echo strtolower($payment_label); ?>"><?php echo $payment_label; ?></span></td>
-                            <td><a href="<?php echo $edit_url; ?>" class="button button-small">Edit</a> <a href="<?php echo $del_url; ?>" onclick="return confirm('Delete?')" class="button button-small" style="color:#b32d2e;">Delete</a></td>
+                            <td>
+                                <a href="<?php echo $edit_url; ?>" class="button button-small">Edit</a> 
+                                <a href="<?php echo $del_url; ?>" onclick="return confirm('Delete?')" class="button button-small" style="color:#b32d2e;">Delete</a>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -220,20 +311,38 @@ class ProjectController {
         global $wpdb;
         $table = $wpdb->prefix . 'studiofy_projects';
         $results = $wpdb->get_results("SELECT * FROM $table ORDER BY created_at DESC");
-        $sorted = ['todo' => [], 'in_progress' => [], 'future' => []];
-        foreach ($results as $row) { if (isset($sorted[$row->status])) $sorted[$row->status][] = $row; }
+        
+        $sorted = [
+            'todo' => [], 
+            'in_progress' => [], 
+            'future' => []
+        ];
+        
+        foreach ($results as $row) { 
+            if (isset($sorted[$row->status])) {
+                $sorted[$row->status][] = $row; 
+            }
+        }
         return $sorted;
     }
 
     private function render_form(): void {
         global $wpdb;
         $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        
         if ($id) {
             $data = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_projects WHERE id = %d", $id));
         } else {
             $data = new \stdClass();
-            $data->id = 0; $data->title = ''; $data->customer_id = 0; $data->status = 'todo'; $data->budget = ''; $data->tax_status = 'taxed'; $data->notes = '';
+            $data->id = 0;
+            $data->title = '';
+            $data->customer_id = 0;
+            $data->status = 'todo';
+            $data->budget = '';
+            $data->tax_status = 'taxed';
+            $data->notes = '';
         }
+
         $customers = $wpdb->get_results("SELECT id, first_name, last_name FROM {$wpdb->prefix}studiofy_customers");
         $tax_status = $data->tax_status;
         ?>
@@ -243,21 +352,101 @@ class ProjectController {
                 <input type="hidden" name="action" value="studiofy_save_project">
                 <?php wp_nonce_field('save_project', 'studiofy_nonce'); ?>
                 <?php if($data->id) echo '<input type="hidden" name="id" value="'.$data->id.'">'; ?>
+                
                 <table class="form-table">
-                    <tr><th scope="row"><label>Title *</label></th><td><input type="text" name="title" required value="<?php echo esc_attr($data->title); ?>" class="regular-text"></td></tr>
-                    <tr><th scope="row"><label>Customer *</label></th><td><select name="customer_id" required><option value="">Select</option><?php foreach($customers as $c) echo "<option value='{$c->id}' ".selected($data->customer_id, $c->id, false).">{$c->first_name} {$c->last_name}</option>"; ?></select></td></tr>
-                    <tr><th scope="row"><label>Status</label></th><td><select name="status"><option value="todo" <?php selected($data->status, 'todo'); ?>>To Do</option><option value="in_progress" <?php selected($data->status, 'in_progress'); ?>>In Progress</option><option value="future" <?php selected($data->status, 'future'); ?>>Future</option></select></td></tr>
-                    <tr><th scope="row"><label>Budget</label></th><td><input type="text" name="budget" class="regular-text" placeholder="$0.00" value="<?php echo esc_attr($data->budget ? '$'.number_format((float)$data->budget, 2) : ''); ?>"></td></tr>
-                    <tr><th scope="row">Tax</th><td><label><input type="radio" name="tax_status" value="taxed" <?php checked($tax_status, 'taxed'); ?>> Taxable</label> <label><input type="radio" name="tax_status" value="exempt" <?php checked($tax_status, 'exempt'); ?>> Exempt</label></td></tr>
-                    <tr><th scope="row"><label>Notes</label></th><td><textarea name="notes" rows="5" class="large-text"><?php echo esc_textarea($data->notes); ?></textarea></td></tr>
+                    <tr>
+                        <th scope="row"><label for="project_title">Title *</label></th>
+                        <td><input type="text" name="title" id="project_title" required value="<?php echo esc_attr($data->title); ?>" class="regular-text"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="customer_id">Customer *</label></th>
+                        <td>
+                            <select name="customer_id" id="customer_id" required>
+                                <option value="">Select</option>
+                                <?php foreach($customers as $c) echo "<option value='{$c->id}' ".selected($data->customer_id, $c->id, false).">{$c->first_name} {$c->last_name}</option>"; ?>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="status">Status</label></th>
+                        <td>
+                            <select name="status" id="status">
+                                <option value="todo" <?php selected($data->status, 'todo'); ?>>To Do</option>
+                                <option value="in_progress" <?php selected($data->status, 'in_progress'); ?>>In Progress</option>
+                                <option value="future" <?php selected($data->status, 'future'); ?>>Future</option>
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="budget">Budget</label></th>
+                        <td><input type="text" name="budget" id="budget" class="regular-text" placeholder="$0.00" value="<?php echo esc_attr($data->budget ? '$'.number_format((float)$data->budget, 2) : ''); ?>"></td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Tax</th>
+                        <td>
+                            <label><input type="radio" name="tax_status" value="taxed" <?php checked($tax_status, 'taxed'); ?>> Taxable</label> 
+                            <label><input type="radio" name="tax_status" value="exempt" <?php checked($tax_status, 'exempt'); ?>> Exempt</label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="notes">Notes</label></th>
+                        <td><textarea name="notes" id="notes" rows="5" class="large-text"><?php echo esc_textarea($data->notes); ?></textarea></td>
+                    </tr>
                 </table>
-                <p class="submit"><button type="submit" class="button button-primary">Save Project</button> <a href="<?php echo admin_url('admin.php?page=studiofy-projects'); ?>" class="button">Cancel</a></p>
+                
+                <p class="submit">
+                    <button type="submit" class="button button-primary">Save Project</button> 
+                    <a href="<?php echo admin_url('admin.php?page=studiofy-projects'); ?>" class="button">Cancel</a>
+                </p>
             </form>
         </div>
         <?php
     }
 
-    public function handle_save(): void { check_admin_referer('save_project', 'studiofy_nonce'); global $wpdb; $budget = isset($_POST['budget']) ? preg_replace('/[^\d.]/', '', $_POST['budget']) : 0; $data = ['title' => sanitize_text_field($_POST['title']), 'customer_id' => (int)$_POST['customer_id'], 'status' => sanitize_text_field($_POST['status']), 'budget' => (float)$budget, 'tax_status' => sanitize_text_field($_POST['tax_status']), 'notes' => sanitize_textarea_field($_POST['notes'])]; if(!empty($_POST['id'])) $wpdb->update($wpdb->prefix.'studiofy_projects', $data, ['id'=>(int)$_POST['id']]); else $wpdb->insert($wpdb->prefix.'studiofy_projects', array_merge($data, ['created_at' => current_time('mysql')])); wp_redirect(admin_url('admin.php?page=studiofy-projects')); exit; }
-    public function handle_delete(): void { check_admin_referer('delete_project_'.$_GET['id']); global $wpdb; $wpdb->delete($wpdb->prefix.'studiofy_projects', ['id'=>(int)$_GET['id']]); wp_redirect(admin_url('admin.php?page=studiofy-projects')); exit; }
-    public function handle_bulk(): void { check_admin_referer('bulk_project', 'studiofy_nonce'); if ($_POST['bulk_action'] === 'delete' && !empty($_POST['ids'])) { global $wpdb; $ids = array_map('intval', $_POST['ids']); $in = implode(',', $ids); $wpdb->query("DELETE FROM {$wpdb->prefix}studiofy_projects WHERE id IN ($in)"); } wp_redirect(admin_url('admin.php?page=studiofy-projects')); exit; }
+    public function handle_save(): void {
+        if (!isset($_POST['studiofy_nonce']) || !wp_verify_nonce($_POST['studiofy_nonce'], 'save_project')) {
+            wp_die('Security check failed');
+        }
+        
+        global $wpdb;
+        $budget = isset($_POST['budget']) ? preg_replace('/[^\d.]/', '', $_POST['budget']) : 0;
+        
+        $data = [
+            'title' => sanitize_text_field($_POST['title']),
+            'customer_id' => (int)$_POST['customer_id'],
+            'status' => sanitize_text_field($_POST['status']),
+            'budget' => (float)$budget,
+            'tax_status' => sanitize_text_field($_POST['tax_status']),
+            'notes' => sanitize_textarea_field($_POST['notes'])
+        ];
+
+        if (!empty($_POST['id'])) {
+            $wpdb->update($wpdb->prefix . 'studiofy_projects', $data, ['id' => (int)$_POST['id']]);
+        } else {
+            $wpdb->insert($wpdb->prefix . 'studiofy_projects', array_merge($data, ['created_at' => current_time('mysql')]));
+        }
+        
+        wp_redirect(admin_url('admin.php?page=studiofy-projects'));
+        exit;
+    }
+
+    public function handle_delete(): void {
+        check_admin_referer('delete_project_' . $_GET['id']);
+        global $wpdb;
+        $wpdb->delete($wpdb->prefix . 'studiofy_projects', ['id' => (int)$_GET['id']]);
+        wp_redirect(admin_url('admin.php?page=studiofy-projects'));
+        exit;
+    }
+
+    public function handle_bulk(): void {
+        check_admin_referer('bulk_project', 'studiofy_nonce');
+        if ($_POST['bulk_action'] === 'delete' && !empty($_POST['ids'])) {
+            global $wpdb;
+            $ids = array_map('intval', $_POST['ids']);
+            $in = implode(',', $ids);
+            $wpdb->query("DELETE FROM {$wpdb->prefix}studiofy_projects WHERE id IN ($in)");
+        }
+        wp_redirect(admin_url('admin.php?page=studiofy-projects'));
+        exit;
+    }
 }
