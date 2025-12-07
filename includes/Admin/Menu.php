@@ -2,7 +2,7 @@
 /**
  * Admin Menu Controller
  * @package Studiofy\Admin
- * @version 2.2.46
+ * @version 2.2.48
  */
 
 declare(strict_types=1);
@@ -35,9 +35,9 @@ class Menu {
 
     public function init(): void {
         add_action('admin_menu', [$this, 'register_menu_pages']);
-        add_action('admin_menu', [$this, 'remove_welcome_menu'], 999); // FIX: Late removal ensures registration
         add_action('admin_enqueue_scripts', [$this, 'enqueue_styles']);
         add_action('admin_init', [$this, 'activation_redirect']);
+        add_action('admin_head', [$this, 'hide_welcome_menu']); // CSS Hide Strategy
         
         $this->settings->init();
         $this->projectController->init();
@@ -71,13 +71,17 @@ class Menu {
         add_submenu_page('studiofy-dashboard', 'Galleries', 'Galleries', 'manage_options', 'studiofy-galleries', [$this->galleryController, 'render_page']);
         add_submenu_page('studiofy-dashboard', 'Settings', 'Settings', 'manage_options', 'studiofy-settings', [$this->settings, 'render_page']);
         
-        // FIX: Register normally to ensure capability checks pass
-        add_submenu_page('studiofy-dashboard', 'Welcome', 'Welcome', 'manage_options', 'studiofy-welcome', [$this, 'render_welcome_page']);
+        // Register Welcome Page as a real submenu of index.php (Dashboard) to fix permissions
+        add_submenu_page('index.php', 'Welcome to Studiofy', 'Welcome to Studiofy', 'manage_options', 'studiofy-welcome', [$this, 'render_welcome_page']);
     }
 
-    // FIX: Remove from menu visually AFTER registration to avoid "Access Denied"
-    public function remove_welcome_menu(): void {
-        remove_submenu_page('studiofy-dashboard', 'studiofy-welcome');
+    public function hide_welcome_menu(): void {
+        echo '<style>
+            /* Hide the Welcome submenu item */
+            a[href="admin.php?page=studiofy-welcome"] { display: none !important; }
+            /* Also hide it if it appears under Dashboard */
+            #menu-dashboard a[href="admin.php?page=studiofy-welcome"] { display: none !important; }
+        </style>';
     }
 
     public function render_welcome_page(): void {
@@ -86,57 +90,30 @@ class Menu {
             <div class="studiofy-welcome-panel">
                 <div class="studiofy-logo" style="margin-bottom: 20px;">
                     <svg width="250" height="200" viewBox="0 0 500 400" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <linearGradient id="lens_gradient_std" x1="200" y1="130" x2="300" y2="230" gradientUnits="userSpaceOnUse">
-                                <stop stop-color="#4f94d4"/> <stop offset="1" stop-color="#2271b1"/> 
-                            </linearGradient>
-                        </defs>
-                        <g id="Camera_Icon">
-                            <rect x="100" y="80" width="300" height="200" rx="20" fill="black"/>
-                            <path d="M180 80 L210 40 H290 L320 80 H180 Z" fill="black"/>
-                            <rect x="120" y="70" width="40" height="10" rx="2" fill="black"/>
-                            <circle cx="250" cy="180" r="85" fill="white"/> <circle cx="250" cy="180" r="75" fill="black"/> <circle cx="250" cy="180" r="60" fill="url(#lens_gradient_std)"/>
-                            <ellipse cx="270" cy="160" rx="20" ry="12" transform="rotate(-45 270 160)" fill="white" fill-opacity="0.4"/>
-                            <circle cx="230" cy="200" r="5" fill="white" fill-opacity="0.2"/>
-                            <rect x="115" y="100" width="15" height="160" rx="5" fill="#333333"/>
-                        </g>
-                        <g id="Typography">
-                            <text x="250" y="340" font-family="Arial, Helvetica, sans-serif" font-size="60" text-anchor="middle" fill="black">
-                                <tspan font-weight="900" letter-spacing="2">STUDIOFY</tspan> 
-                                <tspan font-weight="400" letter-spacing="4"> CRM</tspan>
-                            </text>
-                        </g>
+                        <defs><linearGradient id="lens_gradient_std" x1="200" y1="130" x2="300" y2="230" gradientUnits="userSpaceOnUse"><stop stop-color="#4f94d4"/><stop offset="1" stop-color="#2271b1"/></linearGradient></defs>
+                        <g id="Camera_Icon"><rect x="100" y="80" width="300" height="200" rx="20" fill="black"/><path d="M180 80 L210 40 H290 L320 80 H180 Z" fill="black"/><rect x="120" y="70" width="40" height="10" rx="2" fill="black"/><circle cx="250" cy="180" r="85" fill="white"/><circle cx="250" cy="180" r="75" fill="black"/><circle cx="250" cy="180" r="60" fill="url(#lens_gradient_std)"/><ellipse cx="270" cy="160" rx="20" ry="12" transform="rotate(-45 270 160)" fill="white" fill-opacity="0.4"/><circle cx="230" cy="200" r="5" fill="white" fill-opacity="0.2"/><rect x="115" y="100" width="15" height="160" rx="5" fill="#333333"/></g>
+                        <g id="Typography"><text x="250" y="340" font-family="Arial, Helvetica, sans-serif" font-size="60" text-anchor="middle" fill="black"><tspan font-weight="900" letter-spacing="2">STUDIOFY</tspan> <tspan font-weight="400" letter-spacing="4"> CRM</tspan></text></g>
                     </svg>
                 </div>
-
                 <p class="about-text" style="font-size:16px;">Get started by setting up your environment. Would you like to import demo data to see how the system works?</p>
-                <p style="color:#666;">This will create sample Customers, Projects, Invoices, Contracts, and Galleries.</p>
-                
                 <div class="studiofy-welcome-actions">
                     <a href="<?php echo esc_url(admin_url('admin-post.php?action=studiofy_internal_import&nonce='.wp_create_nonce('internal_import'))); ?>" class="button button-primary button-hero">Yes, Import Demo Data</a>
                     <a href="<?php echo esc_url(admin_url('admin.php?page=studiofy-dashboard')); ?>" class="button button-secondary button-hero">No, Skip to Dashboard</a>
                 </div>
             </div>
         </div>
-        <style>
-            .studiofy-welcome-wrap { display: flex; justify-content: center; align-items: center; min-height: 80vh; background: #f0f0f1; }
-            .studiofy-welcome-panel { background: #fff; padding: 50px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center; max-width: 600px; width: 100%; }
-            .studiofy-welcome-actions { margin-top: 40px; display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
-            .studiofy-logo svg { max-width: 100%; height: auto; }
-        </style>
+        <style>.studiofy-welcome-wrap { display: flex; justify-content: center; align-items: center; min-height: 80vh; background: #f0f0f1; } .studiofy-welcome-panel { background: #fff; padding: 50px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center; max-width: 600px; width: 100%; } .studiofy-welcome-actions { margin-top: 40px; display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; } .studiofy-logo svg { max-width: 100%; height: auto; }</style>
         <?php
     }
 
     public function enqueue_styles($hook): void {
         if (!$hook) return;
         $hook_str = (string) $hook;
-        
         if (strpos($hook_str, 'studiofy') === false) return;
 
         wp_enqueue_style('dashicons');
         wp_enqueue_style('wp-color-picker');
         wp_enqueue_media();
-
         wp_enqueue_style('studiofy-admin-css', STUDIOFY_URL . 'assets/css/admin.css', [], studiofy_get_asset_version('assets/css/admin.css'));
 
         if (strpos($hook_str, 'studiofy-galleries') !== false) {
