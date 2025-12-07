@@ -19,7 +19,6 @@ class ProjectController {
         add_action('admin_post_studiofy_save_project', [$this, 'handle_save']);
         add_action('admin_post_studiofy_delete_project', [$this, 'handle_delete']);
         add_action('admin_post_studiofy_bulk_project', [$this, 'handle_bulk']);
-        // New: AJAX handler for quick task delete from Kanban
         add_action('wp_ajax_studiofy_delete_task_ajax', [$this, 'handle_delete_task_ajax']);
     }
 
@@ -41,7 +40,7 @@ class ProjectController {
         wp_localize_script('studiofy-kanban', 'studiofySettings', [
             'root' => esc_url_raw(rest_url()),
             'nonce' => wp_create_nonce('wp_rest'),
-            'ajax_url' => admin_url('admin-ajax.php') // Needed for new delete action
+            'ajax_url' => admin_url('admin-ajax.php')
         ]);
         
         global $wpdb;
@@ -162,7 +161,6 @@ class ProjectController {
         <?php
     }
 
-    // New AJAX Handler for Inline Delete
     public function handle_delete_task_ajax(): void {
         check_ajax_referer('wp_rest', 'nonce');
         if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
@@ -222,7 +220,11 @@ class ProjectController {
         $table = $wpdb->prefix . 'studiofy_projects';
         $results = $wpdb->get_results("SELECT * FROM $table ORDER BY created_at DESC");
         $sorted = ['todo' => [], 'in_progress' => [], 'future' => []];
-        foreach ($results as $row) { if (isset($sorted[$row->status])) $sorted[$row->status][] = $row; }
+        foreach ($results as $row) { 
+            if (isset($sorted[$row->status])) {
+                $sorted[$row->status][] = $row; 
+            }
+        }
         return $sorted;
     }
 
@@ -270,12 +272,41 @@ class ProjectController {
         if (!isset($_POST['studiofy_nonce']) || !wp_verify_nonce($_POST['studiofy_nonce'], 'save_project')) wp_die('Security check failed');
         global $wpdb;
         $budget = isset($_POST['budget']) ? preg_replace('/[^\d.]/', '', $_POST['budget']) : 0;
-        $data = ['title' => sanitize_text_field($_POST['title']), 'customer_id' => (int)$_POST['customer_id'], 'status' => sanitize_text_field($_POST['status']), 'budget' => (float)$budget, 'tax_status' => sanitize_text_field($_POST['tax_status']), 'notes' => sanitize_textarea_field($_POST['notes'])];
-        if(!empty($_POST['id'])) $wpdb->update($wpdb->prefix.'studiofy_projects', $data, ['id'=>(int)$_POST['id']]);
-        else $wpdb->insert($wpdb->prefix.'studiofy_projects', array_merge($data, ['created_at' => current_time('mysql')]));
-        wp_redirect(admin_url('admin.php?page=studiofy-projects')); exit;
+        $data = [
+            'title' => sanitize_text_field($_POST['title']), 
+            'customer_id' => (int)$_POST['customer_id'], 
+            'status' => sanitize_text_field($_POST['status']), 
+            'budget' => (float)$budget, 
+            'tax_status' => sanitize_text_field($_POST['tax_status']), 
+            'notes' => sanitize_textarea_field($_POST['notes'])
+        ];
+        
+        if(!empty($_POST['id'])) {
+            $wpdb->update($wpdb->prefix.'studiofy_projects', $data, ['id'=>(int)$_POST['id']]);
+        } else {
+            $wpdb->insert($wpdb->prefix.'studiofy_projects', array_merge($data, ['created_at' => current_time('mysql')]));
+        }
+        wp_redirect(admin_url('admin.php?page=studiofy-projects')); 
+        exit;
     }
 
-    public function handle_delete(): void { check_admin_referer('delete_project_'.$_GET['id']); global $wpdb; $wpdb->delete($wpdb->prefix.'studiofy_projects', ['id'=>(int)$_GET['id']]); wp_redirect(admin_url('admin.php?page=studiofy-projects')); exit; }
-    public function handle_bulk(): void { check_admin_referer('bulk_project', 'studiofy_nonce'); if ($_POST['bulk_action'] === 'delete' && !empty($_POST['ids'])) { global $wpdb; $ids = array_map('intval', $_POST['ids']); $in = implode(',', $ids); $wpdb->query("DELETE FROM {$wpdb->prefix}studiofy_projects WHERE id IN ($in)"); } wp_redirect(admin_url('admin.php?page=studiofy-projects')); exit; }
+    public function handle_delete(): void {
+        check_admin_referer('delete_project_'.$_GET['id']);
+        global $wpdb;
+        $wpdb->delete($wpdb->prefix.'studiofy_projects', ['id'=>(int)$_GET['id']]);
+        wp_redirect(admin_url('admin.php?page=studiofy-projects')); 
+        exit;
+    }
+
+    public function handle_bulk(): void {
+        check_admin_referer('bulk_project', 'studiofy_nonce');
+        if ($_POST['bulk_action'] === 'delete' && !empty($_POST['ids'])) {
+            global $wpdb;
+            $ids = array_map('intval', $_POST['ids']);
+            $in = implode(',', $ids);
+            $wpdb->query("DELETE FROM {$wpdb->prefix}studiofy_projects WHERE id IN ($in)");
+        }
+        wp_redirect(admin_url('admin.php?page=studiofy-projects')); 
+        exit;
+    }
 }
