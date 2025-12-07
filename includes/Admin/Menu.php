@@ -2,7 +2,7 @@
 /**
  * Admin Menu Controller
  * @package Studiofy\Admin
- * @version 2.2.41
+ * @version 2.2.42
  */
 
 declare(strict_types=1);
@@ -14,6 +14,7 @@ use function Studiofy\studiofy_get_asset_version;
 class Menu {
 
     private Settings $settings;
+    // ... (Constructor same as before) ...
     private DashboardController $dashboardController;
     private ProjectController $projectController;
     private ContractController $contractController;
@@ -38,6 +39,7 @@ class Menu {
         add_action('admin_enqueue_scripts', [$this, 'enqueue_styles']);
         add_action('admin_init', [$this, 'activation_redirect']);
         
+        // ... (Module inits same as before) ...
         $this->settings->init();
         $this->projectController->init();
         $this->contractController->init();
@@ -60,9 +62,8 @@ class Menu {
     }
 
     public function register_menu_pages(): void {
-        // FIX: Explicitly cast titles to strings to satisfy strip_tags()
+        // FIX: Cast strings strictly to avoid null passing
         add_menu_page('Studiofy CRM', 'Studiofy CRM', 'manage_options', 'studiofy-dashboard', [$this->dashboardController, 'render_page'], 'dashicons-camera', 6);
-        
         add_submenu_page('studiofy-dashboard', 'Dashboard', 'Dashboard', 'manage_options', 'studiofy-dashboard', [$this->dashboardController, 'render_page']);
         add_submenu_page('studiofy-dashboard', 'Customers', 'Customers', 'manage_options', 'studiofy-customers', [$this->customerController, 'render_page']);
         add_submenu_page('studiofy-dashboard', 'Projects', 'Projects', 'manage_options', 'studiofy-projects', [$this->projectController, 'render_page']);
@@ -72,7 +73,8 @@ class Menu {
         add_submenu_page('studiofy-dashboard', 'Galleries', 'Galleries', 'manage_options', 'studiofy-galleries', [$this->galleryController, 'render_page']);
         add_submenu_page('studiofy-dashboard', 'Settings', 'Settings', 'manage_options', 'studiofy-settings', [$this->settings, 'render_page']);
         
-        // FIX: The hidden Welcome page. Parent is null, but title MUST be a string.
+        // Hidden Welcome Page (Register under 'admin.php' then hide via CSS is safer than null parent for title retrieval)
+        // BUT 'null' is the official way. We ensure Title is a string "Welcome".
         add_submenu_page(null, 'Welcome', 'Welcome', 'manage_options', 'studiofy-welcome', [$this, 'render_welcome_page']);
     }
 
@@ -124,10 +126,9 @@ class Menu {
     }
 
     public function enqueue_styles($hook): void {
-        // FIX: Check if hook is null first to prevent strpos error
+        // FIX: Ensure non-null hook
         if (!$hook) return;
         
-        // FIX: Cast to string explicitly
         $hook_str = (string) $hook;
         
         if (strpos($hook_str, 'studiofy') === false) return;
@@ -158,7 +159,7 @@ class Menu {
 
     public function render_footer_version($text): string {
         $screen = get_current_screen();
-        // FIX: Check screen object first
+        // FIX: Valid object check
         if ($screen && isset($screen->id) && strpos((string)$screen->id, 'studiofy') !== false) {
             return 'Studiofy CRM <b>v' . esc_html(STUDIOFY_VERSION) . '</b>';
         }
