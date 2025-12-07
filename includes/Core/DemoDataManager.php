@@ -3,7 +3,7 @@
  * Demo Data Manager
  * Handles XML File Upload & Import.
  * @package Studiofy\Core
- * @version 2.3.0
+ * @version 2.3.2
  */
 
 declare(strict_types=1);
@@ -291,25 +291,12 @@ class DemoDataManager {
         <record customer_id="1" project_id="1"><title>Commercial Agreement</title><service_type>Commercial</service_type><contract_status>Signed</contract_status><status>Paid</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Bank Transfer</method></payment_methods><contract_body>&lt;h2&gt;Commercial Usage License&lt;/h2&gt;&lt;p&gt;Grant of rights...&lt;/p&gt;</contract_body><line_items><line_item><desc>Interior Photography Day Rate</desc><qty>2</qty><rate>1250.00</rate></line_item></line_items></record>
         <record customer_id="2" project_id="2"><title>Headshot Invoice</title><service_type>Portrait</service_type><contract_status>Unsigned</contract_status><status>Sent</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Credit Card</method></payment_methods><contract_body></contract_body><line_items><line_item><desc>Team Headshots</desc><qty>10</qty><rate>120.00</rate></line_item></line_items></record>
         <record customer_id="3" project_id="3"><title>Wedding Contract</title><service_type>Wedding</service_type><contract_status>Signed</contract_status><status>Paid</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><deposit_amount>2500.00</deposit_amount><payment_methods><method>Zelle</method><method>Check</method></payment_methods><contract_body>&lt;h2&gt;Wedding Agreement&lt;/h2&gt;&lt;p&gt;Coverage details...&lt;/p&gt;</contract_body><line_items><line_item><desc>Wedding Package A</desc><qty>1</qty><rate>5000.00</rate></line_item></line_items></record>
-        <record customer_id="4" project_id="4"><title>Family Session</title><service_type>Portrait</service_type><contract_status>Signed</contract_status><status>Unpaid</status><tax_rate>6.0</tax_rate><service_fee>12.00</service_fee><payment_methods><method>Credit Card</method></payment_methods><contract_body>&lt;p&gt;Model Release...&lt;/p&gt;</contract_body><line_items><line_item><desc>Session Fee</desc><qty>1</qty><rate>400.00</rate></line_item></line_items></record>
-        <record customer_id="5" project_id="5"><title>Model Portfolio</title><service_type>Portrait</service_type><contract_status>Unsigned</contract_status><status>Draft</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Venmo</method></payment_methods><contract_body></contract_body><line_items><line_item><desc>Studio Time</desc><qty>4</qty><rate>200.00</rate></line_item></line_items></record>
-        <record customer_id="6" project_id="6"><title>Event Coverage</title><service_type>Event</service_type><contract_status>Signed</contract_status><status>Paid</status><tax_rate>0.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Bank Transfer</method></payment_methods><contract_body>&lt;h2&gt;Event Terms&lt;/h2&gt;</contract_body><line_items><line_item><desc>Event Photography</desc><qty>1</qty><rate>3000.00</rate></line_item><line_item><desc>Tax Exemption</desc><qty>1</qty><rate>0.00</rate></line_item></line_items></record>
-        <record customer_id="7" project_id="7"><title>Brand Web Content</title><service_type>Commercial</service_type><contract_status>Signed</contract_status><status>Sent</status><tax_rate>0.0</tax_rate><service_fee>45.00</service_fee><payment_methods><method>PayPal</method></payment_methods><contract_body>&lt;p&gt;Web usage rights...&lt;/p&gt;</contract_body><line_items><line_item><desc>Branding Session</desc><qty>1</qty><rate>1500.00</rate></line_item></line_items></record>
-        <record customer_id="8" project_id="8"><title>Real Estate Shoot</title><service_type>Commercial</service_type><contract_status>Unsigned</contract_status><status>Unpaid</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Credit Card</method></payment_methods><contract_body></contract_body><line_items><line_item><desc>Listing Photos</desc><qty>1</qty><rate>400.00</rate></line_item><line_item><desc>Drone Add-on</desc><qty>1</qty><rate>200.00</rate></line_item></line_items></record>
-        <record customer_id="9" project_id="9"><title>Graduation Event</title><service_type>Event</service_type><contract_status>Signed</contract_status><status>Paid</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Check</method></payment_methods><contract_body>&lt;p&gt;Event terms...&lt;/p&gt;</contract_body><line_items><line_item><desc>Event Coverage</desc><qty>1</qty><rate>2000.00</rate></line_item></line_items></record>
-        <record customer_id="10" project_id="10"><title>Corporate Headshots</title><service_type>Portrait</service_type><contract_status>Unsigned</contract_status><status>Draft</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Credit Card</method></payment_methods><contract_body></contract_body><line_items><line_item><desc>Partner Portraits</desc><qty>5</qty><rate>200.00</rate></line_item></line_items></record>
-        <record customer_id="1" project_id="11"><title>Catalog Buyout</title><service_type>Commercial</service_type><contract_status>Signed</contract_status><status>Unpaid</status><tax_rate>0.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Bank Transfer</method></payment_methods><contract_body>&lt;h2&gt;Full Buyout&lt;/h2&gt;</contract_body><line_items><line_item><desc>Image License</desc><qty>1</qty><rate>5000.00</rate></line_item></line_items></record>
-        <record customer_id="3" project_id="12"><title>Engagement Invoice</title><service_type>Portrait</service_type><contract_status>Unsigned</contract_status><status>Paid</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Zelle</method></payment_methods><contract_body></contract_body><line_items><line_item><desc>Engagement Session</desc><qty>1</qty><rate>500.00</rate></line_item></line_items></record>
-        <record customer_id="5" project_id="0"><title>Print Order #101</title><service_type>General</service_type><contract_status>Unsigned</contract_status><status>Paid</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Credit Card</method></payment_methods><contract_body></contract_body><line_items><line_item><desc>8x10 Print</desc><qty>5</qty><rate>25.00</rate></line_item></line_items></record>
-        <record customer_id="6" project_id="0"><title>Travel Expense</title><service_type>General</service_type><contract_status>Unsigned</contract_status><status>Sent</status><tax_rate>0.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Bank Transfer</method></payment_methods><contract_body></contract_body><line_items><line_item><desc>Travel Reimbursement</desc><qty>1</qty><rate>450.00</rate></line_item></line_items></record>
-        <record customer_id="2" project_id="0"><title>Retouching Fee</title><service_type>General</service_type><contract_status>Unsigned</contract_status><status>Unpaid</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>PayPal</method></payment_methods><contract_body></contract_body><line_items><line_item><desc>Advanced Retouching</desc><qty>3</qty><rate>50.00</rate></line_item></line_items></record>
-        <record customer_id="9" project_id="0"><title>Album Deposit</title><service_type>Wedding</service_type><contract_status>Signed</contract_status><status>Paid</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Credit Card</method></payment_methods><contract_body>&lt;p&gt;Album terms...&lt;/p&gt;</contract_body><line_items><line_item><desc>Leather Album</desc><qty>1</qty><rate>1200.00</rate></line_item></line_items></record>
-        <record customer_id="4" project_id="0"><title>Holiday Mini</title><service_type>Portrait</service_type><contract_status>Unsigned</contract_status><status>Paid</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Cash</method></payment_methods><contract_body></contract_body><line_items><line_item><desc>Mini Session</desc><qty>1</qty><rate>200.00</rate></line_item></line_items></record>
+        <record customer_id="3" project_id="3"><title>Elena &amp; Mark</title><service_type>Wedding</service_type><contract_status>Unsigned</contract_status><status>Draft</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Credit Card</method></payment_methods><contract_body></contract_body><line_items><line_item><desc>Engagement Session</desc><qty>1</qty><rate>500.00</rate></line_item></line_items></record>
     </billing>
     <galleries>
         <gallery id="1" customer_id="1"><title>Vaughn Interiors</title><description>Select favs.</description><password>vaughn</password></gallery>
         <gallery id="2" customer_id="2"><title>StartUp Team</title><description>Headshots.</description><password>startup</password></gallery>
-        <gallery id="3" customer_id="3"><title>Elena & Mark</title><description>Engagement.</description><password>love</password></gallery>
+        <gallery id="3" customer_id="3"><title>Elena &amp; Mark</title><description>Engagement.</description><password>love</password></gallery>
         <gallery id="4" customer_id="4"><title>Smith Family</title><description>Park.</description><password>smith</password></gallery>
         <gallery id="5" customer_id="5"><title>Sarah Portfolio</title><description>Fashion.</description><password>model</password></gallery>
     </galleries>
@@ -317,34 +304,11 @@ class DemoDataManager {
         <file gallery_id="1" url="https://picsum.photos/800/800?random=1"><name>interior_01.jpg</name></file>
         <file gallery_id="1" url="https://picsum.photos/800/800?random=2"><name>interior_02.jpg</name></file>
         <file gallery_id="1" url="https://picsum.photos/800/800?random=3"><name>interior_03.jpg</name></file>
-        <file gallery_id="1" url="https://picsum.photos/800/800?random=4"><name>interior_04.jpg</name></file>
-        <file gallery_id="1" url="https://picsum.photos/800/800?random=5"><name>interior_05.jpg</name></file>
         <file gallery_id="2" url="https://picsum.photos/800/800?random=6"><name>headshot_01.jpg</name></file>
         <file gallery_id="2" url="https://picsum.photos/800/800?random=7"><name>headshot_02.jpg</name></file>
-        <file gallery_id="2" url="https://picsum.photos/800/800?random=8"><name>headshot_03.jpg</name></file>
-        <file gallery_id="2" url="https://picsum.photos/800/800?random=9"><name>headshot_04.jpg</name></file>
-        <file gallery_id="2" url="https://picsum.photos/800/800?random=10"><name>headshot_05.jpg</name></file>
         <file gallery_id="3" url="https://picsum.photos/800/800?random=11"><name>engage_01.jpg</name></file>
         <file gallery_id="3" url="https://picsum.photos/800/800?random=12"><name>engage_02.jpg</name></file>
         <file gallery_id="3" url="https://picsum.photos/800/800?random=13"><name>engage_03.jpg</name></file>
-        <file gallery_id="3" url="https://picsum.photos/800/800?random=14"><name>engage_04.jpg</name></file>
-        <file gallery_id="3" url="https://picsum.photos/800/800?random=15"><name>engage_05.jpg</name></file>
-        <file gallery_id="3" url="https://picsum.photos/800/800?random=16"><name>engage_06.jpg</name></file>
-        <file gallery_id="3" url="https://picsum.photos/800/800?random=17"><name>engage_07.jpg</name></file>
-        <file gallery_id="3" url="https://picsum.photos/800/800?random=18"><name>engage_08.jpg</name></file>
-        <file gallery_id="4" url="https://picsum.photos/800/800?random=19"><name>fam_01.jpg</name></file>
-        <file gallery_id="4" url="https://picsum.photos/800/800?random=20"><name>fam_02.jpg</name></file>
-        <file gallery_id="4" url="https://picsum.photos/800/800?random=21"><name>fam_03.jpg</name></file>
-        <file gallery_id="4" url="https://picsum.photos/800/800?random=22"><name>fam_04.jpg</name></file>
-        <file gallery_id="4" url="https://picsum.photos/800/800?random=23"><name>fam_05.jpg</name></file>
-        <file gallery_id="5" url="https://picsum.photos/800/800?random=24"><name>model_01.jpg</name></file>
-        <file gallery_id="5" url="https://picsum.photos/800/800?random=25"><name>model_02.jpg</name></file>
-        <file gallery_id="5" url="https://picsum.photos/800/800?random=26"><name>model_03.jpg</name></file>
-        <file gallery_id="5" url="https://picsum.photos/800/800?random=27"><name>model_04.jpg</name></file>
-        <file gallery_id="5" url="https://picsum.photos/800/800?random=28"><name>model_05.jpg</name></file>
-        <file gallery_id="5" url="https://picsum.photos/800/800?random=29"><name>model_06.jpg</name></file>
-        <file gallery_id="5" url="https://picsum.photos/800/800?random=30"><name>model_07.jpg</name></file>
-        <file gallery_id="5" url="https://picsum.photos/800/800?random=31"><name>model_08.jpg</name></file>
     </gallery_files>
     <tasks>
         <task project_id="1"><title>Scout Location</title><priority>Medium</priority><status>completed</status></task>
@@ -355,12 +319,6 @@ class DemoDataManager {
         <task project_id="3"><title>Consultation</title><priority>Medium</priority><status>completed</status></task>
         <task project_id="3"><title>Engagement Shoot</title><priority>High</priority><status>completed</status></task>
         <task project_id="3"><title>Timeline Planning</title><priority>Urgent</priority><status>inprogress</status></task>
-        <task project_id="3"><title>Vendor Check</title><priority>Medium</priority><status>pending</status></task>
-        <task project_id="3"><title>Wedding Day</title><priority>Urgent</priority><status>pending</status></task>
-        <task project_id="5"><title>Moodboard</title><priority>Low</priority><status>completed</status></task>
-        <task project_id="5"><title>Styling</title><priority>Medium</priority><status>completed</status></task>
-        <task project_id="5"><title>Shooting</title><priority>High</priority><status>inprogress</status></task>
-        <task project_id="5"><title>Editing</title><priority>Medium</priority><status>pending</status></task>
     </tasks>
 </studiofy_demo>';
     }
