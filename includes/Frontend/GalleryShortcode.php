@@ -2,7 +2,7 @@
 /**
  * Gallery Shortcode
  * @package Studiofy\Frontend
- * @version 2.2.48
+ * @version 2.3.10
  */
 
 declare(strict_types=1);
@@ -60,9 +60,9 @@ class GalleryShortcode {
 
                 <div class="studiofy-grid">
                     <?php 
-                    $counter = 100;
                     foreach ($files as $file): 
-                        $img_id_display = '#' . sprintf('%04d', $counter++);
+                        // UPDATED: Use Unique Database ID for #0000 format
+                        $img_id_display = '#' . sprintf('%04d', $file->id);
                     ?>
                         <div class="studiofy-grid-item" data-file-id="<?php echo $file->id; ?>">
                             <div class="img-wrapper">
@@ -100,58 +100,79 @@ class GalleryShortcode {
         
         if (!$gallery) wp_send_json_error('Gallery not found');
 
+        // 1. Save Selections
         $approved_count = 0;
+        $approved_ids = []; // For Email List
+
         foreach($selections as $sel) {
-            if($sel['status'] === 'approved') $approved_count++;
-            $wpdb->delete($wpdb->prefix.'studiofy_gallery_selections', ['gallery_id' => $gallery_id, 'attachment_id' => (int)$sel['file_id']]);
+            $file_id = (int)$sel['file_id'];
+            if($sel['status'] === 'approved') {
+                $approved_count++;
+                $approved_ids[] = '#' . sprintf('%04d', $file_id);
+            }
+            
+            $wpdb->delete($wpdb->prefix.'studiofy_gallery_selections', ['gallery_id' => $gallery_id, 'attachment_id' => $file_id]);
             $wpdb->insert($wpdb->prefix.'studiofy_gallery_selections', [
                 'gallery_id' => $gallery_id,
-                'attachment_id' => (int)$sel['file_id'],
+                'attachment_id' => $file_id,
                 'status' => sanitize_text_field($sel['status']),
                 'created_at' => current_time('mysql')
             ]);
         }
 
-        $admin_email = get_option('admin_email');
-        $subject = "Proofing Completed: " . $gallery->title;
-        $message = "Client has submitted selections for gallery: {$gallery->title}.\nTotal Approved: $approved_count";
-        wp_mail($admin_email, $subject, $message);
-
+        // 2. Fetch Context Data for Email
+        $customer_name = "Guest Client";
+        $project_name = "Unassigned Project";
+        $project_link = "#";
+        
         if ($gallery->customer_id) {
-            $project_row = $wpdb->get_row($wpdb->prepare(
-                "SELECT id, title FROM {$wpdb->prefix}studiofy_projects 
-                 WHERE customer_id = %d AND status = 'in_progress' 
-                 ORDER BY created_at DESC LIMIT 1", 
-                $gallery->customer_id
-            ));
-
-            if (!$project_row) {
-                $project_row = $wpdb->get_row($wpdb->prepare(
-                    "SELECT id, title FROM {$wpdb->prefix}studiofy_projects 
-                     WHERE customer_id = %d ORDER BY created_at DESC LIMIT 1", 
-                    $gallery->customer_id
-                ));
+            $customer = $wpdb->get_row($wpdb->prepare("SELECT first_name, last_name FROM {$wpdb->prefix}studiofy_customers WHERE id = %d", $gallery->customer_id));
+            if ($customer) {
+                $customer_name = $customer->first_name . ' ' . $customer->last_name;
             }
 
-            if ($project_row) {
-                $m_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}studiofy_milestones WHERE project_id = %d AND name = 'General Tasks' LIMIT 1", $project_row->id));
+            // Find Active Project
+            $project = $wpdb->get_row($wpdb->prepare(
+                "SELECT id, title FROM {$wpdb->prefix}studiofy_projects WHERE customer_id = %d ORDER BY created_at DESC LIMIT 1", 
+                $gallery->customer_id
+            ));
+            
+            if ($project) {
+                $project_name = $project->title;
+                $project_link = admin_url('admin.php?page=studiofy-projects&action=edit&id=' . $project->id);
+                
+                // 3. Create Kanban Task
+                $m_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}studiofy_milestones WHERE project_id = %d AND name = 'General Tasks' LIMIT 1", $project->id));
                 if (!$m_id) {
-                    $wpdb->insert($wpdb->prefix.'studiofy_milestones', ['project_id' => $project_row->id, 'name' => 'General Tasks']);
+                    $wpdb->insert($wpdb->prefix.'studiofy_milestones', ['project_id' => $project->id, 'name' => 'General Tasks']);
                     $m_id = $wpdb->insert_id;
                 }
 
                 $wpdb->insert($wpdb->prefix.'studiofy_tasks', [
                     'milestone_id' => $m_id,
-                    'title' => 'Proofs Approved: ' . $project_row->title,
+                    'title' => 'Proofs Approved: ' . $project->title,
                     'priority' => 'Urgent', 
-                    'description' => "Client selected $approved_count images from {$gallery->title}.",
+                    'description' => "Client selected $approved_count images. See email for list.",
                     'status' => 'todo', 
                     'created_at' => current_time('mysql')
                 ]);
             }
         }
+
+        // 4. Send Email
+        $admin_email = get_option('admin_email');
+        $subject = "Proofing Selection: $project_name";
+        
+        $message = "Dear Admin,\n\n";
+        $message .= "The following photos have been selected from $project_name for $customer_name:\n\n";
+        $message .= implode(", ", $approved_ids) . "\n\n";
+        $message .= "Manage Project:\n$project_link";
+
+        wp_mail($admin_email, $subject, $message);
         
         delete_transient('studiofy_dashboard_stats');
-        wp_send_json_success(['message' => 'Selections submitted successfully!']);
+        
+        // Return Redirect URL
+        wp_send_json_success(['message' => 'Selections saved!', 'redirect_url' => home_url()]);
     }
 }
