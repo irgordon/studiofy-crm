@@ -2,7 +2,7 @@
 /**
  * Project API Endpoints
  * @package Studiofy\Api
- * @version 2.2.53
+ * @version 2.2.55
  */
 
 declare(strict_types=1);
@@ -17,27 +17,13 @@ class ProjectEndpoints {
 
     public function register_routes(): void {
         register_rest_route('studiofy/v1', '/projects/(?P<id>\d+)', [
-            'methods' => 'GET',
-            'callback' => [$this, 'get_project'],
-            'permission_callback' => fn() => current_user_can('manage_options')
+            'methods' => 'GET', 'callback' => [$this, 'get_project'], 'permission_callback' => fn() => current_user_can('manage_options')
         ]);
-
-        register_rest_route('studiofy/v1', '/projects/(?P<id>\d+)', [
-            'methods' => 'POST',
-            'callback' => [$this, 'update_project'],
-            'permission_callback' => fn() => current_user_can('manage_options')
-        ]);
-
         register_rest_route('studiofy/v1', '/projects/(?P<id>\d+)/tasks', [
-            'methods' => 'POST',
-            'callback' => [$this, 'add_task'],
-            'permission_callback' => fn() => current_user_can('manage_options')
+            'methods' => 'POST', 'callback' => [$this, 'add_task'], 'permission_callback' => fn() => current_user_can('manage_options')
         ]);
-
         register_rest_route('studiofy/v1', '/tasks/(?P<id>\d+)', [
-            'methods' => 'POST',
-            'callback' => [$this, 'update_task'],
-            'permission_callback' => fn() => current_user_can('manage_options')
+            'methods' => 'POST', 'callback' => [$this, 'update_task'], 'permission_callback' => fn() => current_user_can('manage_options')
         ]);
     }
 
@@ -48,7 +34,7 @@ class ProjectEndpoints {
         
         if (!$project) return new \WP_REST_Response(['message' => 'Project not found'], 404);
 
-        // Fetch Tasks
+        // Fetch Tasks with new fields
         $tasks = $wpdb->get_results($wpdb->prepare(
             "SELECT t.* FROM {$wpdb->prefix}studiofy_tasks t 
              JOIN {$wpdb->prefix}studiofy_milestones m ON t.milestone_id = m.id 
@@ -60,49 +46,47 @@ class ProjectEndpoints {
         return new \WP_REST_Response($project, 200);
     }
 
-    public function update_project(\WP_REST_Request $request): \WP_REST_Response {
-        global $wpdb;
-        $id = $request->get_param('id');
-        $params = $request->get_json_params();
-        
-        if (isset($params['status'])) {
-            $wpdb->update($wpdb->prefix.'studiofy_projects', ['status' => sanitize_text_field($params['status'])], ['id' => $id]);
-        }
-        
-        return new \WP_REST_Response(['success' => true], 200);
-    }
-
     public function add_task(\WP_REST_Request $request): \WP_REST_Response {
         global $wpdb;
         $id = $request->get_param('id');
         $params = $request->get_json_params();
-        $title = sanitize_text_field($params['title']);
-
-        // Find or create default milestone
+        
         $m_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}studiofy_milestones WHERE project_id = %d LIMIT 1", $id));
         if (!$m_id) {
             $wpdb->insert($wpdb->prefix.'studiofy_milestones', ['project_id' => $id, 'name' => 'General Tasks']);
             $m_id = $wpdb->insert_id;
         }
 
-        $wpdb->insert($wpdb->prefix.'studiofy_tasks', [
+        $data = [
             'milestone_id' => $m_id,
-            'title' => $title,
-            'priority' => 'Medium',
-            'status' => 'pending',
+            'title' => sanitize_text_field($params['title']),
+            'group_name' => sanitize_text_field($params['group'] ?? 'General'),
+            'priority' => sanitize_text_field($params['priority'] ?? 'Medium'),
+            'status' => sanitize_text_field($params['status'] ?? 'created'),
+            'assignee_id' => (int)($params['assignee'] ?? 0),
+            'start_date' => !empty($params['start_date']) ? sanitize_text_field($params['start_date']) : null,
+            'due_date' => !empty($params['due_date']) ? sanitize_text_field($params['due_date']) : null,
             'created_at' => current_time('mysql')
-        ]);
+        ];
 
-        return new \WP_REST_Response(['success' => true, 'id' => $wpdb->insert_id, 'title' => $title], 200);
+        $wpdb->insert($wpdb->prefix.'studiofy_tasks', $data);
+        $data['id'] = $wpdb->insert_id;
+
+        return new \WP_REST_Response($data, 200);
     }
 
     public function update_task(\WP_REST_Request $request): \WP_REST_Response {
         global $wpdb;
         $id = $request->get_param('id');
         $params = $request->get_json_params();
+        $data = [];
+
+        if (isset($params['status'])) $data['status'] = sanitize_text_field($params['status']);
+        // Add other update fields if needed for direct edits, currently mostly status toggling via checkbox
+        // but can be expanded for full edit
         
-        if (isset($params['status'])) {
-            $wpdb->update($wpdb->prefix.'studiofy_tasks', ['status' => sanitize_text_field($params['status'])], ['id' => $id]);
+        if (!empty($data)) {
+            $wpdb->update($wpdb->prefix.'studiofy_tasks', $data, ['id' => $id]);
         }
         
         return new \WP_REST_Response(['success' => true], 200);
