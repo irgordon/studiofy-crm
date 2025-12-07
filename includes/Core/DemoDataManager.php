@@ -1,8 +1,9 @@
 <?php
 /**
  * Demo Data Manager
+ * Handles XML File Upload & Import.
  * @package Studiofy\Core
- * @version 2.2.58
+ * @version 2.3.0
  */
 
 declare(strict_types=1);
@@ -50,7 +51,7 @@ class DemoDataManager {
         check_admin_referer('internal_import', 'nonce');
         if (!current_user_can('manage_options')) wp_die('Unauthorized');
 
-        // FIX: Use embedded XML content instead of file loading
+        // Use embedded XML content for reliability
         $xml_content = $this->get_default_xml_content();
         $xml = simplexml_load_string($xml_content);
         
@@ -78,7 +79,7 @@ class DemoDataManager {
     private function process_xml($xml): void {
         global $wpdb;
         $enc = new Encryption();
-        $ids = ['customers' => [], 'projects' => [], 'tasks' => [], 'items' => [], 'invoices' => [], 'contracts' => [], 'galleries' => [], 'files' => []];
+        $ids = ['customers' => [], 'projects' => [], 'tasks' => [], 'items' => [], 'invoices' => [], 'galleries' => [], 'files' => []];
         $customer_map = []; 
         $project_map = [];
         $gallery_map = [];
@@ -129,67 +130,61 @@ class DemoDataManager {
             }
         }
 
-        // 4. Invoices
-        if(isset($xml->invoices->invoice)) {
-            foreach ($xml->invoices->invoice as $inv) {
-                $cid = $customer_map[(int)$inv['customer_id']] ?? 0;
-                $pid = $project_map[(int)$inv['project_id']] ?? 0;
+        // 4. Billing Records (Unified Contracts & Invoices)
+        if(isset($xml->billing->record)) {
+            foreach ($xml->billing->record as $rec) {
+                $cid = $customer_map[(int)$rec['customer_id']] ?? 0;
+                $pid = $project_map[(int)$rec['project_id']] ?? 0;
                 
                 if ($cid) {
                     $line_items = [];
                     $subtotal = 0;
-                    foreach($inv->line_items->line_item as $li) {
+                    foreach($rec->line_items->line_item as $li) {
                         $qty = (float)$li->qty;
                         $rate = (float)$li->rate;
                         $subtotal += ($qty * $rate);
                         $line_items[] = ['desc' => (string)$li->desc, 'qty' => $qty, 'rate' => $rate];
                     }
-                    $tax_rate = (float)$inv->tax_rate;
+                    $tax_rate = (float)$rec->tax_rate;
                     $tax_amt = $subtotal * ($tax_rate / 100);
-                    $service_fee = 0.00;
-                    if (isset($inv->service_fee_enabled) && (string)$inv->service_fee_enabled === 'true') {
-                        $service_fee = $subtotal * 0.03;
-                    }
+                    $service_fee = (float)($rec->service_fee ?? 0);
                     $total = $subtotal + $tax_amt + $service_fee;
 
+                    // Payment Methods JSON
+                    $methods = [];
+                    if(isset($rec->payment_methods)) {
+                        foreach($rec->payment_methods->method as $m) $methods[] = (string)$m;
+                    }
+
+                    // Contract HTML
+                    $contract_body = (string)$rec->contract_body;
+
                     $wpdb->insert($wpdb->prefix . 'studiofy_invoices', [
-                        'invoice_number' => 'DEMO-' . rand(1000,9999), 'customer_id' => $cid, 'project_id' => $pid,
-                        'title' => (string)$inv->title, 'amount' => $total, 'tax_amount' => $tax_amt, 'service_fee' => $service_fee,
-                        'line_items' => json_encode($line_items), 'status' => (string)$inv->status, 'payment_method' => (string)($inv->payment_method ?? ''),
-                        'issue_date' => date('Y-m-d'), 'due_date' => date('Y-m-d', strtotime('+30 days')), 'currency' => 'USD', 'created_at' => current_time('mysql')
+                        'invoice_number' => 'INV-' . rand(10000,99999), 
+                        'customer_id' => $cid, 
+                        'project_id' => $pid,
+                        'title' => (string)$rec->title, 
+                        'service_type' => (string)$rec->service_type,
+                        'contract_body' => $contract_body,
+                        'contract_status' => (string)$rec->contract_status,
+                        'amount' => $total, 
+                        'tax_amount' => $tax_amt, 
+                        'service_fee' => $service_fee,
+                        'deposit_amount' => (float)($rec->deposit_amount ?? 0),
+                        'payment_methods' => json_encode($methods),
+                        'line_items' => json_encode($line_items), 
+                        'status' => (string)$rec->status, 
+                        'issue_date' => date('Y-m-d'), 
+                        'due_date' => date('Y-m-d', strtotime('+14 days')),
+                        'currency' => 'USD', 
+                        'created_at' => current_time('mysql')
                     ]);
                     $ids['invoices'][] = $wpdb->insert_id;
                 }
             }
         }
 
-        // 5. Contracts
-        if(isset($xml->contracts->contract)) {
-            foreach ($xml->contracts->contract as $con) {
-                $cid = $customer_map[(int)$con['customer_id']] ?? 0;
-                $pid = $project_map[(int)$con['project_id']] ?? 0;
-                $content = (string)$con->terms;
-
-                if ($cid) {
-                    $cpt_id = wp_insert_post([
-                        'post_title' => 'Contract: ' . (string)$con->title,
-                        'post_type'  => 'studiofy_doc',
-                        'post_status' => 'publish',
-                        'post_content' => $content
-                    ]);
-
-                    $wpdb->insert($wpdb->prefix . 'studiofy_contracts', [
-                        'title' => (string)$con->title, 'customer_id' => $cid, 'project_id' => $pid,
-                        'amount' => (float)$con->amount, 'status' => (string)$con->status, 'body_content' => $content,
-                        'linked_post_id' => $cpt_id, 'start_date' => date('Y-m-d'), 'end_date' => date('Y-m-d', strtotime('+1 year')), 
-                        'created_at' => current_time('mysql')
-                    ]);
-                    $ids['contracts'][] = $wpdb->insert_id;
-                }
-            }
-        }
-
-        // 6. Galleries & Files
+        // 5. Galleries & Files
         if(isset($xml->galleries->gallery)) {
             foreach ($xml->galleries->gallery as $g) {
                 $cid = $customer_map[(int)$g['customer_id']] ?? 0;
@@ -200,6 +195,8 @@ class DemoDataManager {
                 $gid = $wpdb->insert_id;
                 $ids['galleries'][] = $gid;
                 $gallery_map[(int)$g['id']] = $gid;
+                
+                // Use 'studiofy_gal' CPT
                 $pid = wp_insert_post(['post_title' => (string)$g->title . ' - Demo', 'post_content' => '[studiofy_proof_gallery id="'.$gid.'"]', 'post_status' => 'publish', 'post_type' => 'studiofy_gal', 'post_password' => (string)$g->password]);
                 if($pid) $wpdb->update($wpdb->prefix.'studiofy_galleries', ['wp_page_id' => $pid], ['id' => $gid]);
             }
@@ -217,7 +214,7 @@ class DemoDataManager {
             }
         }
 
-        // 7. Tasks
+        // 6. Tasks
         if(isset($xml->tasks->task)) {
             foreach ($xml->tasks->task as $t) {
                 $pid = $project_map[(int)$t['project_id']] ?? 0;
@@ -242,12 +239,7 @@ class DemoDataManager {
                 $pages = $wpdb->get_col("SELECT wp_page_id FROM {$wpdb->prefix}studiofy_galleries WHERE id IN ($g_in) AND wp_page_id IS NOT NULL");
                 foreach($pages as $pid) wp_delete_post($pid, true);
             }
-            if (!empty($ids['contracts'])) {
-                $c_in = implode(',', array_map('intval', $ids['contracts']));
-                $posts = $wpdb->get_col("SELECT linked_post_id FROM {$wpdb->prefix}studiofy_contracts WHERE id IN ($c_in) AND linked_post_id IS NOT NULL");
-                foreach($posts as $pid) wp_delete_post($pid, true);
-            }
-            foreach(['gallery_files'=>'files', 'galleries'=>'galleries', 'contracts'=>'contracts', 'invoices'=>'invoices', 'tasks'=>'tasks', 'projects'=>'projects', 'customers'=>'customers', 'items'=>'items'] as $table => $key) {
+            foreach(['gallery_files'=>'files', 'galleries'=>'galleries', 'invoices'=>'invoices', 'tasks'=>'tasks', 'projects'=>'projects', 'customers'=>'customers', 'items'=>'items'] as $table => $key) {
                 if(!empty($ids[$key])) {
                     $tbl = $wpdb->prefix . 'studiofy_' . $table;
                     $in = implode(',', array_map('intval', $ids[$key]));
@@ -259,91 +251,117 @@ class DemoDataManager {
         delete_option('studiofy_demo_data_ids');
     }
 
-    /**
-     * Returns built-in demo XML content to ensure import works without external file dependencies.
-     */
     private function get_default_xml_content(): string {
         return '<?xml version="1.0" encoding="UTF-8"?>
 <studiofy_demo>
     <items>
-        <item><title>Portrait Session</title><description>1 Hour On-Location</description><rate>200.00</rate><rate_type>Hourly</rate_type><default_qty>1</default_qty><tax_rate>6.0</tax_rate></item>
-        <item><title>Wedding Package</title><description>8 Hour Coverage</description><rate>3500.00</rate><rate_type>Fixed</rate_type><default_qty>1</default_qty><tax_rate>6.0</tax_rate></item>
-        <item><title>Commercial License</title><description>Usage Rights</description><rate>1000.00</rate><rate_type>Fixed</rate_type><default_qty>1</default_qty><tax_rate>0.0</tax_rate></item>
-        <item><title>Event Coverage</title><description>Hourly Rate</description><rate>300.00</rate><rate_type>Hourly</rate_type><default_qty>4</default_qty><tax_rate>6.0</tax_rate></item>
-        <item><title>Boudoir Session</title><description>Private Studio</description><rate>500.00</rate><rate_type>Fixed</rate_type><default_qty>1</default_qty><tax_rate>6.0</tax_rate></item>
-        <item><title>Lifestyle Branding</title><description>Social Media Pack</description><rate>1200.00</rate><rate_type>Fixed</rate_type><default_qty>1</default_qty><tax_rate>6.0</tax_rate></item>
+        <item><title>Portrait Session</title><description>1 Hour On-Location</description><rate>250.00</rate><rate_type>Fixed</rate_type><default_qty>1</default_qty><tax_rate>6.0</tax_rate></item>
+        <item><title>Wedding Coverage</title><description>8 Hours + 2 Shooters</description><rate>4000.00</rate><rate_type>Fixed</rate_type><default_qty>1</default_qty><tax_rate>6.0</tax_rate></item>
+        <item><title>Event Hourly</title><description>Corporate Event</description><rate>350.00</rate><rate_type>Hourly</rate_type><default_qty>4</default_qty><tax_rate>6.0</tax_rate></item>
+        <item><title>Copyright Buyout</title><description>Full Commercial Rights</description><rate>1500.00</rate><rate_type>Fixed</rate_type><default_qty>1</default_qty><tax_rate>0.0</tax_rate></item>
+        <item><title>Print Credit</title><description>Credit towards prints</description><rate>100.00</rate><rate_type>Fixed</rate_type><default_qty>1</default_qty><tax_rate>0.0</tax_rate></item>
     </items>
     <customers>
-        <customer id="1"><first_name>John</first_name><last_name>Doe</last_name><email>john.doe@demo.com</email><phone>555-0101</phone><company>Doe Corp</company><street>123 Main St</street><city>New York</city><state>NY</state><zip>10001</zip><notes>VIP Client.</notes></customer>
-        <customer id="2"><first_name>Jane</first_name><last_name>Smith</last_name><email>jane@demo.com</email><phone>555-0102</phone><company></company><street>200 Oak Ave</street><city>Los Angeles</city><state>CA</state><zip>90001</zip><notes>Wedding inquiry.</notes></customer>
-        <customer id="3"><first_name>Mike</first_name><last_name>Ross</last_name><email>mike@demo.com</email><phone>555-0103</phone><company>Pearson Hardman</company><street>300 High St</street><city>Chicago</city><state>IL</state><zip>60601</zip><notes>Corporate headshots.</notes></customer>
-        <customer id="4"><first_name>Emily</first_name><last_name>Blunt</last_name><email>emily@demo.com</email><phone>555-0104</phone><company></company><street>400 Elm St</street><city>Austin</city><state>TX</state><zip>73301</zip><notes>Family shoot.</notes></customer>
-        <customer id="5"><first_name>Chris</first_name><last_name>Evans</last_name><email>chris@demo.com</email><phone>555-0105</phone><company>Marvel</company><street>500 Pine Rd</street><city>Atlanta</city><state>GA</state><zip>30301</zip><notes>Event coverage.</notes></customer>
-        <customer id="6"><first_name>Sarah</first_name><last_name>Connor</last_name><email>sarah@demo.com</email><phone>555-0106</phone><company>Skynet</company><street>600 Cedar Ln</street><city>Seattle</city><state>WA</state><zip>98101</zip><notes>Product launch.</notes></customer>
-        <customer id="7"><first_name>David</first_name><last_name>Beckham</last_name><email>david@demo.com</email><phone>555-0107</phone><company>Inter Miami</company><street>700 Palm Dr</street><city>Miami</city><state>FL</state><zip>33101</zip><notes>Sports photography.</notes></customer>
-        <customer id="8"><first_name>Jessica</first_name><last_name>Alba</last_name><email>jess@demo.com</email><phone>555-0108</phone><company>Honest Co</company><street>800 Birch Blvd</street><city>Denver</city><state>CO</state><zip>80201</zip><notes>Lifestyle brand.</notes></customer>
-        <customer id="9"><first_name>Daniel</first_name><last_name>Craig</last_name><email>bond@demo.com</email><phone>555-0109</phone><company>MI6</company><street>900 Spruce Ct</street><city>London</city><state>UK</state><zip>00700</zip><notes>Confidential.</notes></customer>
-        <customer id="10"><first_name>Laura</first_name><last_name>Croft</last_name><email>laura@demo.com</email><phone>555-0110</phone><company>Tomb Raiders</company><street>1000 Maple Way</street><city>Venice</city><state>IT</state><zip>30100</zip><notes>Travel shoot.</notes></customer>
+        <customer id="1"><first_name>Alice</first_name><last_name>Vaughn</last_name><email>alice@vaughn.design</email><phone>555-0101</phone><company>Vaughn Interiors</company><street>123 Design Blvd</street><city>New York</city><state>NY</state><zip>10001</zip><notes>Commercial shoot.</notes></customer>
+        <customer id="2"><first_name>Marcus</first_name><last_name>Chen</last_name><email>marcus@tech.io</email><phone>555-0102</phone><company>StartUp IO</company><street>456 Valley Rd</street><city>San Francisco</city><state>CA</state><zip>94103</zip><notes>Headshots.</notes></customer>
+        <customer id="3"><first_name>Elena</first_name><last_name>Rodriguez</last_name><email>elena@wedding.love</email><phone>555-0103</phone><company></company><street>789 Rose Ln</street><city>Austin</city><state>TX</state><zip>78701</zip><notes>Wedding 2026.</notes></customer>
+        <customer id="4"><first_name>David</first_name><last_name>Smith</last_name><email>dave@smith.family</email><phone>555-0104</phone><company></company><street>321 Pine St</street><city>Seattle</city><state>WA</state><zip>98101</zip><notes>Family portrait.</notes></customer>
+        <customer id="5"><first_name>Sarah</first_name><last_name>Jones</last_name><email>sarah@model.agency</email><phone>555-0105</phone><company>Elite Models</company><street>654 Fashion Ave</street><city>Los Angeles</city><state>CA</state><zip>90012</zip><notes>Portfolio update.</notes></customer>
+        <customer id="6"><first_name>Michael</first_name><last_name>Brown</last_name><email>mike@events.pro</email><phone>555-0106</phone><company>Pro Events</company><street>987 Main St</street><city>Chicago</city><state>IL</state><zip>60601</zip><notes>Conference.</notes></customer>
+        <customer id="7"><first_name>Jennifer</first_name><last_name>Lee</last_name><email>jen@creative.studio</email><phone>555-0107</phone><company>Lee Creative</company><street>147 Art Way</street><city>Portland</city><state>OR</state><zip>97204</zip><notes>Branding.</notes></customer>
+        <customer id="8"><first_name>Robert</first_name><last_name>Wilson</last_name><email>bob@wilson.realty</email><phone>555-0108</phone><company>Wilson Realty</company><street>258 Market St</street><city>Miami</city><state>FL</state><zip>33101</zip><notes>Real estate.</notes></customer>
+        <customer id="9"><first_name>Linda</first_name><last_name>Taylor</last_name><email>linda@educate.edu</email><phone>555-0109</phone><company>City College</company><street>369 University Dr</street><city>Boston</city><state>MA</state><zip>02115</zip><notes>Graduation.</notes></customer>
+        <customer id="10"><first_name>James</first_name><last_name>Anderson</last_name><email>james@law.firm</email><phone>555-0110</phone><company>Anderson Law</company><street>741 Court St</street><city>Denver</city><state>CO</state><zip>80202</zip><notes>Partner portraits.</notes></customer>
     </customers>
     <projects>
-        <project id="1" customer_id="1"><title>Doe Portrait</title><status>in_progress</status><budget>500.00</budget><tax_status>taxed</tax_status><notes>Outdoor.</notes></project>
-        <project id="2" customer_id="2"><title>Smith Wedding</title><status>future</status><budget>5000.00</budget><tax_status>taxed</tax_status><notes>Full day.</notes></project>
-        <project id="3" customer_id="3"><title>Corporate Headshots</title><status>todo</status><budget>1500.00</budget><tax_status>exempt</tax_status><notes>Office.</notes></project>
-        <project id="4" customer_id="4"><title>Family Session</title><status>completed</status><budget>400.00</budget><tax_status>taxed</tax_status><notes>Park location.</notes></project>
-        <project id="5" customer_id="5"><title>Movie Premiere</title><status>in_progress</status><budget>3000.00</budget><tax_status>taxed</tax_status><notes>Red carpet.</notes></project>
-        <project id="6" customer_id="6"><title>Product Catalog</title><status>todo</status><budget>12000.00</budget><tax_status>exempt</tax_status><notes>Studio.</notes></project>
-        <project id="7" customer_id="7"><title>Team Photos</title><status>future</status><budget>2500.00</budget><tax_status>taxed</tax_status><notes>Stadium.</notes></project>
-        <project id="8" customer_id="8"><title>Brand Lifestyle</title><status>in_progress</status><budget>4500.00</budget><tax_status>taxed</tax_status><notes>Multiple locations.</notes></project>
-        <project id="9" customer_id="9"><title>Secret Location</title><status>completed</status><budget>10000.00</budget><tax_status>exempt</tax_status><notes>Private.</notes></project>
-        <project id="10" customer_id="10"><title>Adventure Shoot</title><status>future</status><budget>3500.00</budget><tax_status>taxed</tax_status><notes>Hiking trail.</notes></project>
+        <project id="1" customer_id="1"><title>Vaughn Showroom</title><status>in_progress</status><budget>2500.00</budget><tax_status>taxed</tax_status><notes>Interior photography.</notes></project>
+        <project id="2" customer_id="2"><title>StartUp Team</title><status>completed</status><budget>1200.00</budget><tax_status>taxed</tax_status><notes>Office shots.</notes></project>
+        <project id="3" customer_id="3"><title>Rodriguez Wedding</title><status>future</status><budget>5000.00</budget><tax_status>taxed</tax_status><notes>Full day.</notes></project>
+        <project id="4" customer_id="4"><title>Smith Family</title><status>todo</status><budget>400.00</budget><tax_status>taxed</tax_status><notes>Park session.</notes></project>
+        <project id="5" customer_id="5"><title>Sarah Portfolio</title><status>in_progress</status><budget>800.00</budget><tax_status>taxed</tax_status><notes>Studio fashion.</notes></project>
+        <project id="6" customer_id="6"><title>Tech Conference</title><status>future</status><budget>3000.00</budget><tax_status>taxed</tax_status><notes>2 days coverage.</notes></project>
+        <project id="7" customer_id="7"><title>Brand Refresh</title><status>completed</status><budget>1500.00</budget><tax_status>exempt</tax_status><notes>Website content.</notes></project>
+        <project id="8" customer_id="8"><title>Luxury Listing</title><status>todo</status><budget>600.00</budget><tax_status>taxed</tax_status><notes>Drone included.</notes></project>
+        <project id="9" customer_id="9"><title>Class of 2025</title><status>future</status><budget>2000.00</budget><tax_status>taxed</tax_status><notes>Ceremony.</notes></project>
+        <project id="10" customer_id="10"><title>Legal Headshots</title><status>in_progress</status><budget>1000.00</budget><tax_status>taxed</tax_status><notes>Grey background.</notes></project>
+        <project id="11" customer_id="1"><title>Product Catalog</title><status>future</status><budget>5000.00</budget><tax_status>exempt</tax_status><notes>Furniture details.</notes></project>
+        <project id="12" customer_id="3"><title>Engagement</title><status>completed</status><budget>500.00</budget><tax_status>taxed</tax_status><notes>Downtown.</notes></project>
     </projects>
+    <billing>
+        <record customer_id="1" project_id="1"><title>Commercial Agreement</title><service_type>Commercial</service_type><contract_status>Signed</contract_status><status>Paid</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Bank Transfer</method></payment_methods><contract_body>&lt;h2&gt;Commercial Usage License&lt;/h2&gt;&lt;p&gt;Grant of rights...&lt;/p&gt;</contract_body><line_items><line_item><desc>Interior Photography Day Rate</desc><qty>2</qty><rate>1250.00</rate></line_item></line_items></record>
+        <record customer_id="2" project_id="2"><title>Headshot Invoice</title><service_type>Portrait</service_type><contract_status>Unsigned</contract_status><status>Sent</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Credit Card</method></payment_methods><contract_body></contract_body><line_items><line_item><desc>Team Headshots</desc><qty>10</qty><rate>120.00</rate></line_item></line_items></record>
+        <record customer_id="3" project_id="3"><title>Wedding Contract</title><service_type>Wedding</service_type><contract_status>Signed</contract_status><status>Paid</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><deposit_amount>2500.00</deposit_amount><payment_methods><method>Zelle</method><method>Check</method></payment_methods><contract_body>&lt;h2&gt;Wedding Agreement&lt;/h2&gt;&lt;p&gt;Coverage details...&lt;/p&gt;</contract_body><line_items><line_item><desc>Wedding Package A</desc><qty>1</qty><rate>5000.00</rate></line_item></line_items></record>
+        <record customer_id="4" project_id="4"><title>Family Session</title><service_type>Portrait</service_type><contract_status>Signed</contract_status><status>Unpaid</status><tax_rate>6.0</tax_rate><service_fee>12.00</service_fee><payment_methods><method>Credit Card</method></payment_methods><contract_body>&lt;p&gt;Model Release...&lt;/p&gt;</contract_body><line_items><line_item><desc>Session Fee</desc><qty>1</qty><rate>400.00</rate></line_item></line_items></record>
+        <record customer_id="5" project_id="5"><title>Model Portfolio</title><service_type>Portrait</service_type><contract_status>Unsigned</contract_status><status>Draft</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Venmo</method></payment_methods><contract_body></contract_body><line_items><line_item><desc>Studio Time</desc><qty>4</qty><rate>200.00</rate></line_item></line_items></record>
+        <record customer_id="6" project_id="6"><title>Event Coverage</title><service_type>Event</service_type><contract_status>Signed</contract_status><status>Paid</status><tax_rate>0.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Bank Transfer</method></payment_methods><contract_body>&lt;h2&gt;Event Terms&lt;/h2&gt;</contract_body><line_items><line_item><desc>Event Photography</desc><qty>1</qty><rate>3000.00</rate></line_item><line_item><desc>Tax Exemption</desc><qty>1</qty><rate>0.00</rate></line_item></line_items></record>
+        <record customer_id="7" project_id="7"><title>Brand Web Content</title><service_type>Commercial</service_type><contract_status>Signed</contract_status><status>Sent</status><tax_rate>0.0</tax_rate><service_fee>45.00</service_fee><payment_methods><method>PayPal</method></payment_methods><contract_body>&lt;p&gt;Web usage rights...&lt;/p&gt;</contract_body><line_items><line_item><desc>Branding Session</desc><qty>1</qty><rate>1500.00</rate></line_item></line_items></record>
+        <record customer_id="8" project_id="8"><title>Real Estate Shoot</title><service_type>Commercial</service_type><contract_status>Unsigned</contract_status><status>Unpaid</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Credit Card</method></payment_methods><contract_body></contract_body><line_items><line_item><desc>Listing Photos</desc><qty>1</qty><rate>400.00</rate></line_item><line_item><desc>Drone Add-on</desc><qty>1</qty><rate>200.00</rate></line_item></line_items></record>
+        <record customer_id="9" project_id="9"><title>Graduation Event</title><service_type>Event</service_type><contract_status>Signed</contract_status><status>Paid</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Check</method></payment_methods><contract_body>&lt;p&gt;Event terms...&lt;/p&gt;</contract_body><line_items><line_item><desc>Event Coverage</desc><qty>1</qty><rate>2000.00</rate></line_item></line_items></record>
+        <record customer_id="10" project_id="10"><title>Corporate Headshots</title><service_type>Portrait</service_type><contract_status>Unsigned</contract_status><status>Draft</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Credit Card</method></payment_methods><contract_body></contract_body><line_items><line_item><desc>Partner Portraits</desc><qty>5</qty><rate>200.00</rate></line_item></line_items></record>
+        <record customer_id="1" project_id="11"><title>Catalog Buyout</title><service_type>Commercial</service_type><contract_status>Signed</contract_status><status>Unpaid</status><tax_rate>0.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Bank Transfer</method></payment_methods><contract_body>&lt;h2&gt;Full Buyout&lt;/h2&gt;</contract_body><line_items><line_item><desc>Image License</desc><qty>1</qty><rate>5000.00</rate></line_item></line_items></record>
+        <record customer_id="3" project_id="12"><title>Engagement Invoice</title><service_type>Portrait</service_type><contract_status>Unsigned</contract_status><status>Paid</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Zelle</method></payment_methods><contract_body></contract_body><line_items><line_item><desc>Engagement Session</desc><qty>1</qty><rate>500.00</rate></line_item></line_items></record>
+        <record customer_id="5" project_id="0"><title>Print Order #101</title><service_type>General</service_type><contract_status>Unsigned</contract_status><status>Paid</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Credit Card</method></payment_methods><contract_body></contract_body><line_items><line_item><desc>8x10 Print</desc><qty>5</qty><rate>25.00</rate></line_item></line_items></record>
+        <record customer_id="6" project_id="0"><title>Travel Expense</title><service_type>General</service_type><contract_status>Unsigned</contract_status><status>Sent</status><tax_rate>0.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Bank Transfer</method></payment_methods><contract_body></contract_body><line_items><line_item><desc>Travel Reimbursement</desc><qty>1</qty><rate>450.00</rate></line_item></line_items></record>
+        <record customer_id="2" project_id="0"><title>Retouching Fee</title><service_type>General</service_type><contract_status>Unsigned</contract_status><status>Unpaid</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>PayPal</method></payment_methods><contract_body></contract_body><line_items><line_item><desc>Advanced Retouching</desc><qty>3</qty><rate>50.00</rate></line_item></line_items></record>
+        <record customer_id="9" project_id="0"><title>Album Deposit</title><service_type>Wedding</service_type><contract_status>Signed</contract_status><status>Paid</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Credit Card</method></payment_methods><contract_body>&lt;p&gt;Album terms...&lt;/p&gt;</contract_body><line_items><line_item><desc>Leather Album</desc><qty>1</qty><rate>1200.00</rate></line_item></line_items></record>
+        <record customer_id="4" project_id="0"><title>Holiday Mini</title><service_type>Portrait</service_type><contract_status>Unsigned</contract_status><status>Paid</status><tax_rate>6.0</tax_rate><service_fee>0.00</service_fee><payment_methods><method>Cash</method></payment_methods><contract_body></contract_body><line_items><line_item><desc>Mini Session</desc><qty>1</qty><rate>200.00</rate></line_item></line_items></record>
+    </billing>
     <galleries>
-        <gallery id="1" customer_id="1"><title>Doe Portraits</title><description>Select your favorites.</description><password>doe123</password></gallery>
-        <gallery id="2" customer_id="2"><title>Smith Wedding</title><description>Wedding highlights.</description><password>smith2025</password></gallery>
-        <gallery id="3" customer_id="3"><title>Pearson Headshots</title><description>Staff photos.</description><password>ph2025</password></gallery>
-        <gallery id="4" customer_id="4"><title>Family Fun</title><description>Park session.</description><password>family</password></gallery>
-        <gallery id="5" customer_id="5"><title>Premiere Night</title><description>Red carpet.</description><password>movie</password></gallery>
-        <gallery id="6" customer_id="6"><title>Skynet Products</title><description>Catalog shots.</description><password>sky</password></gallery>
-        <gallery id="7" customer_id="7"><title>Miami Team</title><description>Action shots.</description><password>miami</password></gallery>
-        <gallery id="8" customer_id="8"><title>Honest Lifestyle</title><description>Brand assets.</description><password>honest</password></gallery>
-        <gallery id="9" customer_id="9"><title>007 Location</title><description>Confidential.</description><password>bond</password></gallery>
-        <gallery id="10" customer_id="10"><title>Tomb Adventure</title><description>Action.</description><password>croft</password></gallery>
+        <gallery id="1" customer_id="1"><title>Vaughn Interiors</title><description>Select favs.</description><password>vaughn</password></gallery>
+        <gallery id="2" customer_id="2"><title>StartUp Team</title><description>Headshots.</description><password>startup</password></gallery>
+        <gallery id="3" customer_id="3"><title>Elena & Mark</title><description>Engagement.</description><password>love</password></gallery>
+        <gallery id="4" customer_id="4"><title>Smith Family</title><description>Park.</description><password>smith</password></gallery>
+        <gallery id="5" customer_id="5"><title>Sarah Portfolio</title><description>Fashion.</description><password>model</password></gallery>
     </galleries>
     <gallery_files>
-        <file gallery_id="1" url="https://picsum.photos/800/800?random=1"><name>portrait_01.jpg</name></file>
-        <file gallery_id="1" url="https://picsum.photos/800/800?random=2"><name>portrait_02.jpg</name></file>
-        <file gallery_id="1" url="https://picsum.photos/800/800?random=3"><name>portrait_03.jpg</name></file>
-        <file gallery_id="1" url="https://picsum.photos/800/800?random=4"><name>portrait_04.jpg</name></file>
-        <file gallery_id="1" url="https://picsum.photos/800/800?random=5"><name>portrait_05.jpg</name></file>
-        <file gallery_id="2" url="https://picsum.photos/800/800?random=10"><name>wedding_01.jpg</name></file>
-        <file gallery_id="2" url="https://picsum.photos/800/800?random=11"><name>wedding_02.jpg</name></file>
-        <file gallery_id="2" url="https://picsum.photos/800/800?random=12"><name>wedding_03.jpg</name></file>
-        <file gallery_id="2" url="https://picsum.photos/800/800?random=13"><name>wedding_04.jpg</name></file>
-        <file gallery_id="2" url="https://picsum.photos/800/800?random=14"><name>wedding_05.jpg</name></file>
-        <file gallery_id="3" url="https://picsum.photos/800/800?random=30"><name>headshot_01.jpg</name></file>
-        <file gallery_id="3" url="https://picsum.photos/800/800?random=31"><name>headshot_02.jpg</name></file>
-        <file gallery_id="3" url="https://picsum.photos/800/800?random=32"><name>headshot_03.jpg</name></file>
-        <file gallery_id="3" url="https://picsum.photos/800/800?random=33"><name>headshot_04.jpg</name></file>
-        <file gallery_id="3" url="https://picsum.photos/800/800?random=34"><name>headshot_05.jpg</name></file>
-        <file gallery_id="4" url="https://picsum.photos/800/800?random=40"><name>family_01.jpg</name></file>
-        <file gallery_id="4" url="https://picsum.photos/800/800?random=41"><name>family_02.jpg</name></file>
-        <file gallery_id="4" url="https://picsum.photos/800/800?random=42"><name>family_03.jpg</name></file>
-        <file gallery_id="4" url="https://picsum.photos/800/800?random=43"><name>family_04.jpg</name></file>
+        <file gallery_id="1" url="https://picsum.photos/800/800?random=1"><name>interior_01.jpg</name></file>
+        <file gallery_id="1" url="https://picsum.photos/800/800?random=2"><name>interior_02.jpg</name></file>
+        <file gallery_id="1" url="https://picsum.photos/800/800?random=3"><name>interior_03.jpg</name></file>
+        <file gallery_id="1" url="https://picsum.photos/800/800?random=4"><name>interior_04.jpg</name></file>
+        <file gallery_id="1" url="https://picsum.photos/800/800?random=5"><name>interior_05.jpg</name></file>
+        <file gallery_id="2" url="https://picsum.photos/800/800?random=6"><name>headshot_01.jpg</name></file>
+        <file gallery_id="2" url="https://picsum.photos/800/800?random=7"><name>headshot_02.jpg</name></file>
+        <file gallery_id="2" url="https://picsum.photos/800/800?random=8"><name>headshot_03.jpg</name></file>
+        <file gallery_id="2" url="https://picsum.photos/800/800?random=9"><name>headshot_04.jpg</name></file>
+        <file gallery_id="2" url="https://picsum.photos/800/800?random=10"><name>headshot_05.jpg</name></file>
+        <file gallery_id="3" url="https://picsum.photos/800/800?random=11"><name>engage_01.jpg</name></file>
+        <file gallery_id="3" url="https://picsum.photos/800/800?random=12"><name>engage_02.jpg</name></file>
+        <file gallery_id="3" url="https://picsum.photos/800/800?random=13"><name>engage_03.jpg</name></file>
+        <file gallery_id="3" url="https://picsum.photos/800/800?random=14"><name>engage_04.jpg</name></file>
+        <file gallery_id="3" url="https://picsum.photos/800/800?random=15"><name>engage_05.jpg</name></file>
+        <file gallery_id="3" url="https://picsum.photos/800/800?random=16"><name>engage_06.jpg</name></file>
+        <file gallery_id="3" url="https://picsum.photos/800/800?random=17"><name>engage_07.jpg</name></file>
+        <file gallery_id="3" url="https://picsum.photos/800/800?random=18"><name>engage_08.jpg</name></file>
+        <file gallery_id="4" url="https://picsum.photos/800/800?random=19"><name>fam_01.jpg</name></file>
+        <file gallery_id="4" url="https://picsum.photos/800/800?random=20"><name>fam_02.jpg</name></file>
+        <file gallery_id="4" url="https://picsum.photos/800/800?random=21"><name>fam_03.jpg</name></file>
+        <file gallery_id="4" url="https://picsum.photos/800/800?random=22"><name>fam_04.jpg</name></file>
+        <file gallery_id="4" url="https://picsum.photos/800/800?random=23"><name>fam_05.jpg</name></file>
+        <file gallery_id="5" url="https://picsum.photos/800/800?random=24"><name>model_01.jpg</name></file>
+        <file gallery_id="5" url="https://picsum.photos/800/800?random=25"><name>model_02.jpg</name></file>
+        <file gallery_id="5" url="https://picsum.photos/800/800?random=26"><name>model_03.jpg</name></file>
+        <file gallery_id="5" url="https://picsum.photos/800/800?random=27"><name>model_04.jpg</name></file>
+        <file gallery_id="5" url="https://picsum.photos/800/800?random=28"><name>model_05.jpg</name></file>
+        <file gallery_id="5" url="https://picsum.photos/800/800?random=29"><name>model_06.jpg</name></file>
+        <file gallery_id="5" url="https://picsum.photos/800/800?random=30"><name>model_07.jpg</name></file>
+        <file gallery_id="5" url="https://picsum.photos/800/800?random=31"><name>model_08.jpg</name></file>
     </gallery_files>
     <tasks>
-        <task project_id="1"><title>Scouting</title><priority>Medium</priority><description>Check park.</description><status>pending</status></task>
-        <task project_id="2"><title>Interview</title><priority>High</priority><description>Timeline check.</description><status>pending</status></task>
-        <task project_id="6"><title>Retouching</title><priority>Urgent</priority><description>Catalog deadline.</description><status>pending</status></task>
+        <task project_id="1"><title>Scout Location</title><priority>Medium</priority><status>completed</status></task>
+        <task project_id="1"><title>Shoot Day</title><priority>High</priority><status>completed</status></task>
+        <task project_id="1"><title>Retouching</title><priority>Medium</priority><status>inprogress</status></task>
+        <task project_id="2"><title>Selection</title><priority>Medium</priority><status>completed</status></task>
+        <task project_id="2"><title>Final Delivery</title><priority>High</priority><status>completed</status></task>
+        <task project_id="3"><title>Consultation</title><priority>Medium</priority><status>completed</status></task>
+        <task project_id="3"><title>Engagement Shoot</title><priority>High</priority><status>completed</status></task>
+        <task project_id="3"><title>Timeline Planning</title><priority>Urgent</priority><status>inprogress</status></task>
+        <task project_id="3"><title>Vendor Check</title><priority>Medium</priority><status>pending</status></task>
+        <task project_id="3"><title>Wedding Day</title><priority>Urgent</priority><status>pending</status></task>
+        <task project_id="5"><title>Moodboard</title><priority>Low</priority><status>completed</status></task>
+        <task project_id="5"><title>Styling</title><priority>Medium</priority><status>completed</status></task>
+        <task project_id="5"><title>Shooting</title><priority>High</priority><status>inprogress</status></task>
+        <task project_id="5"><title>Editing</title><priority>Medium</priority><status>pending</status></task>
     </tasks>
-    <invoices>
-        <invoice customer_id="1" project_id="1"><title>Portrait Invoice</title><status>Paid</status><tax_rate>6.0</tax_rate><line_items><line_item><desc>Portrait Session</desc><qty>1</qty><rate>200.00</rate></line_item><line_item><desc>Print Credit</desc><qty>1</qty><rate>50.00</rate></line_item></line_items></invoice>
-        <invoice customer_id="2" project_id="2"><title>Wedding Deposit</title><status>Paid</status><tax_rate>6.0</tax_rate><line_items><line_item><desc>Wedding Package</desc><qty>1</qty><rate>3500.00</rate></line_item></line_items></invoice>
-        <invoice customer_id="6" project_id="6"><title>Commercial Rights</title><status>Sent</status><tax_rate>0.0</tax_rate><line_items><line_item><desc>Product Catalog</desc><qty>1</qty><rate>12000.00</rate></line_item><line_item><desc>Copyright Release</desc><qty>1</qty><rate>1000.00</rate></line_item></line_items></invoice>
-    </invoices>
-    <contracts>
-        <contract customer_id="1" project_id="1"><title>Portrait Agreement</title><amount>500.00</amount><status>signed</status><terms><![CDATA[<div class="studiofy-contract"><h2>Portrait Agreement</h2><p>Standard portrait terms apply.</p></div>]]></terms></contract>
-        <contract customer_id="2" project_id="2"><title>Wedding Contract</title><amount>5000.00</amount><status>draft</status><terms><![CDATA[<div class="studiofy-contract"><h2>Wedding Agreement</h2><p>8 hours coverage.</p></div>]]></terms></contract>
-    </contracts>
 </studiofy_demo>';
     }
 }
