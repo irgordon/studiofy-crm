@@ -1,0 +1,24 @@
+.studiofy-contract-container {
+    max-width: 800px;
+    margin: 40px auto;
+    background: #fff;
+    padding: 40px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border: 1px solid #e1e1e1;
+}
+
+.contract-header { text-align: center; border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 30px; }
+.contract-meta { display: flex; justify-content: space-between; font-weight: bold; color: #555; }
+
+.contract-body { font-size: 16px; line-height: 1.6; margin-bottom: 40px; }
+
+.signature-area { background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #eee; }
+.sig-pad-wrapper { border: 1px solid #ccc; background: #fff; margin: 15px 0; cursor: crosshair; }
+#signature-canvas { width: 100%; height: 200px; display: block; }
+
+.form-group { margin-bottom: 15px; }
+.form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+.form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+
+.signed-status { text-align: center; padding: 20px; border: 2px solid #46b450; background: #eaffea; border-radius: 8px; }
+.signature-img { max-width: 100%; height: auto; margin-top: 15px; border-bottom: 1px solid #000; }
