@@ -2,7 +2,7 @@
 /**
  * Settings Controller
  * @package Studiofy\Admin
- * @version 2.2.36
+ * @version 2.2.37
  */
 
 declare(strict_types=1);
@@ -76,8 +76,8 @@ class Settings {
     }
 
     public function field_text(array $args): void {
-        $options = get_option('studiofy_branding');
-        // FIX: Ensure value is string (cast to string)
+        // FIX: Force array return to prevent bool access errors on fresh install
+        $options = (array) get_option('studiofy_branding', []);
         $val = isset($options[$args['key']]) ? (string)$options[$args['key']] : '';
         $id = 'studiofy_' . $args['key'];
         
@@ -89,7 +89,7 @@ class Settings {
     }
 
     public function render_env_field(): void {
-         $options = get_option('studiofy_branding');
+         $options = (array) get_option('studiofy_branding', []);
          $env = isset($options['square_env']) ? (string)$options['square_env'] : 'sandbox';
          echo '<label for="studiofy_square_env" class="screen-reader-text">Select Environment</label>';
          echo '<select id="studiofy_square_env" name="studiofy_branding[square_env]" title="Select Square Environment"><option value="sandbox" '.selected($env,'sandbox',false).'>Sandbox</option><option value="production" '.selected($env,'production',false).'>Production</option></select>';
@@ -97,7 +97,7 @@ class Settings {
     }
 
     public function field_logo(): void {
-        $options = get_option('studiofy_branding');
+        $options = (array) get_option('studiofy_branding', []);
         $logo = isset($options['business_logo']) ? (string)$options['business_logo'] : '';
         echo '<div class="studiofy-media-uploader">';
         echo '<label for="studiofy_business_logo" class="screen-reader-text">Business Logo URL</label>';
@@ -107,7 +107,7 @@ class Settings {
     }
 
     public function render_social_table(): void {
-        $options = get_option('studiofy_branding');
+        $options = (array) get_option('studiofy_branding', []);
         $socials = isset($options['social_media']) && is_array($options['social_media']) ? $options['social_media'] : [['network' => 'Instagram', 'url' => '']];
         echo '<table class="wp-list-table widefat fixed striped table-view-list" role="presentation">';
         echo '<thead><tr><th scope="col">Network Name</th><th scope="col">URL</th><th scope="col">Actions</th></tr></thead><tbody id="studiofy-social-tbody">';
