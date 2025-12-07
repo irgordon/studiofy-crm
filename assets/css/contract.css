@@ -1,71 +1,29 @@
-/**
- * Studiofy Contract CSS
- * @package Studiofy
- * @version 2.0.4
- */
-
-.studiofy-contract-viewer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+.studiofy-contract-paper-container {
     background: #f0f0f1;
-    padding: 20px;
+    padding: 40px;
+    display: flex;
+    justify-content: center;
 }
 
-.studiofy-paper {
-    background: white;
-    width: 210mm;
-    min-height: 297mm;
+.studiofy-contract-paper {
+    background: #fff;
+    width: 210mm; /* A4 width */
+    min-height: 297mm; /* A4 height */
     padding: 20mm;
-    box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    box-sizing: border-box;
     font-family: 'Georgia', serif;
     color: #333;
+    line-height: 1.6;
 }
 
-.contract-header {
-    text-align: center;
-    margin-bottom: 30px;
-}
+.paper-header { text-align: center; margin-bottom: 40px; }
+.paper-header h2 { margin: 0 0 10px 0; text-transform: uppercase; font-size: 24px; }
+.paper-header .meta { font-family: sans-serif; color: #666; font-size: 14px; display: flex; justify-content: space-between; margin-bottom: 20px;}
 
-.contract-footer {
-    margin-top: 50px;
-    page-break-inside: avoid;
-}
+.paper-body { margin-bottom: 50px; min-height: 400px; }
 
-#studiofy-signature-pad {
-    border: 2px dashed #ccc;
-    background: #fafafa;
-    cursor: crosshair;
-}
-
-.signature-stamp {
-    border: 2px solid #2271b1;
-    padding: 15px;
-    color: #2271b1;
-    display: inline-block;
-    border-radius: 5px;
-}
-
-.signature-image img {
-    max-width: 200px;
-}
-
-@media print {
-    body * { visibility: hidden; }
-    .studiofy-paper, .studiofy-paper * {
-        visibility: visible;
-    }
-    .studiofy-paper {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        box-shadow: none;
-        padding: 0;
-        margin: 0;
-    }
-    .no-print, .studiofy-actions, #wpadminbar, #adminmenumain {
-        display: none !important;
-    }
-}
+.paper-footer { margin-top: auto; }
+.signed-box { border: 2px solid #46b450; padding: 15px; display: inline-block; border-radius: 4px; background: #f9fdf9; }
+.unsigned-box { border: 2px dashed #ccc; padding: 20px; text-align: center; background: #fafafa; color: #888; }
+.status-pending { font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
