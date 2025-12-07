@@ -1,117 +1,164 @@
 /**
  * Studiofy Project Modal
- * @version 2.2.54
+ * @version 2.2.55
  */
 (function($) {
-    // Attach to global window object so onclick="..." can find it
     window.StudiofyModal = {
         open: function(projectId) {
             var $modal = $('#modal-project');
-            
-            if ($modal.length === 0) {
-                console.error('Studiofy: #modal-project element not found in DOM.');
-                return;
-            }
-
-            $modal.removeClass('studiofy-hidden');
-            $modal.data('id', projectId);
-            
+            $modal.removeClass('studiofy-hidden').data('id', projectId);
             this.loadProjectData(projectId);
-            
-            // Setup Close Handlers (One-time binding)
             $('.close-modal, .studiofy-modal-overlay').off('click').on('click', function(e) {
                 if (e.target === this || $(this).hasClass('close-modal')) {
                     $('#modal-project').addClass('studiofy-hidden');
-                    // Refresh page to update Kanban card counts/status
                     location.reload(); 
                 }
             });
         },
 
         loadProjectData: function(id) {
-            var $content = $('#modal-project-content');
-            $content.html('<p style="padding:20px; text-align:center;">Loading...</p>');
-
+            $('#modal-project-content').html('<p style="padding:20px; text-align:center;">Loading...</p>');
             wp.apiFetch({ path: '/studiofy/v1/projects/' + id }).then(data => {
                 this.renderContent(data);
-            }).catch(err => {
-                $content.html('<p class="error" style="color:red; padding:20px;">Error loading project data. Check console.</p>');
-                console.error(err);
-            });
+            }).catch(err => console.error(err));
         },
 
         renderContent: function(data) {
+            // Build User Options
+            let userOpts = '<option value="0">Unassigned</option>';
+            if (studiofySettings.users) {
+                studiofySettings.users.forEach(u => {
+                    userOpts += `<option value="${u.id}">${u.name}</option>`;
+                });
+            }
+
             var html = `
-                <div style="margin-bottom:15px;">
-                    <h3 style="margin-top:0;">${data.title}</h3>
-                    <p class="description">Manage tasks for this project.</p>
+                <div style="margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+                    <h2 style="margin:0;">${data.title}</h2>
                 </div>
-                <div class="task-list">
-                    <ul id="modal-task-list" style="list-style:none; padding:0; margin:0 0 15px 0; border:1px solid #ddd; border-radius:4px; max-height:300px; overflow-y:auto;">`;
-            
+                
+                <div class="studiofy-add-task-box" style="background:#f6f7f7; padding:15px; border-radius:4px; margin-bottom:20px;">
+                    <h4 style="margin-top:0;">Add New Task</h4>
+                    <div style="display:flex; gap:10px; margin-bottom:10px;">
+                        <input type="text" id="new-task-title" placeholder="Task Title" class="widefat" style="flex:2;">
+                        <select id="new-task-group" class="widefat" style="flex:1;">
+                            <option value="General">General</option>
+                            <option value="Editing">Editing</option>
+                            <option value="Shooting">Shooting</option>
+                            <option value="Admin">Admin</option>
+                        </select>
+                        <select id="new-task-priority" class="widefat" style="flex:1;">
+                            <option value="Low">Low</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="High">High</option>
+                            <option value="Urgent">Urgent</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; gap:10px; margin-bottom:10px;">
+                        <select id="new-task-assignee" class="widefat" style="flex:1;">${userOpts}</select>
+                        <input type="date" id="new-task-start" class="widefat" style="flex:1;" placeholder="Start">
+                        <input type="date" id="new-task-due" class="widefat" style="flex:1;" placeholder="Due">
+                        <button class="button button-primary" id="btn-add-task" style="flex:0 0 80px;">Add</button>
+                    </div>
+                </div>
+
+                <div class="task-grid-container">
+                    <table class="wp-list-table widefat fixed striped">
+                        <thead>
+                            <tr>
+                                <th width="30"></th>
+                                <th>Task</th>
+                                <th>Group</th>
+                                <th>Assignee</th>
+                                <th>Priority</th>
+                                <th>Timeline</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal-task-list">`;
+
             if (data.tasks && data.tasks.length > 0) {
                 data.tasks.forEach(function(t) {
-                    var checked = t.status === 'completed' ? 'checked' : '';
-                    var strike = t.status === 'completed' ? 'style="text-decoration:line-through; opacity:0.6;"' : '';
-                    html += `
-                        <li style="padding:10px; border-bottom:1px solid #eee; display:flex; align-items:center;">
-                            <label ${strike} style="flex:1; cursor:pointer;">
-                                <input type="checkbox" class="task-checkbox" data-id="${t.id}" ${checked}> 
-                                <span style="margin-left:8px;">${t.title}</span>
-                            </label>
-                        </li>`;
+                    html += window.StudiofyModal.renderTaskRow(t, userOpts);
                 });
             } else {
-                html += `<li style="padding:15px; color:#777; text-align:center;">No tasks found. Add one below.</li>`;
+                html += `<tr><td colspan="7" style="text-align:center;">No tasks found.</td></tr>`;
             }
             
-            html += `</ul>
-                    <div class="add-task-row" style="display:flex; gap:10px;">
-                        <input type="text" id="new-task-title" placeholder="New Task Title..." class="widefat" style="flex:1;">
-                        <button class="button button-primary" id="btn-add-task">Add Task</button>
-                    </div>
-                </div>`;
+            html += `</tbody></table></div>`;
 
             $('#modal-project-content').html(html);
 
-            // Bind Checkbox Events
-            $('.task-checkbox').change(function() {
-                var id = $(this).data('id');
-                var status = this.checked ? 'completed' : 'pending';
-                var label = $(this).closest('label');
-                
-                if(status === 'completed') label.css({textDecoration:'line-through', opacity:0.6});
-                else label.css({textDecoration:'none', opacity:1});
+            // Bind Events
+            this.bindEvents(data.id);
+        },
 
+        renderTaskRow: function(t, userOpts) {
+            // Calculate Timeline
+            let timeline = '-';
+            if (t.start_date && t.due_date) {
+                const start = new Date(t.start_date);
+                const due = new Date(t.due_date);
+                const diffTime = Math.abs(due - start);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                timeline = diffDays + ' Days';
+            }
+
+            // Assignee Name
+            let assigneeName = 'Unassigned';
+            if(studiofySettings.users && t.assignee_id) {
+                let user = studiofySettings.users.find(u => u.id == t.assignee_id);
+                if(user) assigneeName = user.name;
+            }
+
+            let statusBadge = `<span class="studiofy-badge ${t.status}">${t.status}</span>`;
+            let checked = t.status === 'completed' ? 'checked' : '';
+
+            return `
+                <tr>
+                    <td><input type="checkbox" class="task-checkbox" data-id="${t.id}" ${checked}></td>
+                    <td><strong>${t.title}</strong></td>
+                    <td>${t.group_name || '-'}</td>
+                    <td>${assigneeName}</td>
+                    <td>${t.priority}</td>
+                    <td>${timeline}</td>
+                    <td>${statusBadge}</td>
+                </tr>`;
+        },
+
+        bindEvents: function(projectId) {
+            // Add Task
+            $('#btn-add-task').click(function() {
+                var title = $('#new-task-title').val();
+                if (!title) return;
+                
+                var payload = {
+                    title: title,
+                    group: $('#new-task-group').val(),
+                    priority: $('#new-task-priority').val(),
+                    assignee: $('#new-task-assignee').val(),
+                    start_date: $('#new-task-start').val(),
+                    due_date: $('#new-task-due').val(),
+                    status: 'created'
+                };
+
+                $(this).prop('disabled', true).text('...');
+                
                 wp.apiFetch({
-                    path: '/studiofy/v1/tasks/' + id,
+                    path: '/studiofy/v1/projects/' + projectId + '/tasks',
                     method: 'POST',
-                    data: { status: status }
+                    data: payload
+                }).then(res => {
+                    // Re-render whole content to simplify appending complex row
+                    window.StudiofyModal.loadProjectData(projectId);
                 });
             });
 
-            // Bind Add Task Event
-            $('#btn-add-task').click(function() {
-                var title = $('#new-task-title').val();
-                if (!title) {
-                    alert('Please enter a task title.');
-                    return;
-                }
-                
-                var $btn = $(this);
-                $btn.prop('disabled', true).text('Adding...');
-                
-                wp.apiFetch({
-                    path: '/studiofy/v1/projects/' + data.id + '/tasks',
-                    method: 'POST',
-                    data: { title: title }
-                }).then(res => {
-                    // Re-fetch project data to refresh list cleanly (easier than appending HTML manually)
-                    window.StudiofyModal.loadProjectData(data.id);
-                }).catch(err => {
-                    alert('Error adding task.');
-                    $btn.prop('disabled', false).text('Add Task');
-                });
+            // Toggle Status
+            $('.task-checkbox').change(function() {
+                var id = $(this).data('id');
+                var status = this.checked ? 'completed' : 'inprogress';
+                wp.apiFetch({ path: '/studiofy/v1/tasks/' + id, method: 'POST', data: { status: status } });
             });
         }
     };
