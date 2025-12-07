@@ -2,7 +2,7 @@
 /**
  * Billing Controller (Unified Contract & Invoice)
  * @package Studiofy\Admin
- * @version 2.3.0
+ * @version 2.3.3
  */
 
 declare(strict_types=1);
@@ -54,7 +54,7 @@ class BillingController {
                 $del_url = wp_nonce_url(admin_url("admin-post.php?action=studiofy_delete_billing&id={$r->id}"), 'delete_billing_'.$r->id);
                 
                 echo "<tr>
-                    <td>" . esc_html($r->customer_id) . "</td>
+                    <td>" . esc_html($r->id) . "</td>
                     <td><strong>" . $customer . "</strong></td>
                     <td>" . esc_html($r->title) . "</td>
                     <td>" . esc_html($r->service_type) . "</td>
@@ -76,33 +76,37 @@ class BillingController {
         global $wpdb;
         $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
         
-        // Initialize Data
         if ($id) {
             $data = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_invoices WHERE id = %d", $id));
+            $line_items = json_decode($data->line_items, true) ?: [];
         } else {
+            // New Record Defaults
             $data = new \stdClass();
             $data->id = 0;
             $data->customer_id = 0;
             $data->title = '';
-            $data->service_type = 'Portrait';
+            $data->service_type = 'Portrait'; // Default suggestion
             $data->amount = 0.00;
             $data->tax_amount = 0.00;
-            $data->service_fee = 0.00;
+            $data->service_fee = 0.00; // Value stored as amount
             $data->deposit_amount = 0.00;
             $data->status = 'Draft';
             $data->contract_status = 'Unsigned';
             $data->contract_body = '';
-            $data->line_items = '[]';
             $data->payment_methods = '[]';
             $data->memo = "Thank you for your business!";
             $data->due_date = date('Y-m-d', strtotime('+30 days'));
+            
+            // Default Item for New Billing
+            $line_items = [
+                ['desc' => 'Photography Session', 'rate' => 0.00, 'qty' => 1]
+            ];
         }
 
         $customers = $wpdb->get_results("SELECT id, first_name, last_name FROM {$wpdb->prefix}studiofy_customers ORDER BY last_name ASC");
         
         // Prepare template variables
-        $line_items = json_decode($data->line_items, true) ?: [];
-        $active_methods = json_decode($data->payment_methods, true) ?: [];
+        $active_methods = json_decode($data->payment_methods ?? '[]', true) ?: [];
         
         require_once STUDIOFY_PATH . 'templates/admin/billing-builder.php';
     }
@@ -111,7 +115,7 @@ class BillingController {
         check_admin_referer('save_billing', 'studiofy_nonce');
         global $wpdb;
         
-        // Parse Line Items
+        // 1. Line Items
         $items = $_POST['items'] ?? [];
         $subtotal = 0;
         $cleaned_items = [];
@@ -125,20 +129,39 @@ class BillingController {
             }
         }
         
+        // 2. Calculations
+        // Discount (New)
+        $discount_percent = isset($_POST['discount_percent']) ? (float)$_POST['discount_percent'] : 0;
+        $discount_amount = $subtotal * ($discount_percent / 100);
+        $taxable_amount = max(0, $subtotal - $discount_amount);
+
+        // Tax
         $tax_rate = isset($_POST['tax_rate']) ? (float)$_POST['tax_rate'] : 0;
-        $tax_amt = $subtotal * ($tax_rate / 100);
-        $service_fee = isset($_POST['enable_tipping']) ? ($subtotal * 0.03) : 0.00;
-        $total = $subtotal + $tax_amt + $service_fee;
+        $tax_amt = $taxable_amount * ($tax_rate / 100);
+        
+        // Service Fee (3%)
+        $service_fee = 0.00;
+        if (isset($_POST['apply_service_fee'])) {
+            $service_fee = $taxable_amount * 0.03;
+        }
+
+        // Tip (5, 10, 20%) - Just save the amount if calculated, or flag it?
+        // Usually tips are added BY customer at payment. 
+        // Here we might just be setting a "Tip Amount" if manually added, or enabling the option.
+        // For this logic, we'll save any pre-calculated tip amount if passed, otherwise 0.
+        $tip_amount = isset($_POST['tip_amount']) ? (float)$_POST['tip_amount'] : 0.00;
+
+        $total = $taxable_amount + $tax_amt + $service_fee + $tip_amount;
 
         $db_data = [
             'customer_id' => (int)$_POST['customer_id'],
             'title' => sanitize_text_field($_POST['title']),
-            'service_type' => sanitize_text_field($_POST['service_type']),
-            'contract_body' => wp_kses_post($_POST['contract_body']), // Content from wp_editor
+            'service_type' => sanitize_text_field($_POST['service_type']), // Custom Text Input
+            'contract_body' => wp_kses_post($_POST['contract_body']), 
             'contract_status' => sanitize_text_field($_POST['contract_status']),
             'amount' => $total,
             'tax_amount' => $tax_amt,
-            'service_fee' => $service_fee,
+            'service_fee' => $service_fee, // Saving actual fee amount
             'deposit_amount' => (float)$_POST['deposit_amount'],
             'payment_methods' => json_encode($_POST['payment_methods'] ?? []),
             'line_items' => json_encode($cleaned_items),
@@ -146,6 +169,9 @@ class BillingController {
             'memo' => sanitize_textarea_field($_POST['memo']),
             'status' => sanitize_text_field($_POST['payment_status'])
         ];
+        
+        // Note: You might want to save 'discount_amount' and 'tip_amount' to DB if you add columns later.
+        // For now, they affect 'amount' (Total).
 
         if(!empty($_POST['id'])) {
             $wpdb->update($wpdb->prefix.'studiofy_invoices', $db_data, ['id'=>(int)$_POST['id']]);
