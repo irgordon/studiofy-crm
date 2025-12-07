@@ -2,7 +2,7 @@
 /**
  * Activator
  * @package Studiofy\Core
- * @version 2.2.35
+ * @version 2.2.45
  */
 
 declare(strict_types=1);
@@ -11,6 +11,7 @@ namespace Studiofy\Core;
 
 class Activator {
     public static function activate(): void {
+        // Prevent output buffering issues that might cause "Access Not Allowed"
         ob_start();
 
         if (!current_user_can('activate_plugins')) {
@@ -47,12 +48,8 @@ class Activator {
             file_put_contents($dir . '/.htaccess', 'Options -Indexes');
         }
 
-        // Generate the XML file locally so it's available for the Welcome Page import
-        // (Content is massive, so we assume the file structure from v2.2.32 is used)
-        // Ideally this file should be distributed in the ZIP, but for this exercise we can write it.
-        // For production, this file 'Studiofy_Demo_data.xml' must exist in the plugin root.
-        
-        if(!get_option('studiofy_db_version')) add_option('studiofy_do_activation_redirect', true);
+        // Set Activation Redirect Flag
+        add_option('studiofy_do_activation_redirect', true);
         update_option('studiofy_db_version', STUDIOFY_DB_VERSION);
         
         ob_end_clean();
