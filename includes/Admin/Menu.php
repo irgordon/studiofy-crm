@@ -2,7 +2,7 @@
 /**
  * Admin Menu Controller
  * @package Studiofy\Admin
- * @version 2.2.35
+ * @version 2.2.37
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ class Menu {
     public function init(): void {
         add_action('admin_menu', [$this, 'register_menu_pages']);
         add_action('admin_enqueue_scripts', [$this, 'enqueue_styles']);
-        add_action('admin_init', [$this, 'activation_redirect']); // NEW
+        add_action('admin_init', [$this, 'activation_redirect']);
         
         $this->settings->init();
         $this->projectController->init();
@@ -70,7 +70,6 @@ class Menu {
         add_submenu_page('studiofy-dashboard', 'Galleries', 'Galleries', 'manage_options', 'studiofy-galleries', [$this->galleryController, 'render_page']);
         add_submenu_page('studiofy-dashboard', 'Settings', 'Settings', 'manage_options', 'studiofy-settings', [$this->settings, 'render_page']);
         
-        // Hidden Welcome Page
         add_submenu_page(null, 'Welcome', 'Welcome', 'manage_options', 'studiofy-welcome', [$this, 'render_welcome_page']);
     }
 
@@ -84,7 +83,6 @@ class Menu {
                 
                 <div class="studiofy-welcome-actions">
                     <a href="<?php echo esc_url(admin_url('admin-post.php?action=studiofy_internal_import&nonce='.wp_create_nonce('internal_import'))); ?>" class="button button-primary button-hero">Yes, Import Demo Data</a>
-                    
                     <a href="<?php echo esc_url(admin_url('admin.php?page=studiofy-dashboard')); ?>" class="button button-secondary button-hero">No, Skip to Dashboard</a>
                 </div>
             </div>
