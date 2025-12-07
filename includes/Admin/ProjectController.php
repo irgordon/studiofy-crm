@@ -2,7 +2,7 @@
 /**
  * Project Controller
  * @package Studiofy\Admin
- * @version 2.2.51
+ * @version 2.2.54
  */
 
 declare(strict_types=1);
@@ -34,8 +34,11 @@ class ProjectController {
     public function render_dashboard(): void {
         wp_enqueue_script('jquery-ui-sortable');
         wp_enqueue_script('studiofy-kanban', STUDIOFY_URL . 'assets/js/kanban.js', ['jquery', 'jquery-ui-sortable', 'wp-api-fetch'], studiofy_get_asset_version('assets/js/kanban.js'), true);
+        
+        // FIX: Ensure this script is loaded dependent on jQuery and API Fetch
         wp_enqueue_script('studiofy-modal-js', STUDIOFY_URL . 'assets/js/project-modal.js', ['jquery', 'wp-api-fetch'], studiofy_get_asset_version('assets/js/project-modal.js'), true);
-        wp_enqueue_style('studiofy-modal-css', STUDIOFY_URL . 'assets/css/modal.css', [], studiofy_get_asset_version('assets/css/modal.css'));
+        
+        // Removed studiofy-modal-css enqueue as styles are in admin.css
 
         wp_localize_script('studiofy-kanban', 'studiofySettings', [
             'root' => esc_url_raw(rest_url()),
@@ -72,6 +75,7 @@ class ProjectController {
             <?php endif; ?>
         </div>
         <?php
+        // Critical: Include the modal HTML structure
         require_once STUDIOFY_PATH . 'templates/admin/modal-project.php';
     }
 
@@ -95,7 +99,6 @@ class ProjectController {
                 
                 <div class="studiofy-card-container">
                     <?php foreach ($projects[$key] as $project): 
-                        // Fetch tasks (Prioritize Urgent/High)
                         $tasks = $wpdb->get_results($wpdb->prepare(
                             "SELECT t.* FROM {$wpdb->prefix}studiofy_tasks t 
                              JOIN {$wpdb->prefix}studiofy_milestones m ON t.milestone_id = m.id 
@@ -120,8 +123,7 @@ class ProjectController {
                                 <?php if (!empty($tasks)): ?>
                                     <ul class="task-preview-list">
                                         <?php foreach ($tasks as $t): 
-                                            // Highlight Proofing Tasks
-                                            $is_proof = (strpos($t->title, 'Proof') !== false) || (strpos($t->title, 'Approved') !== false);
+                                            $is_proof = (strpos($t->title, 'Proofs Approved') !== false) || (strpos($t->title, 'Proof') !== false);
                                             $style = $is_proof ? 'style="color: #d63638; font-weight: bold;"' : '';
                                         ?>
                                             <li <?php echo $style; ?> class="task-item" data-task-id="<?php echo $t->id; ?>">
@@ -164,7 +166,6 @@ class ProjectController {
     public function handle_delete_task_ajax(): void {
         check_ajax_referer('wp_rest', 'nonce');
         if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
-        
         $task_id = (int)$_POST['task_id'];
         global $wpdb;
         $wpdb->delete($wpdb->prefix.'studiofy_tasks', ['id' => $task_id]);
@@ -220,31 +221,19 @@ class ProjectController {
         $table = $wpdb->prefix . 'studiofy_projects';
         $results = $wpdb->get_results("SELECT * FROM $table ORDER BY created_at DESC");
         $sorted = ['todo' => [], 'in_progress' => [], 'future' => []];
-        foreach ($results as $row) { 
-            if (isset($sorted[$row->status])) {
-                $sorted[$row->status][] = $row; 
-            }
-        }
+        foreach ($results as $row) { if (isset($sorted[$row->status])) $sorted[$row->status][] = $row; }
         return $sorted;
     }
 
     private function render_form(): void {
         global $wpdb;
         $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-        
         if ($id) {
             $data = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_projects WHERE id = %d", $id));
         } else {
             $data = new \stdClass();
-            $data->id = 0;
-            $data->title = '';
-            $data->customer_id = 0;
-            $data->status = 'todo';
-            $data->budget = '';
-            $data->tax_status = 'taxed';
-            $data->notes = '';
+            $data->id = 0; $data->title = ''; $data->customer_id = 0; $data->status = 'todo'; $data->budget = ''; $data->tax_status = 'taxed'; $data->notes = '';
         }
-
         $customers = $wpdb->get_results("SELECT id, first_name, last_name FROM {$wpdb->prefix}studiofy_customers");
         $tax_status = $data->tax_status;
         ?>
@@ -268,45 +257,7 @@ class ProjectController {
         <?php
     }
 
-    public function handle_save(): void {
-        if (!isset($_POST['studiofy_nonce']) || !wp_verify_nonce($_POST['studiofy_nonce'], 'save_project')) wp_die('Security check failed');
-        global $wpdb;
-        $budget = isset($_POST['budget']) ? preg_replace('/[^\d.]/', '', $_POST['budget']) : 0;
-        $data = [
-            'title' => sanitize_text_field($_POST['title']), 
-            'customer_id' => (int)$_POST['customer_id'], 
-            'status' => sanitize_text_field($_POST['status']), 
-            'budget' => (float)$budget, 
-            'tax_status' => sanitize_text_field($_POST['tax_status']), 
-            'notes' => sanitize_textarea_field($_POST['notes'])
-        ];
-        
-        if(!empty($_POST['id'])) {
-            $wpdb->update($wpdb->prefix.'studiofy_projects', $data, ['id'=>(int)$_POST['id']]);
-        } else {
-            $wpdb->insert($wpdb->prefix.'studiofy_projects', array_merge($data, ['created_at' => current_time('mysql')]));
-        }
-        wp_redirect(admin_url('admin.php?page=studiofy-projects')); 
-        exit;
-    }
-
-    public function handle_delete(): void {
-        check_admin_referer('delete_project_'.$_GET['id']);
-        global $wpdb;
-        $wpdb->delete($wpdb->prefix.'studiofy_projects', ['id'=>(int)$_GET['id']]);
-        wp_redirect(admin_url('admin.php?page=studiofy-projects')); 
-        exit;
-    }
-
-    public function handle_bulk(): void {
-        check_admin_referer('bulk_project', 'studiofy_nonce');
-        if ($_POST['bulk_action'] === 'delete' && !empty($_POST['ids'])) {
-            global $wpdb;
-            $ids = array_map('intval', $_POST['ids']);
-            $in = implode(',', $ids);
-            $wpdb->query("DELETE FROM {$wpdb->prefix}studiofy_projects WHERE id IN ($in)");
-        }
-        wp_redirect(admin_url('admin.php?page=studiofy-projects')); 
-        exit;
-    }
+    public function handle_save(): void { check_admin_referer('save_project', 'studiofy_nonce'); global $wpdb; $budget = isset($_POST['budget']) ? preg_replace('/[^\d.]/', '', $_POST['budget']) : 0; $data = ['title' => sanitize_text_field($_POST['title']), 'customer_id' => (int)$_POST['customer_id'], 'status' => sanitize_text_field($_POST['status']), 'budget' => (float)$budget, 'tax_status' => sanitize_text_field($_POST['tax_status']), 'notes' => sanitize_textarea_field($_POST['notes'])]; if(!empty($_POST['id'])) $wpdb->update($wpdb->prefix.'studiofy_projects', $data, ['id'=>(int)$_POST['id']]); else $wpdb->insert($wpdb->prefix.'studiofy_projects', array_merge($data, ['created_at' => current_time('mysql')])); wp_redirect(admin_url('admin.php?page=studiofy-projects')); exit; }
+    public function handle_delete(): void { check_admin_referer('delete_project_'.$_GET['id']); global $wpdb; $wpdb->delete($wpdb->prefix.'studiofy_projects', ['id'=>(int)$_GET['id']]); wp_redirect(admin_url('admin.php?page=studiofy-projects')); exit; }
+    public function handle_bulk(): void { check_admin_referer('bulk_project', 'studiofy_nonce'); if ($_POST['bulk_action'] === 'delete' && !empty($_POST['ids'])) { global $wpdb; $ids = array_map('intval', $_POST['ids']); $in = implode(',', $ids); $wpdb->query("DELETE FROM {$wpdb->prefix}studiofy_projects WHERE id IN ($in)"); } wp_redirect(admin_url('admin.php?page=studiofy-projects')); exit; }
 }
