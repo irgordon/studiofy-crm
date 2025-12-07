@@ -105,7 +105,6 @@ class ProjectController {
             <?php endif; ?>
         </div>
         <?php
-        // Include Modal Template
         require_once STUDIOFY_PATH . 'templates/admin/modal-project.php';
     }
 
@@ -333,6 +332,7 @@ class ProjectController {
         if ($id) {
             $data = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_projects WHERE id = %d", $id));
         } else {
+            // Default object to prevent "attempt to read property on null"
             $data = new \stdClass();
             $data->id = 0;
             $data->title = '';
@@ -355,22 +355,22 @@ class ProjectController {
                 
                 <table class="form-table">
                     <tr>
-                        <th scope="row"><label for="project_title">Title *</label></th>
-                        <td><input type="text" name="title" id="project_title" required value="<?php echo esc_attr($data->title); ?>" class="regular-text"></td>
+                        <th scope="row"><label>Title *</label></th>
+                        <td><input type="text" name="title" required value="<?php echo esc_attr($data->title); ?>" class="regular-text"></td>
                     </tr>
                     <tr>
-                        <th scope="row"><label for="customer_id">Customer *</label></th>
+                        <th scope="row"><label>Customer *</label></th>
                         <td>
-                            <select name="customer_id" id="customer_id" required>
+                            <select name="customer_id" required>
                                 <option value="">Select</option>
                                 <?php foreach($customers as $c) echo "<option value='{$c->id}' ".selected($data->customer_id, $c->id, false).">{$c->first_name} {$c->last_name}</option>"; ?>
                             </select>
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><label for="status">Status</label></th>
+                        <th scope="row"><label>Status</label></th>
                         <td>
-                            <select name="status" id="status">
+                            <select name="status">
                                 <option value="todo" <?php selected($data->status, 'todo'); ?>>To Do</option>
                                 <option value="in_progress" <?php selected($data->status, 'in_progress'); ?>>In Progress</option>
                                 <option value="future" <?php selected($data->status, 'future'); ?>>Future</option>
@@ -378,8 +378,8 @@ class ProjectController {
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><label for="budget">Budget</label></th>
-                        <td><input type="text" name="budget" id="budget" class="regular-text" placeholder="$0.00" value="<?php echo esc_attr($data->budget ? '$'.number_format((float)$data->budget, 2) : ''); ?>"></td>
+                        <th scope="row"><label>Budget</label></th>
+                        <td><input type="text" name="budget" class="regular-text" placeholder="$0.00" value="<?php echo esc_attr($data->budget ? '$'.number_format((float)$data->budget, 2) : ''); ?>"></td>
                     </tr>
                     <tr>
                         <th scope="row">Tax</th>
@@ -389,8 +389,8 @@ class ProjectController {
                         </td>
                     </tr>
                     <tr>
-                        <th scope="row"><label for="notes">Notes</label></th>
-                        <td><textarea name="notes" id="notes" rows="5" class="large-text"><?php echo esc_textarea($data->notes); ?></textarea></td>
+                        <th scope="row"><label>Notes</label></th>
+                        <td><textarea name="notes" rows="5" class="large-text"><?php echo esc_textarea($data->notes); ?></textarea></td>
                     </tr>
                 </table>
                 
