@@ -2,7 +2,7 @@
 /**
  * Main Controller
  * @package Studiofy\Core
- * @version 2.2.28
+ * @version 2.2.56
  */
 
 declare(strict_types=1);
@@ -19,7 +19,8 @@ use Studiofy\Api\GalleryRoutes;
 use Studiofy\Api\InvoiceRoutes;
 use Studiofy\Core\DemoDataManager;
 use Studiofy\Frontend\GalleryShortcode; 
-use Studiofy\Frontend\ContractShortcode; // NEW
+use Studiofy\Frontend\ContractShortcode;
+use Studiofy\Frontend\PaymentShortcode; // NEW
 
 class Plugin {
     
@@ -32,7 +33,8 @@ class Plugin {
 
         // Frontend Logic 
         (new GalleryShortcode())->init();
-        (new ContractShortcode())->init(); // NEW
+        (new ContractShortcode())->init();
+        (new PaymentShortcode())->init(); // NEW
 
         // Modules
         (new GalleryController())->init();
