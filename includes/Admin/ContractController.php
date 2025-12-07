@@ -2,7 +2,7 @@
 /**
  * Contract Controller
  * @package Studiofy\Admin
- * @version 2.2.29
+ * @version 2.2.30
  */
 
 declare(strict_types=1);
@@ -110,11 +110,15 @@ class ContractController {
         
         $linked_post_id = isset($_POST['linked_post_id']) ? (int)$_POST['linked_post_id'] : 0;
         
+        // Use default template if this is a new contract
+        $default_content = $this->get_default_contract_template();
+
         if ($linked_post_id === 0) {
             $post_id = wp_insert_post([
                 'post_title' => 'Contract: ' . sanitize_text_field($_POST['title']),
                 'post_type'  => 'studiofy_doc',
-                'post_status' => 'publish'
+                'post_status' => 'publish',
+                'post_content' => $default_content // Inject Template Here
             ]);
             if ($post_id) $linked_post_id = $post_id;
         } else {
@@ -132,11 +136,13 @@ class ContractController {
             'end_date' => sanitize_text_field($_POST['end_date']),
             'amount' => (float)$_POST['amount'],
             'status' => sanitize_text_field($_POST['status']),
-            'body_content' => '', 
+            'body_content' => $default_content, // Also save to DB for fallback
             'linked_post_id' => $linked_post_id
         ];
 
         if (!empty($_POST['contract_id'])) {
+            // Don't overwrite body content on update if it exists
+            unset($data['body_content']);
             $wpdb->update($wpdb->prefix . 'studiofy_contracts', $data, ['id' => (int)$_POST['contract_id']]);
             $redirect_id = (int)$_POST['contract_id'];
         } else {
@@ -159,11 +165,61 @@ class ContractController {
         check_admin_referer('delete_contract_' . $_GET['id']);
         global $wpdb;
         $id = (int)$_GET['id'];
-        
         $post_id = $wpdb->get_var($wpdb->prepare("SELECT linked_post_id FROM {$wpdb->prefix}studiofy_contracts WHERE id = %d", $id));
         if ($post_id) wp_delete_post($post_id, true);
-        
         $wpdb->delete($wpdb->prefix.'studiofy_contracts', ['id' => $id]);
         wp_redirect(admin_url('admin.php?page=studiofy-contracts')); exit;
+    }
+
+    /**
+     * Default Contract Template (Matches uploaded DOCX)
+     */
+    private function get_default_contract_template(): string {
+        return '
+        <div class="studiofy-contract-template">
+            <h2 style="text-align: center;">PHOTOGRAPHY CONTRACT</h2>
+            
+            <h3>1. The Parties</h3>
+            <p>This Service Contract (the “Agreement”) made on [MM/DD/YYYY] (the “Effective Date”) is by and between:</p>
+            <ul>
+                <li><strong>Photographer:</strong> [SERVICE PROVIDER NAME], with a mailing address of [SERVICE PROVIDER ADDRESS] (the “Service Provider”).</li>
+                <li><strong>Client:</strong> [CLIENT NAME], with a mailing address of [CLIENT ADDRESS] (the “Client”).</li>
+            </ul>
+            <p>The Service Provider and the Client are each referred to as a “Party” and, collectively, as the “Parties.”</p>
+
+            <h3>2. Term</h3>
+            <p>The term of this Agreement shall commence on [MM/DD/YYYY] and terminate upon completion of the Services performed.</p>
+
+            <h3>3. Services</h3>
+            <p>The Service Provider agrees to provide the following Services:</p>
+            <p>[DESCRIBE SERVICES TO BE PERFORMED]</p>
+            <p>The address where the services will be completed is: [ENTER ADDRESS]</p>
+
+            <h3>4. Payment Amount</h3>
+            <p>The Client agrees to pay the Service Provider the following compensation:</p>
+            <p><strong>Total Amount:</strong> $[RATE]</p>
+
+            <h3>5. Retainer</h3>
+            <p>The Client is REQUIRED to pay a Retainer in the amount of $[RETAINER AMOUNT] to the Service Provider as an advance on future Services. This Retainer is Non-Refundable.</p>
+
+            <h3>6. Copyright and Ownership</h3>
+            <p>All photographs taken by the Service Provider shall remain the property of the Service Provider and may not be used, reproduced, or distributed without the Service Provider’s written consent. The Client may use the photographs for personal, non-commercial purposes.</p>
+
+            <h3>7. Model Release</h3>
+            <p>The Service Provider shall have the right to use the photographs taken for advertising, marketing, and other promotional purposes.</p>
+
+            <h3>8. Liability & Mutual Indemnification</h3>
+            <p>If the Service Provider is unable to perform the services due to any cause outside of their control (fire, flood, illness, etc.), the Client agrees to indemnify the Service Provider for any loss damage or liability; however, the Service Provider will return all payments made by the Client.</p>
+            <p>Each Party shall indemnify, hold harmless, and defend the other Party against any and all losses, damages, liabilities, or claims arising out of the Services provided under this Agreement.</p>
+
+            <h3>9. Independent Contractor Status</h3>
+            <p>The Service Provider is an independent contractor and not an employee of the Client. The Service Provider has the sole right to control and direct the means, manner, and method by which the Services will be performed.</p>
+
+            <h3>10. Governing Law</h3>
+            <p>This Agreement shall be governed under the laws in the State of [STATE NAME].</p>
+
+            <h3>11. Entire Agreement</h3>
+            <p>This Agreement constitutes the entire agreement between the Parties and supersedes all prior agreements. No modification shall be binding unless executed in writing by the Parties.</p>
+        </div>';
     }
 }
