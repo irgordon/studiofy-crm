@@ -1,6 +1,6 @@
 /**
  * Studiofy Frontend Gallery CSS
- * @version 2.2.27
+ * @version 2.2.48
  */
 .studiofy-frontend-gallery { padding: 20px 0; }
 .studiofy-frontend-gallery .gallery-header { text-align: center; margin-bottom: 30px; }
@@ -12,63 +12,83 @@
 }
 
 .studiofy-grid-item {
-    position: relative;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    background: #fff;
     overflow: hidden;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    background: #f0f0f0;
-    aspect-ratio: 1; 
-    border: 4px solid transparent;
     transition: all 0.2s;
+    border: 2px solid transparent;
 }
 
-/* States */
-.studiofy-grid-item.approved { border-color: #46b450; }
-.studiofy-grid-item.rejected { border-color: #d63638; opacity: 0.6; }
+/* Status States */
+.studiofy-grid-item.approved { border-color: #46b450; background: #f0fdf4; }
+.studiofy-grid-item.rejected { border-color: #d63638; opacity: 0.7; background: #fef2f2; }
 
-.studiofy-grid-item img {
+.img-wrapper {
+    aspect-ratio: 1;
+    overflow: hidden;
+}
+
+.img-wrapper img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     display: block;
 }
 
-.proof-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background: rgba(0,0,0,0.7);
+/* Toolbar Below Image */
+.proof-toolbar {
     display: flex;
-    justify-content: center;
-    gap: 20px;
+    justify-content: space-between;
+    align-items: center;
     padding: 10px;
-    transform: translateY(100%);
-    transition: transform 0.3s ease;
+    background: #fff;
+    border-top: 1px solid #eee;
 }
 
-.studiofy-grid-item:hover .proof-overlay,
-.studiofy-grid-item.approved .proof-overlay,
-.studiofy-grid-item.rejected .proof-overlay {
-    transform: translateY(0);
+.img-id {
+    font-family: monospace;
+    font-weight: bold;
+    color: #666;
+    font-size: 14px;
+}
+
+.proof-controls {
+    display: flex;
+    gap: 10px;
 }
 
 .proof-btn {
-    background: none;
-    border: 2px solid #fff;
-    color: #fff;
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    font-size: 20px;
+    border: 1px solid #ccc;
+    background: #f9f9f9;
+    color: #ccc;
+    border-radius: 4px;
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     transition: all 0.2s;
 }
 
-.proof-btn.approve:hover, .studiofy-grid-item.approved .proof-btn.approve { background: #46b450; border-color: #46b450; }
-.proof-btn.reject:hover, .studiofy-grid-item.rejected .proof-btn.reject { background: #d63638; border-color: #d63638; }
+.proof-btn:hover { background: #eee; }
 
-.studiofy-actions-top, .studiofy-actions-bottom { text-align: center; margin: 20px 0; }
+/* Active States */
+.studiofy-grid-item.approved .proof-btn.approve {
+    background: #46b450;
+    border-color: #46b450;
+    color: #fff;
+}
+
+.studiofy-grid-item.rejected .proof-btn.reject {
+    background: #d63638;
+    border-color: #d63638;
+    color: #fff;
+}
+
+.studiofy-actions-top, .studiofy-actions-bottom { text-align: center; margin: 30px 0; }
 .studiofy-submit-proof {
     background: #2271b1;
     color: #fff;
