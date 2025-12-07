@@ -3,7 +3,7 @@
  * Demo Data Manager
  * Handles XML File Upload & Import.
  * @package Studiofy\Core
- * @version 2.2.35
+ * @version 2.2.36
  */
 
 declare(strict_types=1);
@@ -17,12 +17,9 @@ class DemoDataManager {
     public function init(): void {
         add_action('admin_post_studiofy_import_demo', [$this, 'handle_import']);
         add_action('admin_post_studiofy_delete_demo', [$this, 'handle_delete']);
-        add_action('admin_post_studiofy_internal_import', [$this, 'handle_internal_import']); // NEW
+        add_action('admin_post_studiofy_internal_import', [$this, 'handle_internal_import']);
     }
 
-    /**
-     * Handles Manual File Upload from Settings
-     */
     public function handle_import(): void {
         check_admin_referer('import_demo', 'studiofy_nonce');
         if (!current_user_can('manage_options')) wp_die('Unauthorized');
@@ -46,10 +43,6 @@ class DemoDataManager {
         exit;
     }
 
-    /**
-     * Handles One-Click Import from Welcome Screen
-     * Reads the file bundled with the plugin
-     */
     public function handle_internal_import(): void {
         check_admin_referer('internal_import', 'nonce');
         if (!current_user_can('manage_options')) wp_die('Unauthorized');
@@ -63,7 +56,6 @@ class DemoDataManager {
         $this->process_xml_file($internal_file);
         delete_transient('studiofy_dashboard_stats');
 
-        // Redirect to dashboard with success message
         wp_redirect(admin_url('admin.php?page=studiofy-dashboard&msg=demo_imported'));
         exit;
     }
@@ -112,7 +104,14 @@ class DemoDataManager {
         if(isset($xml->customers->customer)) {
             foreach ($xml->customers->customer as $c) {
                 $xml_id = (int)$c['id']; 
-                $addr_str = implode(', ', array_filter([(string)$c->street, (string)$c->city, (string)$c->state, (string)$c->zip]));
+                // Fix: Strict string casting to prevent null pointer exceptions
+                $addr_str = implode(', ', array_filter([
+                    (string)$c->street,
+                    (string)$c->city,
+                    (string)$c->state,
+                    (string)$c->zip
+                ]));
+
                 $wpdb->insert($wpdb->prefix . 'studiofy_customers', [
                     'first_name' => (string)$c->first_name, 'last_name' => (string)$c->last_name, 'email' => (string)$c->email,
                     'phone' => $enc->encrypt((string)$c->phone), 'company' => (string)$c->company, 'address' => $enc->encrypt($addr_str),
@@ -253,7 +252,7 @@ class DemoDataManager {
     public function delete_demo_data(): void {
         global $wpdb;
         $ids = get_option('studiofy_demo_data_ids');
-        if ($ids) {
+        if ($ids && is_array($ids)) {
             if (!empty($ids['galleries'])) {
                 $g_in = implode(',', array_map('intval', $ids['galleries']));
                 $pages = $wpdb->get_col("SELECT wp_page_id FROM {$wpdb->prefix}studiofy_galleries WHERE id IN ($g_in) AND wp_page_id IS NOT NULL");
