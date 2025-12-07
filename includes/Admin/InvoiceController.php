@@ -417,4 +417,13 @@ class InvoiceController {
             $wpdb->query($wpdb->prepare("DELETE FROM {$wpdb->prefix}studiofy_invoices WHERE id IN ($placeholders)", $ids));
             wp_redirect(admin_url('admin.php?page=studiofy-invoices&msg=deleted')); exit;
         }
-        wp_redirect(admin_url('admin
+        wp_redirect(admin_url('admin.php?page=studiofy-invoices')); exit;
+    }
+
+    public function handle_delete(): void {
+        check_admin_referer('delete_invoice_'.$_GET['id']);
+        global $wpdb;
+        $wpdb->delete($wpdb->prefix.'studiofy_invoices', ['id' => (int)$_GET['id']]);
+        wp_redirect(admin_url('admin.php?page=studiofy-invoices&msg=deleted')); exit;
+    }
+}
