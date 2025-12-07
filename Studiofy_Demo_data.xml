@@ -1,40 +1,58 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <studiofy_demo>
+    <items>
+        <item><title>Portrait Session</title><description>1 Hour On-Location</description><rate>200.00</rate><rate_type>Hourly</rate_type><default_qty>1</default_qty><tax_rate>6.0</tax_rate></item>
+        <item><title>Wedding Package</title><description>8 Hour Coverage</description><rate>3500.00</rate><rate_type>Fixed</rate_type><default_qty>1</default_qty><tax_rate>6.0</tax_rate></item>
+        <item><title>Commercial License</title><description>Usage Rights</description><rate>1000.00</rate><rate_type>Fixed</rate_type><default_qty>1</default_qty><tax_rate>0.0</tax_rate></item>
+        <item><title>Event Coverage</title><description>Hourly Rate</description><rate>300.00</rate><rate_type>Hourly</rate_type><default_qty>4</default_qty><tax_rate>6.0</tax_rate></item>
+        <item><title>Boudoir Session</title><description>Private Studio</description><rate>500.00</rate><rate_type>Fixed</rate_type><default_qty>1</default_qty><tax_rate>6.0</tax_rate></item>
+        <item><title>Lifestyle Branding</title><description>Social Media Pack</description><rate>1200.00</rate><rate_type>Fixed</rate_type><default_qty>1</default_qty><tax_rate>6.0</tax_rate></item>
+    </items>
+
     <customers>
-        <customer id="1"><first_name>John</first_name><last_name>Doe</last_name><email>john.doe@demo.com</email><phone>555-0101</phone><company>Doe Corp</company><street>123 Main St</street><city>New York</city><state>NY</state><zip>10001</zip><notes>Portrait session.</notes></customer>
-        <customer id="2"><first_name>Jane</first_name><last_name>Smith</last_name><email>jane.smith@demo.com</email><phone>555-0102</phone><company></company><street>456 Oak Ave</street><city>Los Angeles</city><state>CA</state><zip>90210</zip><notes>Wedding inquiry.</notes></customer>
-        <customer id="3"><first_name>Michael</first_name><last_name>Johnson</last_name><email>mike.j@demo.com</email><phone>555-0103</phone><company>MJ Designs</company><street>789 Pine Ln</street><city>Austin</city><state>TX</state><zip>78701</zip><notes>Commercial shoot.</notes></customer>
-        <customer id="4"><first_name>Emily</first_name><last_name>Davis</last_name><email>emily.d@demo.com</email><phone>555-0104</phone><company></company><street>321 Elm St</street><city>Chicago</city><state>IL</state><zip>60601</zip><notes>Boudoir session.</notes></customer>
-        <customer id="5"><first_name>Chris</first_name><last_name>Brown</last_name><email>chris.b@demo.com</email><phone>555-0105</phone><company></company><street>654 Maple Dr</street><city>Miami</city><state>FL</state><zip>33101</zip><notes>Lifestyle photography.</notes></customer>
-        <customer id="6"><first_name>Sarah</first_name><last_name>Wilson</last_name><email>sarah.w@demo.com</email><phone>555-0106</phone><company>Wilson Events</company><street>987 Cedar Rd</street><city>Denver</city><state>CO</state><zip>80201</zip><notes>Event coverage.</notes></customer>
-        <customer id="7"><first_name>David</first_name><last_name>Miller</last_name><email>david.m@demo.com</email><phone>555-0107</phone><company></company><street>147 Birch Blvd</street><city>Seattle</city><state>WA</state><zip>98101</zip><notes>Family portrait.</notes></customer>
-        <customer id="8"><first_name>Jessica</first_name><last_name>Taylor</last_name><email>jess.t@demo.com</email><phone>555-0108</phone><company></company><street>258 Willow Way</street><city>Boston</city><state>MA</state><zip>02108</zip><notes>Headshots.</notes></customer>
-        <customer id="9"><first_name>Daniel</first_name><last_name>Anderson</last_name><email>dan.a@demo.com</email><phone>555-0109</phone><company>TechStart</company><street>369 Spruce Ct</street><city>San Francisco</city><state>CA</state><zip>94105</zip><notes>Product photography.</notes></customer>
-        <customer id="10"><first_name>Laura</first_name><last_name>Thomas</last_name><email>laura.t@demo.com</email><phone>555-0110</phone><company></company><street>741 Aspen Pl</street><city>Phoenix</city><state>AZ</state><zip>85001</zip><notes>Engagement shoot.</notes></customer>
+        <customer id="1"><first_name>John</first_name><last_name>Doe</last_name><email>john.doe@demo.com</email><phone>555-0101</phone><company>JD Inc</company><street>100 Main St</street><city>New York</city><state>NY</state><zip>10001</zip><notes>VIP Client.</notes></customer>
+        <customer id="2"><first_name>Jane</first_name><last_name>Smith</last_name><email>jane@demo.com</email><phone>555-0102</phone><company></company><street>200 Oak Ave</street><city>Los Angeles</city><state>CA</state><zip>90001</zip><notes>Wedding inquiry.</notes></customer>
+        <customer id="3"><first_name>Mike</first_name><last_name>Ross</last_name><email>mike@demo.com</email><phone>555-0103</phone><company>Pearson Hardman</company><street>300 High St</street><city>Chicago</city><state>IL</state><zip>60601</zip><notes>Corporate headshots.</notes></customer>
+        <customer id="4"><first_name>Emily</first_name><last_name>Blunt</last_name><email>emily@demo.com</email><phone>555-0104</phone><company></company><street>400 Elm St</street><city>Austin</city><state>TX</state><zip>73301</zip><notes>Family shoot.</notes></customer>
+        <customer id="5"><first_name>Chris</first_name><last_name>Evans</last_name><email>chris@demo.com</email><phone>555-0105</phone><company>Marvel</company><street>500 Pine Rd</street><city>Atlanta</city><state>GA</state><zip>30301</zip><notes>Event coverage.</notes></customer>
+        <customer id="6"><first_name>Sarah</first_name><last_name>Connor</last_name><email>sarah@demo.com</email><phone>555-0106</phone><company>Skynet</company><street>600 Cedar Ln</street><city>Seattle</city><state>WA</state><zip>98101</zip><notes>Product launch.</notes></customer>
+        <customer id="7"><first_name>David</first_name><last_name>Beckham</last_name><email>david@demo.com</email><phone>555-0107</phone><company>Inter Miami</company><street>700 Palm Dr</street><city>Miami</city><state>FL</state><zip>33101</zip><notes>Sports photography.</notes></customer>
+        <customer id="8"><first_name>Jessica</first_name><last_name>Alba</last_name><email>jess@demo.com</email><phone>555-0108</phone><company>Honest Co</company><street>800 Birch Blvd</street><city>Denver</city><state>CO</state><zip>80201</zip><notes>Lifestyle brand.</notes></customer>
+        <customer id="9"><first_name>Daniel</first_name><last_name>Craig</last_name><email>bond@demo.com</email><phone>555-0109</phone><company>MI6</company><street>900 Spruce Ct</street><city>London</city><state>UK</state><zip>00700</zip><notes>Confidential.</notes></customer>
+        <customer id="10"><first_name>Laura</first_name><last_name>Croft</last_name><email>laura@demo.com</email><phone>555-0110</phone><company>Tomb Raiders</company><street>1000 Maple Way</street><city>Venice</city><state>IT</state><zip>30100</zip><notes>Travel shoot.</notes></customer>
     </customers>
-    
+
     <projects>
-        <project id="1" customer_id="1"><title>Doe Portrait Session</title><status>in_progress</status><budget>400.00</budget><tax_status>taxed</tax_status><notes>Outdoor location.</notes></project>
-        <project id="2" customer_id="2"><title>Smith Wedding</title><status>future</status><budget>5000.00</budget><tax_status>taxed</tax_status><notes>Full day coverage.</notes></project>
-        <project id="3" customer_id="3"><title>Commercial Product Launch</title><status>todo</status><budget>12250.00</budget><tax_status>exempt</tax_status><notes>Studio shoot.</notes></project>
-        <project id="4" customer_id="4"><title>Boudoir Collection</title><status>in_progress</status><budget>1500.00</budget><tax_status>taxed</tax_status><notes>Private studio.</notes></project>
-        <project id="5" customer_id="9"><title>Tech Headshots</title><status>future</status><budget>800.00</budget><tax_status>exempt</tax_status><notes>Office location.</notes></project>
+        <project id="1" customer_id="1"><title>Doe Portrait</title><status>in_progress</status><budget>500.00</budget><tax_status>taxed</tax_status><notes>Outdoor.</notes></project>
+        <project id="2" customer_id="2"><title>Smith Wedding</title><status>future</status><budget>5000.00</budget><tax_status>taxed</tax_status><notes>Full day.</notes></project>
+        <project id="3" customer_id="3"><title>Corporate Headshots</title><status>todo</status><budget>1500.00</budget><tax_status>exempt</tax_status><notes>Office.</notes></project>
+        <project id="4" customer_id="4"><title>Family Session</title><status>completed</status><budget>400.00</budget><tax_status>taxed</tax_status><notes>Park location.</notes></project>
+        <project id="5" customer_id="5"><title>Movie Premiere</title><status>in_progress</status><budget>3000.00</budget><tax_status>taxed</tax_status><notes>Red carpet.</notes></project>
+        <project id="6" customer_id="6"><title>Product Catalog</title><status>todo</status><budget>12000.00</budget><tax_status>exempt</tax_status><notes>Studio.</notes></project>
+        <project id="7" customer_id="7"><title>Team Photos</title><status>future</status><budget>2500.00</budget><tax_status>taxed</tax_status><notes>Stadium.</notes></project>
+        <project id="8" customer_id="8"><title>Brand Lifestyle</title><status>in_progress</status><budget>4500.00</budget><tax_status>taxed</tax_status><notes>Multiple locations.</notes></project>
+        <project id="9" customer_id="9"><title>Secret Location</title><status>completed</status><budget>10000.00</budget><tax_status>exempt</tax_status><notes>Private.</notes></project>
+        <project id="10" customer_id="10"><title>Adventure Shoot</title><status>future</status><budget>3500.00</budget><tax_status>taxed</tax_status><notes>Hiking trail.</notes></project>
     </projects>
-    
-    <tasks>
-        <task project_id="1"><title>Pre-production Meeting</title><priority>High</priority><description>Discuss wardrobe options.</description><status>completed</status></task>
-        <task project_id="1"><title>Scene Scouting</title><priority>Medium</priority><description>Check lighting at park.</description><status>pending</status></task>
-        <task project_id="2"><title>Interview Client</title><priority>High</priority><description>Finalize timeline.</description><status>pending</status></task>
-        <task project_id="2"><title>Proofing</title><priority>Medium</priority><description>Prepare gallery for review.</description><status>pending</status></task>
-        <task project_id="3"><title>Editing Images</title><priority>Urgent</priority><description>Color grade product shots.</description><status>pending</status></task>
-    </tasks>
-    
+
+    <contracts>
+        <contract customer_id="1" project_id="1"><title>Portrait Agreement</title><amount>500.00</amount><status>signed</status><terms><![CDATA[<div class="studiofy-contract"><h2>Portrait Agreement</h2><p>Standard portrait terms apply. Model release included.</p></div>]]></terms></contract>
+        <contract customer_id="2" project_id="2"><title>Wedding Contract</title><amount>5000.00</amount><status>draft</status><terms><![CDATA[<div class="studiofy-contract"><h2>Wedding Agreement</h2><p>Includes 8 hours coverage. 50% retainer due.</p></div>]]></terms></contract>
+        <contract customer_id="3" project_id="3"><title>Commercial License</title><amount>1500.00</amount><status>active</status><terms><![CDATA[<div class="studiofy-contract"><h2>Commercial License</h2><p>Usage rights for web and print. 2 years exclusive.</p></div>]]></terms></contract>
+        <contract customer_id="6" project_id="6"><title>Product Usage</title><amount>12000.00</amount><status>draft</status><terms><![CDATA[<div class="studiofy-contract"><h2>Product Photography</h2><p>Full buyout of rights.</p></div>]]></terms></contract>
+    </contracts>
+
     <galleries>
-        <gallery id="1" customer_id="1"><title>John Doe - Portrait Proofing</title><description>Please select your favorite 5 images for retouching.</description><password>demo123</password></gallery>
-        <gallery id="2" customer_id="2"><title>Smith Wedding - Highlights</title><description>Ceremony and Reception highlights.</description><password>wedding2025</password></gallery>
-        <gallery id="3" customer_id="3"><title>Commercial Product Launch</title><description>High-res product shots for catalog.</description><password>launch25</password></gallery>
-        <gallery id="4" customer_id="4"><title>Ms. Davis - Boudoir</title><description>Private gallery. Password protected.</description><password>secret456</password></gallery>
-        <gallery id="5" customer_id="9"><title>TechStart Headshots</title><description>Team headshots for website.</description><password>techstart</password></gallery>
+        <gallery id="1" customer_id="1"><title>Doe Portraits</title><description>Select your favorites.</description><password>doe123</password></gallery>
+        <gallery id="2" customer_id="2"><title>Smith Wedding</title><description>Wedding highlights.</description><password>smith2025</password></gallery>
+        <gallery id="3" customer_id="3"><title>Pearson Headshots</title><description>Staff photos.</description><password>ph2025</password></gallery>
+        <gallery id="4" customer_id="4"><title>Family Fun</title><description>Park session.</description><password>family</password></gallery>
+        <gallery id="5" customer_id="5"><title>Premiere Night</title><description>Red carpet.</description><password>movie</password></gallery>
+        <gallery id="6" customer_id="6"><title>Skynet Products</title><description>Catalog shots.</description><password>sky</password></gallery>
+        <gallery id="7" customer_id="7"><title>Miami Team</title><description>Action shots.</description><password>miami</password></gallery>
+        <gallery id="8" customer_id="8"><title>Honest Lifestyle</title><description>Brand assets.</description><password>honest</password></gallery>
+        <gallery id="9" customer_id="9"><title>007 Location</title><description>Confidential.</description><password>bond</password></gallery>
+        <gallery id="10" customer_id="10"><title>Tomb Adventure</title><description>Action.</description><password>croft</password></gallery>
     </galleries>
 
     <gallery_files>
@@ -43,66 +61,77 @@
         <file gallery_id="1" url="https://picsum.photos/800/800?random=3"><name>portrait_03.jpg</name></file>
         <file gallery_id="1" url="https://picsum.photos/800/800?random=4"><name>portrait_04.jpg</name></file>
         <file gallery_id="1" url="https://picsum.photos/800/800?random=5"><name>portrait_05.jpg</name></file>
-        <file gallery_id="1" url="https://picsum.photos/800/800?random=6"><name>portrait_06.jpg</name></file>
-        <file gallery_id="1" url="https://picsum.photos/800/800?random=7"><name>portrait_07.jpg</name></file>
-        <file gallery_id="1" url="https://picsum.photos/800/800?random=8"><name>portrait_08.jpg</name></file>
-        <file gallery_id="1" url="https://picsum.photos/800/800?random=9"><name>portrait_09.jpg</name></file>
-        <file gallery_id="1" url="https://picsum.photos/800/800?random=10"><name>portrait_10.jpg</name></file>
-        <file gallery_id="1" url="https://picsum.photos/800/800?random=11"><name>portrait_11.jpg</name></file>
-        <file gallery_id="1" url="https://picsum.photos/800/800?random=12"><name>portrait_12.jpg</name></file>
-        </gallery_files>
 
-    <invoices>
-        <invoice customer_id="1" project_id="1"><title>Deposit - Portrait</title><amount>355.00</amount><status>Paid</status></invoice>
-        <invoice customer_id="2" project_id="2"><title>Wedding Package 1</title><amount>5000.00</amount><status>Sent</status></invoice>
-        <invoice customer_id="3" project_id="3"><title>Commercial Retainer</title><amount>12250.00</amount><status>Draft</status></invoice>
-        <invoice customer_id="4" project_id="4"><title>Boudoir Session Fee</title><amount>1500.00</amount><status>Paid</status></invoice>
-        <invoice customer_id="9" project_id="5"><title>Headshot Session (Tax Exempt)</title><amount>800.00</amount><status>Sent</status></invoice>
-    </invoices>
+        <file gallery_id="2" url="https://picsum.photos/800/800?random=10"><name>wedding_01.jpg</name></file>
+        <file gallery_id="2" url="https://picsum.photos/800/800?random=11"><name>wedding_02.jpg</name></file>
+        <file gallery_id="2" url="https://picsum.photos/800/800?random=12"><name>wedding_03.jpg</name></file>
+        <file gallery_id="2" url="https://picsum.photos/800/800?random=13"><name>wedding_04.jpg</name></file>
+        <file gallery_id="2" url="https://picsum.photos/800/800?random=14"><name>wedding_05.jpg</name></file>
+        <file gallery_id="2" url="https://picsum.photos/800/800?random=15"><name>wedding_06.jpg</name></file>
+        <file gallery_id="2" url="https://picsum.photos/800/800?random=16"><name>wedding_07.jpg</name></file>
+        <file gallery_id="2" url="https://picsum.photos/800/800?random=17"><name>wedding_08.jpg</name></file>
+        <file gallery_id="2" url="https://picsum.photos/800/800?random=18"><name>wedding_09.jpg</name></file>
+        <file gallery_id="2" url="https://picsum.photos/800/800?random=19"><name>wedding_10.jpg</name></file>
+        <file gallery_id="2" url="https://picsum.photos/800/800?random=20"><name>wedding_11.jpg</name></file>
+        <file gallery_id="2" url="https://picsum.photos/800/800?random=21"><name>wedding_12.jpg</name></file>
 
-    <contracts>
-        <contract customer_id="1" project_id="1"><title>Portrait Agreement</title><amount>400.00</amount><status>signed</status>
-            <terms><![CDATA[
-            <div class="studiofy-contract-template">
-            <h2 style="text-align: center;">PHOTOGRAPHY CONTRACT</h2>
-            <h3>1. The Parties</h3><p>This Service Contract (the “Agreement”) made on [DATE] is by and between the Photographer and the Client.</p>
-            <h3>2. Term</h3><p>The term of this Agreement shall commence on [DATE] and terminate upon completion of the Services.</p>
-            <h3>3. Services</h3><p>The Service Provider agrees to provide photography services as discussed.</p>
-            <h3>4. Payment Amount</h3><p>The Client agrees to pay the Service Provider the following compensation: <strong>Total Amount: $400.00</strong></p>
-            <h3>5. Retainer</h3><p>The Client is REQUIRED to pay a Retainer in the amount of $200.00. This Retainer is Non-Refundable.</p>
-            <h3>6. Copyright and Ownership</h3><p>All photographs taken by the Service Provider shall remain the property of the Service Provider.</p>
-            <h3>7. Model Release</h3><p>The Service Provider shall have the right to use the photographs for marketing purposes.</p>
-            <h3>8. Liability & Indemnification</h3><p>If the Service Provider is unable to perform due to causes outside control, liability is limited to return of payments.</p>
-            <h3>9. Independent Contractor</h3><p>The Service Provider is an independent contractor and not an employee of the Client.</p>
-            <h3>10. Governing Law</h3><p>This Agreement shall be governed under the laws of the State.</p>
-            <h3>11. Entire Agreement</h3><p>This Agreement constitutes the entire agreement between the Parties.</p>
-            </div>
-            ]]></terms>
-        </contract>
-        
-        <contract customer_id="2" project_id="2"><title>Wedding Contract</title><amount>5000.00</amount><status>draft</status>
-            <terms><![CDATA[
-            <div class="studiofy-contract-template">
-            <h2 style="text-align: center;">WEDDING PHOTOGRAPHY CONTRACT</h2>
-            <h3>1. The Parties</h3><p>This Service Contract (the “Agreement”) made on [DATE] is by and between the Photographer and the Client.</p>
-            <h3>2. Services</h3><p>Full day wedding coverage (8 hours). Second shooter included.</p>
-            <h3>3. Payment</h3><p>Total: $5,000.00. 50% Retainer due upon signing.</p>
-            <h3>4. Copyright</h3><p>Photographer retains copyright. Client receives print rights for personal use.</p>
-            <h3>5. Cancellation</h3><p>Retainer is non-refundable if cancelled within 90 days of event.</p>
-            </div>
-            ]]></terms>
-        </contract>
+        <file gallery_id="3" url="https://picsum.photos/800/800?random=30"><name>headshot_01.jpg</name></file>
+        <file gallery_id="3" url="https://picsum.photos/800/800?random=31"><name>headshot_02.jpg</name></file>
+        <file gallery_id="3" url="https://picsum.photos/800/800?random=32"><name>headshot_03.jpg</name></file>
+        <file gallery_id="3" url="https://picsum.photos/800/800?random=33"><name>headshot_04.jpg</name></file>
+        <file gallery_id="3" url="https://picsum.photos/800/800?random=34"><name>headshot_05.jpg</name></file>
+        <file gallery_id="3" url="https://picsum.photos/800/800?random=35"><name>headshot_06.jpg</name></file>
 
-        <contract customer_id="3" project_id="3"><title>Commercial License</title><amount>12250.00</amount><status>active</status>
-            <terms><![CDATA[
-            <div class="studiofy-contract-template">
-            <h2 style="text-align: center;">COMMERCIAL PHOTOGRAPHY LICENSE</h2>
-            <h3>1. Grant of Rights</h3><p>Photographer grants Client exclusive, worldwide usage rights for 2 years.</p>
-            <h3>2. Services</h3><p>Product photography for catalog and web use.</p>
-            <h3>3. Payment</h3><p>Total Fee: $12,250.00. Payable Net 30.</p>
-            <h3>4. Indemnification</h3><p>Client agrees to indemnify Photographer against claims arising from use of images.</p>
-            </div>
-            ]]></terms>
-        </contract>
-    </contracts>
+        <file gallery_id="4" url="https://picsum.photos/800/800?random=40"><name>family_01.jpg</name></file>
+        <file gallery_id="4" url="https://picsum.photos/800/800?random=41"><name>family_02.jpg</name></file>
+        <file gallery_id="4" url="https://picsum.photos/800/800?random=42"><name>family_03.jpg</name></file>
+        <file gallery_id="4" url="https://picsum.photos/800/800?random=43"><name>family_04.jpg</name></file>
+
+        <file gallery_id="5" url="https://picsum.photos/800/800?random=50"><name>event_01.jpg</name></file>
+        <file gallery_id="5" url="https://picsum.photos/800/800?random=51"><name>event_02.jpg</name></file>
+        <file gallery_id="5" url="https://picsum.photos/800/800?random=52"><name>event_03.jpg</name></file>
+        <file gallery_id="5" url="https://picsum.photos/800/800?random=53"><name>event_04.jpg</name></file>
+        <file gallery_id="5" url="https://picsum.photos/800/800?random=54"><name>event_05.jpg</name></file>
+        <file gallery_id="5" url="https://picsum.photos/800/800?random=55"><name>event_06.jpg</name></file>
+        <file gallery_id="5" url="https://picsum.photos/800/800?random=56"><name>event_07.jpg</name></file>
+        <file gallery_id="5" url="https://picsum.photos/800/800?random=57"><name>event_08.jpg</name></file>
+
+        <file gallery_id="6" url="https://picsum.photos/800/800?random=60"><name>prod_01.jpg</name></file>
+        <file gallery_id="6" url="https://picsum.photos/800/800?random=61"><name>prod_02.jpg</name></file>
+        <file gallery_id="6" url="https://picsum.photos/800/800?random=62"><name>prod_03.jpg</name></file>
+        <file gallery_id="6" url="https://picsum.photos/800/800?random=63"><name>prod_04.jpg</name></file>
+        <file gallery_id="6" url="https://picsum.photos/800/800?random=64"><name>prod_05.jpg</name></file>
+        <file gallery_id="6" url="https://picsum.photos/800/800?random=65"><name>prod_06.jpg</name></file>
+        <file gallery_id="6" url="https://picsum.photos/800/800?random=66"><name>prod_07.jpg</name></file>
+        <file gallery_id="6" url="https://picsum.photos/800/800?random=67"><name>prod_08.jpg</name></file>
+        <file gallery_id="6" url="https://picsum.photos/800/800?random=68"><name>prod_09.jpg</name></file>
+        <file gallery_id="6" url="https://picsum.photos/800/800?random=69"><name>prod_10.jpg</name></file>
+
+        <file gallery_id="7" url="https://picsum.photos/800/800?random=70"><name>team_01.jpg</name></file>
+        <file gallery_id="7" url="https://picsum.photos/800/800?random=71"><name>team_02.jpg</name></file>
+        <file gallery_id="7" url="https://picsum.photos/800/800?random=72"><name>team_03.jpg</name></file>
+        <file gallery_id="7" url="https://picsum.photos/800/800?random=73"><name>team_04.jpg</name></file>
+        <file gallery_id="7" url="https://picsum.photos/800/800?random=74"><name>team_05.jpg</name></file>
+
+        <file gallery_id="8" url="https://picsum.photos/800/800?random=80"><name>life_01.jpg</name></file>
+        <file gallery_id="8" url="https://picsum.photos/800/800?random=81"><name>life_02.jpg</name></file>
+        <file gallery_id="8" url="https://picsum.photos/800/800?random=82"><name>life_03.jpg</name></file>
+        <file gallery_id="8" url="https://picsum.photos/800/800?random=83"><name>life_04.jpg</name></file>
+        <file gallery_id="8" url="https://picsum.photos/800/800?random=84"><name>life_05.jpg</name></file>
+        <file gallery_id="8" url="https://picsum.photos/800/800?random=85"><name>life_06.jpg</name></file>
+        <file gallery_id="8" url="https://picsum.photos/800/800?random=86"><name>life_07.jpg</name></file>
+        <file gallery_id="8" url="https://picsum.photos/800/800?random=87"><name>life_08.jpg</name></file>
+
+        <file gallery_id="9" url="https://picsum.photos/800/800?random=90"><name>secret_01.jpg</name></file>
+        <file gallery_id="9" url="https://picsum.photos/800/800?random=91"><name>secret_02.jpg</name></file>
+        <file gallery_id="9" url="https://picsum.photos/800/800?random=92"><name>secret_03.jpg</name></file>
+        <file gallery_id="9" url="https://picsum.photos/800/800?random=93"><name>secret_04.jpg</name></file>
+
+        <file gallery_id="10" url="https://picsum.photos/800/800?random=95"><name>adv_01.jpg</name></file>
+        <file gallery_id="10" url="https://picsum.photos/800/800?random=96"><name>adv_02.jpg</name></file>
+        <file gallery_id="10" url="https://picsum.photos/800/800?random=97"><name>adv_03.jpg</name></file>
+        <file gallery_id="10" url="https://picsum.photos/800/800?random=98"><name>adv_04.jpg</name></file>
+        <file gallery_id="10" url="https://picsum.photos/800/800?random=99"><name>adv_05.jpg</name></file>
+        <file gallery_id="10" url="https://picsum.photos/800/800?random=100"><name>adv_06.jpg</name></file>
+    </gallery_files>
 </studiofy_demo>
