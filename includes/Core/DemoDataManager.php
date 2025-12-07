@@ -2,7 +2,7 @@
 /**
  * Demo Data Manager
  * @package Studiofy\Core
- * @version 2.2.30
+ * @version 2.2.31
  */
 
 declare(strict_types=1);
@@ -23,173 +23,120 @@ class DemoDataManager {
         if (!current_user_can('manage_options')) wp_die('Unauthorized');
 
         if (empty($_FILES['demo_xml_file']) || $_FILES['demo_xml_file']['error'] !== UPLOAD_ERR_OK) {
-            wp_redirect(admin_url('admin.php?page=studiofy-settings&msg=upload_error'));
-            exit;
+            wp_redirect(admin_url('admin.php?page=studiofy-settings&msg=upload_error')); exit;
         }
 
-        $file_tmp = $_FILES['demo_xml_file']['tmp_name'];
-        $content = file_get_contents($file_tmp);
-        if (strpos($content, '<?xml') === false && strpos($content, '<studiofy_demo>') === false) {
-             wp_redirect(admin_url('admin.php?page=studiofy-settings&msg=xml_error'));
-             exit;
-        }
+        $xml = simplexml_load_file($_FILES['demo_xml_file']['tmp_name']);
+        if ($xml === false) { wp_redirect(admin_url('admin.php?page=studiofy-settings&msg=xml_error')); exit; }
 
-        $this->process_xml_file($file_tmp);
+        $this->process_xml_file($xml);
         delete_transient('studiofy_dashboard_stats');
-
-        wp_redirect(admin_url('admin.php?page=studiofy-settings&msg=demo_imported'));
-        exit;
+        wp_redirect(admin_url('admin.php?page=studiofy-settings&msg=demo_imported')); exit;
     }
 
     public function handle_delete(): void {
         check_admin_referer('delete_demo', 'studiofy_nonce');
         if (!current_user_can('manage_options')) wp_die('Unauthorized');
-
         $this->delete_demo_data();
-        delete_transient('studiofy_dashboard_stats');
-
-        wp_redirect(admin_url('admin.php?page=studiofy-settings&msg=demo_deleted'));
-        exit;
+        wp_redirect(admin_url('admin.php?page=studiofy-settings&msg=demo_deleted')); exit;
     }
 
-    private function process_xml_file(string $file_path): void {
+    private function process_xml_file($xml): void {
         global $wpdb;
         $enc = new Encryption();
-        
-        libxml_use_internal_errors(true);
-        $xml = simplexml_load_file($file_path);
+        $ids = ['customers'=>[], 'projects'=>[], 'tasks'=>[], 'items'=>[], 'invoices'=>[], 'contracts'=>[], 'galleries'=>[], 'files'=>[]];
+        $map = ['cust'=>[], 'proj'=>[]];
 
-        if ($xml === false) {
-            wp_redirect(admin_url('admin.php?page=studiofy-settings&msg=xml_error'));
-            exit;
+        // 1. Items
+        if(isset($xml->items->item)) {
+            foreach($xml->items->item as $i) {
+                $wpdb->insert($wpdb->prefix.'studiofy_items', [
+                    'title'=>(string)$i->title, 'description'=>(string)$i->description, 
+                    'rate'=>(float)$i->rate, 'rate_type'=>(string)$i->rate_type, 
+                    'default_qty'=>(int)$i->default_qty, 'tax_rate'=>(float)$i->tax_rate
+                ]);
+                $ids['items'][] = $wpdb->insert_id;
+            }
         }
 
-        $ids = ['customers' => [], 'projects' => [], 'tasks' => [], 'invoices' => [], 'contracts' => [], 'galleries' => [], 'files' => []];
-        $customer_map = []; 
-        $project_map = [];
-
-        // 1. Customers
+        // 2. Customers
         if(isset($xml->customers->customer)) {
             foreach ($xml->customers->customer as $c) {
-                $xml_id = (int)$c['id']; 
-                $addr_str = implode(', ', array_filter([(string)$c->street, (string)$c->city, (string)$c->state, (string)$c->zip]));
+                $addr = implode(', ', array_filter([(string)$c->street, (string)$c->city, (string)$c->state, (string)$c->zip]));
                 $wpdb->insert($wpdb->prefix . 'studiofy_customers', [
                     'first_name' => (string)$c->first_name, 'last_name' => (string)$c->last_name, 'email' => (string)$c->email,
-                    'phone' => $enc->encrypt((string)$c->phone), 'company' => (string)$c->company, 'address' => $enc->encrypt($addr_str),
+                    'phone' => $enc->encrypt((string)$c->phone), 'company' => (string)$c->company, 'address' => $enc->encrypt($addr),
                     'status' => 'Active', 'notes' => (string)$c->notes, 'created_at' => current_time('mysql')
                 ]);
-                $db_id = $wpdb->insert_id;
-                $ids['customers'][] = $db_id;
-                $customer_map[$xml_id] = $db_id;
+                $dbid = $wpdb->insert_id;
+                $ids['customers'][] = $dbid;
+                $map['cust'][(int)$c['id']] = $dbid;
             }
         }
 
-        // 2. Projects
+        // 3. Projects
         if(isset($xml->projects->project)) {
             foreach ($xml->projects->project as $p) {
-                $xml_id = (int)$p['id'];
-                $real_cust_id = $customer_map[(int)$p['customer_id']] ?? 0;
-                if ($real_cust_id) {
+                $cid = $map['cust'][(int)$p['customer_id']] ?? 0;
+                if ($cid) {
                     $wpdb->insert($wpdb->prefix . 'studiofy_projects', [
-                        'customer_id' => $real_cust_id, 'title' => (string)$p->title, 'status' => (string)$p->status,
-                        'budget' => (float)$p->budget, 'tax_status' => (string)$p->tax_status, 'notes' => (string)$p->notes,
-                        'created_at' => current_time('mysql')
+                        'customer_id' => $cid, 'title' => (string)$p->title, 'status' => (string)$p->status,
+                        'budget' => (float)$p->budget, 'tax_status' => (string)$p->tax_status, 'notes' => (string)$p->notes, 'created_at' => current_time('mysql')
                     ]);
-                    $db_id = $wpdb->insert_id;
-                    $ids['projects'][] = $db_id;
-                    $project_map[$xml_id] = $db_id;
+                    $pid = $wpdb->insert_id;
+                    $ids['projects'][] = $pid;
+                    $map['proj'][(int)$p['id']] = $pid;
                 }
             }
         }
 
-        // 3. Tasks
-        if(isset($xml->tasks->task)) {
-            foreach ($xml->tasks->task as $t) {
-                $real_proj_id = $project_map[(int)$t['project_id']] ?? 0;
-                if ($real_proj_id) {
-                    $m_id = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}studiofy_milestones WHERE project_id = %d LIMIT 1", $real_proj_id));
-                    if (!$m_id) {
-                        $wpdb->insert($wpdb->prefix.'studiofy_milestones', ['project_id' => $real_proj_id, 'name' => 'General Tasks']);
-                        $m_id = $wpdb->insert_id;
-                    }
-                    $wpdb->insert($wpdb->prefix . 'studiofy_tasks', [
-                        'milestone_id' => $m_id, 'title' => (string)$t->title, 'priority' => (string)$t->priority,
-                        'description' => (string)$t->description, 'status' => (string)$t->status, 'created_at' => current_time('mysql')
-                    ]);
-                    $ids['tasks'][] = $wpdb->insert_id;
-                }
-            }
-        }
-
-        // 4. Galleries
-        $gallery_map = [];
-        if(isset($xml->galleries->gallery)) {
-            foreach ($xml->galleries->gallery as $g) {
-                $xml_id = (int)$g['id'];
-                $real_cust_id = $customer_map[(int)$g['customer_id']] ?? 0;
-                $wpdb->insert($wpdb->prefix . 'studiofy_galleries', [
-                    'title' => (string)$g->title, 'description' => (string)$g->description, 'customer_id' => $real_cust_id ?: null,
-                    'password' => (string)$g->password, 'status' => 'active', 'created_at' => current_time('mysql')
-                ]);
-                $db_id = $wpdb->insert_id;
-                $ids['galleries'][] = $db_id;
-                $gallery_map[$xml_id] = $db_id;
-                $pid = wp_insert_post(['post_title' => (string)$g->title . ' - Demo', 'post_content' => '[studiofy_proof_gallery id="'.$db_id.'"]', 'post_status' => 'publish', 'post_type' => 'page', 'post_password' => (string)$g->password]);
-                if($pid) $wpdb->update($wpdb->prefix.'studiofy_galleries', ['wp_page_id' => $pid], ['id' => $db_id]);
-            }
-        }
-
-        // 5. Gallery Files
-        if(isset($xml->gallery_files->file)) {
-            foreach ($xml->gallery_files->file as $f) {
-                $real_gal_id = $gallery_map[(int)$f['gallery_id']] ?? 0;
-                if ($real_gal_id) {
-                    $wpdb->insert($wpdb->prefix . 'studiofy_gallery_files', [
-                        'gallery_id' => $real_gal_id, 'uploaded_by' => get_current_user_id(), 'file_name' => (string)$f->name, 'file_path' => '', 'file_url' => (string)$f['url'], 'file_type' => 'jpg', 'file_size' => '200KB', 'created_at' => current_time('mysql')
-                    ]);
-                    $ids['files'][] = $wpdb->insert_id;
-                }
-            }
-        }
-
-        // 6. Invoices
+        // 4. Invoices (With complex math)
         if(isset($xml->invoices->invoice)) {
-            foreach ($xml->invoices->invoice as $i) {
-                $real_cust_id = $customer_map[(int)$i['customer_id']] ?? 0;
-                $real_proj_id = $project_map[(int)$i['project_id']] ?? 0;
-                if ($real_cust_id) {
+            foreach ($xml->invoices->invoice as $inv) {
+                $cid = $map['cust'][(int)$inv['customer_id']] ?? 0;
+                $pid = $map['proj'][(int)$inv['project_id']] ?? 0;
+                
+                if ($cid) {
+                    $line_items = [];
+                    $subtotal = 0;
+                    
+                    // Parse line items
+                    foreach($inv->line_items->line_item as $li) {
+                        $qty = (float)$li->qty;
+                        $rate = (float)$li->rate;
+                        $amt = $qty * $rate;
+                        $subtotal += $amt;
+                        $line_items[] = [
+                            'desc' => (string)$li->desc,
+                            'qty' => $qty,
+                            'rate' => $rate
+                        ];
+                    }
+                    
+                    $tax_rate = (float)$inv->tax_rate; // 6.0
+                    $tax_amt = $subtotal * ($tax_rate / 100);
+                    $total = $subtotal + $tax_amt;
+
                     $wpdb->insert($wpdb->prefix . 'studiofy_invoices', [
-                        'invoice_number' => 'DEMO-' . rand(1000,9999), 'customer_id' => $real_cust_id, 'project_id' => $real_proj_id,
-                        'title' => (string)$i->title, 'amount' => (float)$i->amount, 'status' => (string)$i->status, 'issue_date' => date('Y-m-d'), 'due_date' => date('Y-m-d', strtotime('+30 days')), 'currency' => 'USD', 'created_at' => current_time('mysql')
+                        'invoice_number' => 'DEMO-' . rand(1000,9999), 'customer_id' => $cid, 'project_id' => $pid,
+                        'title' => (string)$inv->title, 'amount' => $total, 'tax_amount' => $tax_amt, 'line_items' => json_encode($line_items),
+                        'status' => (string)$inv->status, 'issue_date' => date('Y-m-d'), 'due_date' => date('Y-m-d', strtotime('+30 days')),
+                        'currency' => 'USD', 'created_at' => current_time('mysql')
                     ]);
                     $ids['invoices'][] = $wpdb->insert_id;
                 }
             }
         }
 
-        // 7. Contracts (Enhanced with full content and CPT)
-        if(isset($xml->contracts->contract)) {
-            foreach ($xml->contracts->contract as $con) {
-                $real_cust_id = $customer_map[(int)$con['customer_id']] ?? 0;
-                $real_proj_id = $project_map[(int)$con['project_id']] ?? 0;
-                $content = (string)$con->terms; // Now contains full HTML from XML
-
-                if ($real_cust_id) {
-                    // Create linked CPT for Elementor compatibility
-                    $cpt_id = wp_insert_post([
-                        'post_title' => 'Contract: ' . (string)$con->title,
-                        'post_type'  => 'studiofy_doc',
-                        'post_status' => 'publish',
-                        'post_content' => $content
-                    ]);
-
-                    $wpdb->insert($wpdb->prefix . 'studiofy_contracts', [
-                        'title' => (string)$con->title, 'customer_id' => $real_cust_id, 'project_id' => $real_proj_id,
-                        'amount' => (float)$con->amount, 'status' => (string)$con->status, 'body_content' => $content,
-                        'linked_post_id' => $cpt_id,
-                        'start_date' => date('Y-m-d'), 'end_date' => date('Y-m-d', strtotime('+1 year')), 'created_at' => current_time('mysql')
-                    ]);
-                    $ids['contracts'][] = $wpdb->insert_id;
+        // 5. Tasks (Basic)
+        if(isset($xml->tasks->task)) {
+            foreach ($xml->tasks->task as $t) {
+                $pid = $map['proj'][(int)$t['project_id']] ?? 0;
+                if ($pid) {
+                    $mid = $wpdb->get_var($wpdb->prepare("SELECT id FROM {$wpdb->prefix}studiofy_milestones WHERE project_id = %d LIMIT 1", $pid));
+                    if (!$mid) { $wpdb->insert($wpdb->prefix.'studiofy_milestones', ['project_id'=>$pid,'name'=>'General']); $mid=$wpdb->insert_id; }
+                    $wpdb->insert($wpdb->prefix.'studiofy_tasks', ['milestone_id'=>$mid, 'title'=>(string)$t->title, 'priority'=>(string)$t->priority, 'description'=>(string)$t->description, 'status'=>(string)$t->status, 'created_at'=>current_time('mysql')]);
+                    $ids['tasks'][] = $wpdb->insert_id;
                 }
             }
         }
@@ -197,27 +144,14 @@ class DemoDataManager {
         update_option('studiofy_demo_data_ids', $ids);
     }
 
-    // delete_demo_data() same as v2.2.29
     public function delete_demo_data(): void {
         global $wpdb;
         $ids = get_option('studiofy_demo_data_ids');
-        if ($ids && is_array($ids)) {
-            // Cleanup Linked Posts (Galleries & Contracts)
-            if (!empty($ids['galleries'])) {
-                $g_in = implode(',', array_map('intval', $ids['galleries']));
-                $pages = $wpdb->get_col("SELECT wp_page_id FROM {$wpdb->prefix}studiofy_galleries WHERE id IN ($g_in) AND wp_page_id IS NOT NULL");
-                foreach($pages as $pid) wp_delete_post($pid, true);
-            }
-            if (!empty($ids['contracts'])) {
-                $c_in = implode(',', array_map('intval', $ids['contracts']));
-                $posts = $wpdb->get_col("SELECT linked_post_id FROM {$wpdb->prefix}studiofy_contracts WHERE id IN ($c_in) AND linked_post_id IS NOT NULL");
-                foreach($posts as $pid) wp_delete_post($pid, true);
-            }
-
-            foreach(['gallery_files'=>'files', 'galleries'=>'galleries', 'contracts'=>'contracts', 'invoices'=>'invoices', 'tasks'=>'tasks', 'projects'=>'projects', 'customers'=>'customers'] as $table => $key) {
-                if (!empty($ids[$key])) {
-                    $tbl = $wpdb->prefix . 'studiofy_' . $table;
-                    $in = implode(',', array_map('intval', $ids[$key]));
+        if ($ids) {
+            foreach(['items', 'invoices', 'tasks', 'projects', 'customers'] as $k) {
+                if(!empty($ids[$k])) {
+                    $tbl = $wpdb->prefix . 'studiofy_' . $k;
+                    $in = implode(',', array_map('intval', $ids[$k]));
                     $wpdb->query("DELETE FROM $tbl WHERE id IN ($in)");
                 }
             }
