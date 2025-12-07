@@ -1,89 +1,75 @@
 # Studiofy CRM 📸
-### The Ultimate Business Suite for Professional Photographers
+### The Modern Operating System for Photography Studios
 
-![Version](https://img.shields.io/badge/Version-2.2.27-blue.svg) ![PHP](https://img.shields.io/badge/PHP-8.1%2B-purple.svg) ![Elementor](https://img.shields.io/badge/Elementor-Required-E93056.svg)
+![Version](https://img.shields.io/badge/Version-2.2.49-blue.svg) ![PHP](https://img.shields.io/badge/PHP-8.1%2B-purple.svg) ![Elementor](https://img.shields.io/badge/Elementor-Required-E93056.svg)
 
 ---
 
 ## 🚀 Overview
-**Studiofy CRM** is a high-performance, privacy-focused business operating system designed specifically for modern photographers. It transforms your WordPress dashboard into a command center for managing Clients, Projects, Invoices, and Proofing Galleries.
+**Studiofy CRM** is a next-generation business suite designed exclusively for professional photographers. By leveraging the power of **Elementor**, Studiofy transforms your WordPress dashboard into a comprehensive studio management platform without the monthly fees of external SaaS tools.
 
-**New in v2.2.27:** The Gallery module now features a complete **Proofing Workflow**, allowing clients to approve/reject images directly on the frontend. We've also resolved critical upload permissions (403 errors) for the chunked uploader.
-
----
-
-## 🎨 Built for Elementor
-Studiofy integrates natively with **Elementor**, allowing you to build stunning Client Portals without writing code.
-
-* **✨ Lead Forms:** Drag-and-drop inquiry forms that auto-populate your CRM database.
-* **📅 Visual Scheduler:** Frontend booking calendar with availability checks.
-* **🖼️ Proofing Galleries:** Secure image grids where clients can select favorites.
+We simplify the business side of photography so you can focus on the creative side. From capturing leads to getting paid, Studiofy handles the entire client lifecycle with modern, privacy-focused tools.
 
 ---
 
-## 🔥 Key Features
+## ✨ Core Features
 
 ### 1. 📇 Intelligent Customer Management
-* **Centralized Database:** Track leads and active clients.
-* **Encryption:** AES-256 encryption for sensitive PII (Phone/Address).
-* **Google Maps API:** Auto-complete address validation for US locations.
+* **Centralized Database:** Manage leads and active clients in one secure location.
+* **Security First:** Sensitive client data (Phone, Address) is encrypted at rest using AES-256.
+* **Address Validation:** Built-in Google Maps API integration for error-free client addresses.
 
-### 2. ⚡ High-Performance Galleries
-* **Chunked Uploads:** Bypass server limits by streaming large files (RAW/JPG) in 2MB chunks.
-* **Proofing Workflow:** Clients can "Approve" or "Reject" images.
-* **Kanban Integration:** Submitting selections automatically creates a "Proofing Review" task on your project board.
+### 2. ⚡ High-Performance Private Galleries
+* **Proofing Workflow:** Create password-protected galleries where clients can "Approve" or "Reject" images.
+* **Chunked Uploads:** Our custom upload engine bypasses server limits, allowing you to upload large RAW/High-Res files (2MB+ chunks) reliably.
+* **Automated Feedback:** When a client submits their selection, Studiofy automatically updates your Project Kanban board with a "Proofs Approved" task.
 
-### 3. 💸 Smart Invoicing & Payments
-* **Square API Integration:** Collect payments directly on your site.
-* **Dynamic Line Items:** Add services, products, and calculate tax percentages on the fly.
-* **Status Tracking:** Draft, Sent, Paid statuses with PDF print support.
+### 3. 💸 Professional Invoicing
+* **Item Library:** Save reusable services (e.g., "Wedding Package", "Print Credit") for rapid invoice creation.
+* **PDF Generation:** Generate beautiful, branded PDF invoices with a single click.
+* **Flexible Billing:** Support for Hourly, Fixed, and Day rates with dynamic tax calculations.
 
-### 4. ✍️ Digital Contracts
-* **Elementor-Powered:** Design contract templates using the full power of Elementor.
-* **eSignatures:** Collect legally binding signatures from clients.
-* **Linked Projects:** Associate contracts directly with CRM projects.
+### 4. 📋 Kanban Project Management
+* **Visual Workflow:** Drag-and-drop projects across stages (To Do, In Progress, Future).
+* **Task Tracking:** Granular task lists for every project ensure you never miss a shoot detail.
+* **Financial Insight:** View budget status and payment tracking directly on the project card.
 
-### 5. 📋 Kanban Project Workflow
-* **Visual Board:** Drag and drop projects between "To Do", "In Progress", and "Future".
-* **Task Management:** Create sub-tasks, set priorities, and mark complete with visual strike-throughs.
-* **Financial Overview:** See budget and payment status directly on the project card.
+### 5. ✍️ Digital Contracts
+* **Elementor Integration:** Design legally binding contracts using the Elementor editor you already know.
+* **eSignatures:** Capture client signatures directly on your website via a dedicated client portal.
+* **Templates:** Comes with industry-standard photography contract templates ready to use.
 
 ---
 
 ## 🛠️ Installation
 
-1.  **Upload:** Upload the `studiofy-crm` folder to `/wp-content/plugins/`.
-2.  **Activate:** Activate via the WordPress Plugins menu.
-3.  **Dependency:** Ensure **Elementor** is installed (the plugin will prompt you if missing).
-4.  **Setup:** Go to **Studiofy CRM > Settings** to configure branding and API keys.
-5.  **(Optional):** Use the "Demo Data" import tool in Settings to populate test content.
+1.  **Download:** Get the latest `studiofy-crm.zip`.
+2.  **Upload:** Go to **Plugins > Add New > Upload** in WordPress.
+3.  **Activate:** Activate the plugin. You will be redirected to the **Welcome Screen**.
+4.  **Onboarding:** Click "Import Demo Data" to populate your CRM with sample clients, projects, and galleries to see how it works instantly.
+5.  **Settings:** Configure your Studio Name, Logo, and API Keys in **Studiofy CRM > Settings**.
 
 ---
 
-## ⚙️ Recent Changelog
+## ⚙️ Changelog Highlights
 
-### v2.2.27
-* **Fix:** Resolved 403 Forbidden error during chunked uploads by implementing a dedicated `upload_nonce`.
-* **Feature:** Added Frontend Proofing UI (Approve/Reject buttons) to Gallery Shortcode.
-* **Automation:** Submitting gallery proofing now auto-creates a "Review" task in the Project Kanban.
+### v2.2.49 (Latest)
+* **Fix:** Resolved `stdClass` property warning in Project creation.
+* **Fix:** Fixed `ltrim()` deprecation warning in Invoice creation logic.
 
-### v2.2.26
-* **UI:** Overhauled Kanban Board to enforce horizontal scrolling layout.
-* **UI:** Redesigned Project Cards to include Task Count and Budget metadata.
+### v2.2.40 - v2.2.48
+* **Feature:** Overhauled Gallery Proofing with visual "Approve/Reject" toolbar and Image ID numbering (#0100).
+* **Feature:** Added "Item Library" to Invoices for saving reusable products.
+* **UI:** Redesigned Invoice Builder to be a distinct editing interface.
+* **Fix:** Solved "Access Denied" issues on the Welcome page using CSS hiding strategy.
 
-### v2.2.23 - v2.2.25
-* **Performance:** Implemented Chunked File Uploads (2MB slices) for handling large RAW files.
-* **Feature:** Added visual progress bar for uploads.
-* **Data:** Updated Demo Data XML with 60 randomized high-res images and sub-tasks.
-
-### v2.2.20 - v2.2.22
-* **Feature:** Added "Contract Section" Elementor Widget.
-* **Architecture:** Registered `studiofy_doc` CPT to bridge Contracts with Elementor Editor.
-* **Cleanup:** Added `uninstall.php` for complete data removal on deletion.
+### v2.2.30 - v2.2.39
+* **Feature:** Added SVG Logo branding to Welcome Screen and PDF Invoices.
+* **Performance:** Implemented "Chunked Uploads" for Gallery files to fix timeout issues.
+* **Architecture:** Renamed CPTs (`studiofy_gal`) to comply with WordPress core limits.
 
 ---
 
-**Ready to transform your workflow?**
-*Get back to doing what you love—taking amazing photos.*
+**Get back to doing what you love—taking amazing photos.**
 
-&copy; 2025 Ian R. Gordon. All Rights Reserved.
+&copy; 2025 Studiofy CRM. Built for WordPress.
