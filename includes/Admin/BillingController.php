@@ -1,8 +1,8 @@
 <?php
 /**
- * Billing Controller
+ * Billing Controller (Unified Contract & Invoice)
  * @package Studiofy\Admin
- * @version 2.3.5
+ * @version 2.3.6
  */
 
 declare(strict_types=1);
@@ -10,6 +10,7 @@ declare(strict_types=1);
 namespace Studiofy\Admin;
 
 use Studiofy\Utils\TableHelper;
+use Studiofy\Security\Encryption;
 
 class BillingController {
     use TableHelper;
@@ -18,7 +19,7 @@ class BillingController {
         add_action('admin_post_studiofy_save_billing', [$this, 'handle_save']);
         add_action('admin_post_studiofy_delete_billing', [$this, 'handle_delete']);
         add_action('admin_post_studiofy_print_billing', [$this, 'handle_print']);
-        add_action('admin_post_studiofy_email_contract', [$this, 'handle_email_contract']); // NEW
+        add_action('admin_post_studiofy_email_contract', [$this, 'handle_email_contract']);
     }
 
     public function render_page(): void {
@@ -34,6 +35,7 @@ class BillingController {
         global $wpdb;
         $orderby = $_GET['orderby'] ?? 'id';
         $order = strtoupper($_GET['order'] ?? 'DESC');
+        
         $sql = "SELECT i.*, c.first_name, c.last_name, c.email FROM {$wpdb->prefix}studiofy_invoices i LEFT JOIN {$wpdb->prefix}studiofy_customers c ON i.customer_id = c.id ORDER BY i.$orderby $order";
         $rows = $wpdb->get_results($sql);
         
@@ -52,6 +54,7 @@ class BillingController {
                 $customer = $r->first_name ? esc_html($r->first_name . ' ' . $r->last_name) : 'Unknown';
                 $edit_url = "?page=studiofy-billing&action=edit&id={$r->id}";
                 $del_url = wp_nonce_url(admin_url("admin-post.php?action=studiofy_delete_billing&id={$r->id}"), 'delete_billing_'.$r->id);
+                $view_url = wp_nonce_url(admin_url("admin-post.php?action=studiofy_print_billing&id={$r->id}"), 'print_billing_'.$r->id);
                 $email_url = wp_nonce_url(admin_url("admin-post.php?action=studiofy_email_contract&id={$r->id}"), 'email_contract_'.$r->id);
                 $sig_url = add_query_arg('bid', $r->id, $base_sig_url);
                 
@@ -62,6 +65,7 @@ class BillingController {
                     <td><span class='studiofy-badge " . esc_attr(strtolower($r->status)) . "'>" . esc_html($r->status) . "</span></td>
                     <td><span class='studiofy-badge " . esc_attr(strtolower($r->contract_status)) . "'>" . esc_html($r->contract_status) . "</span></td>
                     <td>
+                        <a href='$view_url' class='button button-small' target='_blank'>View</a>
                         <a href='$edit_url' class='button button-small'>Edit</a>
                         <a href='$sig_url' target='_blank' class='button button-small'>Sign Link</a>
                         <a href='$email_url' class='button button-small' onclick='return confirm(\"Email contract to client?\")'>Email</a>
@@ -100,12 +104,17 @@ class BillingController {
             $data = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_invoices WHERE id = %d", $id));
         } else {
             $data = new \stdClass();
-            $data->id = 0; $data->customer_id = 0; $data->title = ''; $data->service_type = 'Portrait'; $data->amount = 0.00; $data->tax_amount = 0.00; $data->service_fee = 0.00; $data->deposit_amount = 0.00; $data->status = 'Draft'; $data->contract_status = 'Unsigned'; $data->contract_body = ''; $data->payment_methods = '[]'; $data->memo = "Thank you!"; $data->due_date = date('Y-m-d'); $data->line_items = '[]';
-            // Init fields for null safety in template
+            $data->id = 0; $data->customer_id = 0; $data->title = ''; $data->service_type = 'Portrait'; $data->amount = 0.00; $data->tax_amount = 0.00; $data->service_fee = 0.00; $data->deposit_amount = 0.00; $data->status = 'Draft'; $data->contract_status = 'Unsigned'; 
+            $data->contract_body = '<h3>1. Scope of Work</h3><p>Details here...</p>'; 
+            $data->payment_methods = '[]'; $data->memo = "Thank you for your business!"; $data->due_date = date('Y-m-d', strtotime('+30 days')); $data->line_items = '[]';
+            
+            // Init signature fields
             $data->signed_name = ''; $data->signed_at = ''; $data->signature_serial = ''; $data->signature_data = '';
         }
 
         $customers = $wpdb->get_results("SELECT id, first_name, last_name FROM {$wpdb->prefix}studiofy_customers ORDER BY last_name ASC");
+        
+        // Prepare template variables
         $line_items = json_decode($data->line_items, true) ?: [];
         $active_methods = json_decode($data->payment_methods, true) ?: [];
         
@@ -115,7 +124,131 @@ class BillingController {
         require_once STUDIOFY_PATH . 'templates/admin/billing-builder.php';
     }
 
-    // handle_save, handle_delete, handle_print are same as v2.3.4 (omitted for strict brevity limit, but logic is standard CRUD)
-    public function handle_save(): void { check_admin_referer('save_billing', 'studiofy_nonce'); global $wpdb; $items=$_POST['items']??[]; $sub=0; $clean=[]; if(is_array($items)){foreach($items as $i){$q=(float)$i['qty'];$r=(float)$i['rate'];$sub+=($q*$r);$clean[]=['desc'=>sanitize_text_field($i['name']),'qty'=>$q,'rate'=>$r];}} $tax=(isset($_POST['tax_rate'])?(float)$_POST['tax_rate']:0); $tax_amt=$sub*($tax/100); $svc=(isset($_POST['apply_service_fee'])?($sub*0.03):0); $tot=$sub+$tax_amt+$svc; $db=['customer_id'=>(int)$_POST['customer_id'],'title'=>sanitize_text_field($_POST['title']),'service_type'=>sanitize_text_field($_POST['service_type']),'contract_body'=>wp_kses_post($_POST['contract_body']),'contract_status'=>sanitize_text_field($_POST['contract_status']),'amount'=>$tot,'tax_amount'=>$tax_amt,'service_fee'=>$svc,'deposit_amount'=>(float)$_POST['deposit_amount'],'payment_methods'=>json_encode($_POST['payment_methods']??[]),'line_items'=>json_encode($clean),'due_date'=>sanitize_text_field($_POST['final_due_date']),'memo'=>sanitize_textarea_field($_POST['memo']),'status'=>sanitize_text_field($_POST['payment_status'])]; if(!empty($_POST['id'])) $wpdb->update($wpdb->prefix.'studiofy_invoices',$db,['id'=>(int)$_POST['id']]); else $wpdb->insert($wpdb->prefix.'studiofy_invoices',array_merge($db,['created_at'=>current_time('mysql'),'invoice_number'=>'INV-'.rand(1000,9999)])); wp_redirect(admin_url('admin.php?page=studiofy-billing')); exit; }
-    public function handle_delete(): void { check_admin_referer('delete_billing_'.$_GET['id']); global $wpdb; $wpdb->delete($wpdb->prefix.'studiofy_invoices', ['id'=>(int)$_GET['id']]); wp_redirect(admin_url('admin.php?page=studiofy-billing')); exit; }
+    public function handle_save(): void {
+        check_admin_referer('save_billing', 'studiofy_nonce');
+        global $wpdb;
+        
+        // Parse Line Items
+        $items = $_POST['items'] ?? [];
+        $subtotal = 0;
+        $cleaned_items = [];
+        if (is_array($items)) {
+            foreach($items as $i) {
+                $qty = (float)$i['qty'];
+                $rate = (float)$i['rate'];
+                $desc = sanitize_text_field($i['name']);
+                $subtotal += ($qty * $rate);
+                $cleaned_items[] = ['desc'=>$desc, 'qty'=>$qty, 'rate'=>$rate];
+            }
+        }
+        
+        // Calculations
+        $discount_percent = isset($_POST['discount_percent']) ? (float)$_POST['discount_percent'] : 0;
+        $discount_amount = $subtotal * ($discount_percent / 100);
+        $taxable_amount = max(0, $subtotal - $discount_amount);
+
+        $tax_rate = isset($_POST['tax_rate']) ? (float)$_POST['tax_rate'] : 0;
+        $tax_amt = $taxable_amount * ($tax_rate / 100);
+        
+        $service_fee = isset($_POST['apply_service_fee']) ? ($taxable_amount * 0.03) : 0.00;
+        
+        $tip_amount = isset($_POST['tip_amount']) ? (float)$_POST['tip_amount'] : 0.00;
+
+        $total = $taxable_amount + $tax_amt + $service_fee + $tip_amount;
+
+        $db_data = [
+            'customer_id' => (int)$_POST['customer_id'],
+            'title' => sanitize_text_field($_POST['title']),
+            'service_type' => sanitize_text_field($_POST['service_type']),
+            'contract_body' => wp_kses_post($_POST['contract_body']), 
+            'contract_status' => sanitize_text_field($_POST['contract_status']),
+            'amount' => $total,
+            'tax_amount' => $tax_amt,
+            'service_fee' => $service_fee,
+            'deposit_amount' => (float)$_POST['deposit_amount'],
+            'payment_methods' => json_encode($_POST['payment_methods'] ?? []),
+            'line_items' => json_encode($cleaned_items),
+            'due_date' => sanitize_text_field($_POST['final_due_date']),
+            'memo' => sanitize_textarea_field($_POST['memo']),
+            'status' => sanitize_text_field($_POST['payment_status'])
+        ];
+
+        if(!empty($_POST['id'])) {
+            $wpdb->update($wpdb->prefix.'studiofy_invoices', $db_data, ['id'=>(int)$_POST['id']]);
+        } else {
+            $wpdb->insert($wpdb->prefix.'studiofy_invoices', array_merge($db_data, ['created_at' => current_time('mysql'), 'invoice_number' => 'INV-'.rand(1000,9999)]));
+        }
+        
+        wp_redirect(admin_url('admin.php?page=studiofy-billing'));
+        exit;
+    }
+
+    public function handle_delete(): void {
+        check_admin_referer('delete_billing_'.$_GET['id']);
+        global $wpdb;
+        $wpdb->delete($wpdb->prefix.'studiofy_invoices', ['id'=>(int)$_GET['id']]);
+        wp_redirect(admin_url('admin.php?page=studiofy-billing')); exit;
+    }
+
+    public function handle_print(): void {
+        check_admin_referer('print_billing_'.$_GET['id']);
+        global $wpdb;
+        $id = (int)$_GET['id'];
+        
+        $invoice = $wpdb->get_row($wpdb->prepare("SELECT i.*, c.first_name, c.last_name, c.email, c.phone, c.company, c.address FROM {$wpdb->prefix}studiofy_invoices i LEFT JOIN {$wpdb->prefix}studiofy_customers c ON i.customer_id = c.id WHERE i.id = %d", $id));
+        
+        if (!$invoice) wp_die('Record not found.');
+        
+        $branding = (array) get_option('studiofy_branding', []);
+        $business_name = !empty($branding['business_name']) ? (string)$branding['business_name'] : 'Photography Studio';
+        $business_logo_url = !empty($branding['business_logo']) ? (string)$branding['business_logo'] : ''; 
+        $admin_email = get_option('admin_email');
+        
+        $enc = new Encryption();
+        $customer = new \stdClass();
+        $customer->name = esc_html($invoice->first_name . ' ' . $invoice->last_name);
+        $customer->company = esc_html($invoice->company);
+        $customer->address = esc_html($enc->decrypt($invoice->address));
+        
+        $invoice->issue_date_formatted = date('m/d/Y', strtotime($invoice->created_at)); 
+        $invoice->due_date_formatted = date('m/d/Y', strtotime($invoice->due_date));
+        $invoice->payable_to = "Payable to " . esc_html($business_name) . " Upon Receipt";
+        $invoice->line_items_data = json_decode($invoice->line_items, true) ?: [];
+        
+        $invoice->subtotal = 0;
+        foreach($invoice->line_items_data as $item) { 
+            $invoice->subtotal += ((float)$item['qty'] * (float)$item['rate']); 
+        }
+
+        // Render HTML for Print
+        ob_start();
+        include STUDIOFY_PATH . 'templates/admin/invoice-template.php';
+        $html = ob_get_clean();
+        
+        // Inject contract content if it exists
+        if (!empty($invoice->contract_body)) {
+            $contract_html = '<div class="contract-page" style="page-break-before: always; margin-top:40px; padding-top:40px; border-top:2px solid #eee;">';
+            $contract_html .= '<h1 class="invoice-title">SERVICE AGREEMENT</h1>';
+            $contract_html .= '<div class="contract-body">' . wp_kses_post($invoice->contract_body) . '</div>';
+            
+            if ($invoice->contract_status === 'Signed') {
+                 $contract_html .= '<div class="signature-box" style="margin-top:40px; border:1px solid #ccc; padding:20px; text-align:center;">';
+                 $contract_html .= '<img src="' . esc_url($invoice->signature_data) . '" style="max-height:80px;"><br>';
+                 $contract_html .= '<strong>Signed By:</strong> ' . esc_html($invoice->signed_name) . '<br>';
+                 $contract_html .= '<strong>Date:</strong> ' . esc_html($invoice->signed_at) . '<br>';
+                 $contract_html .= '<small>Serial: ' . esc_html($invoice->signature_serial) . '</small>';
+                 $contract_html .= '</div>';
+            }
+
+            $contract_html .= '</div>';
+            
+            // Append before closing body
+            $html = str_replace('</body>', $contract_html . '</body>', $html);
+        }
+
+        $html .= '<script>window.onload = function() { window.print(); }</script>';
+        
+        echo $html;
+        exit;
+    }
 }
