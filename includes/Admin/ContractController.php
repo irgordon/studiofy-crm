@@ -2,7 +2,7 @@
 /**
  * Contract Controller
  * @package Studiofy\Admin
- * @version 2.2.21
+ * @version 2.2.28
  */
 
 declare(strict_types=1);
@@ -21,17 +21,13 @@ class ContractController {
         add_action('admin_post_studiofy_delete_contract', [$this, 'handle_delete']);
     }
 
+    // ... (render_page, render_list, render_builder, handle_save, handle_delete same as v2.2.20) ...
     public function render_page(): void {
         $action = $_GET['action'] ?? 'list';
         $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-
-        if ($action === 'create' || $action === 'edit') {
-            $this->render_builder($id);
-        } elseif ($action === 'view') {
-            $this->render_view($id);
-        } else {
-            $this->render_list();
-        }
+        if ($action === 'create' || $action === 'edit') $this->render_builder($id);
+        elseif ($action === 'view') $this->render_view($id);
+        else $this->render_list();
     }
 
     private function render_list(): void {
@@ -87,7 +83,6 @@ class ContractController {
         $contract = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_contracts WHERE id = %d", $id));
         if (!$contract) { echo '<div class="notice notice-error"><p>Contract not found.</p></div>'; return; }
         
-        // Get Content: Elementor via linked post
         $content = $contract->body_content;
         if ($contract->linked_post_id && class_exists('\Elementor\Plugin')) {
             $elem_content = \Elementor\Plugin::instance()->frontend->get_builder_content_for_display($contract->linked_post_id);
@@ -96,7 +91,12 @@ class ContractController {
             }
         }
         
-        wp_enqueue_script('studiofy-signature', STUDIOFY_URL . 'assets/js/signature-pad.js', [], studiofy_get_asset_version('assets/js/signature-pad.js'), true);
+        // Find or create a page for signing if it doesn't exist, OR just provide instructions
+        // For simplicity, we assume the user creates a "Contract Portal" page with [studiofy_contract_portal].
+        // We will try to find a page with that shortcode.
+        $portal_page = $wpdb->get_var("SELECT ID FROM {$wpdb->posts} WHERE post_content LIKE '%[studiofy_contract_portal]%' AND post_status='publish' LIMIT 1");
+        $signing_link = $portal_page ? get_permalink($portal_page) . '?contract_id=' . $contract->id : '';
+
         wp_enqueue_style('studiofy-contract-css', STUDIOFY_URL . 'assets/css/contract.css', [], studiofy_get_asset_version('assets/css/contract.css'));
         
         $view_content = $content; 
@@ -109,11 +109,10 @@ class ContractController {
         
         $linked_post_id = isset($_POST['linked_post_id']) ? (int)$_POST['linked_post_id'] : 0;
         
-        // Create/Update linked CPT
         if ($linked_post_id === 0) {
             $post_id = wp_insert_post([
                 'post_title' => 'Contract: ' . sanitize_text_field($_POST['title']),
-                'post_type'  => 'studiofy_doc', // FIXED: Updated CPT Key
+                'post_type'  => 'studiofy_doc',
                 'post_status' => 'publish'
             ]);
             if ($post_id) $linked_post_id = $post_id;
@@ -149,6 +148,7 @@ class ContractController {
     }
 
     public function handle_signature(): void {
+        // This is primarily for Admin Signing if needed, Frontend uses Shortcode logic
         global $wpdb;
         $id = (int) $_POST['contract_id'];
         $wpdb->update($wpdb->prefix . 'studiofy_contracts', ['signature_data' => $_POST['signature_data'], 'signed_name' => sanitize_text_field($_POST['signed_name']), 'signed_at' => current_time('mysql'), 'status' => 'signed'], ['id' => $id]);
@@ -159,10 +159,8 @@ class ContractController {
         check_admin_referer('delete_contract_' . $_GET['id']);
         global $wpdb;
         $id = (int)$_GET['id'];
-        
         $post_id = $wpdb->get_var($wpdb->prepare("SELECT linked_post_id FROM {$wpdb->prefix}studiofy_contracts WHERE id = %d", $id));
         if ($post_id) wp_delete_post($post_id, true);
-        
         $wpdb->delete($wpdb->prefix.'studiofy_contracts', ['id' => $id]);
         wp_redirect(admin_url('admin.php?page=studiofy-contracts')); exit;
     }
