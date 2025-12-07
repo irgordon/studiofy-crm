@@ -2,7 +2,7 @@
 /**
  * Admin Menu Controller
  * @package Studiofy\Admin
- * @version 2.2.43
+ * @version 2.2.46
  */
 
 declare(strict_types=1);
@@ -35,6 +35,7 @@ class Menu {
 
     public function init(): void {
         add_action('admin_menu', [$this, 'register_menu_pages']);
+        add_action('admin_menu', [$this, 'remove_welcome_menu'], 999); // FIX: Late removal ensures registration
         add_action('admin_enqueue_scripts', [$this, 'enqueue_styles']);
         add_action('admin_init', [$this, 'activation_redirect']);
         
@@ -60,10 +61,7 @@ class Menu {
     }
 
     public function register_menu_pages(): void {
-        // Main Menu
         add_menu_page('Studiofy CRM', 'Studiofy CRM', 'manage_options', 'studiofy-dashboard', [$this->dashboardController, 'render_page'], 'dashicons-camera', 6);
-        
-        // Submenus
         add_submenu_page('studiofy-dashboard', 'Dashboard', 'Dashboard', 'manage_options', 'studiofy-dashboard', [$this->dashboardController, 'render_page']);
         add_submenu_page('studiofy-dashboard', 'Customers', 'Customers', 'manage_options', 'studiofy-customers', [$this->customerController, 'render_page']);
         add_submenu_page('studiofy-dashboard', 'Projects', 'Projects', 'manage_options', 'studiofy-projects', [$this->projectController, 'render_page']);
@@ -73,9 +71,12 @@ class Menu {
         add_submenu_page('studiofy-dashboard', 'Galleries', 'Galleries', 'manage_options', 'studiofy-galleries', [$this->galleryController, 'render_page']);
         add_submenu_page('studiofy-dashboard', 'Settings', 'Settings', 'manage_options', 'studiofy-settings', [$this->settings, 'render_page']);
         
-        // FIX: Register 'Welcome' as a real submenu of Dashboard to satisfy WP strict types...
+        // FIX: Register normally to ensure capability checks pass
         add_submenu_page('studiofy-dashboard', 'Welcome', 'Welcome', 'manage_options', 'studiofy-welcome', [$this, 'render_welcome_page']);
-        // ... then immediately remove it so it's hidden from the UI but registered in the backend
+    }
+
+    // FIX: Remove from menu visually AFTER registration to avoid "Access Denied"
+    public function remove_welcome_menu(): void {
         remove_submenu_page('studiofy-dashboard', 'studiofy-welcome');
     }
 
@@ -127,7 +128,6 @@ class Menu {
     }
 
     public function enqueue_styles($hook): void {
-        // FIX: Ensure hook is not null before checking strpos
         if (!$hook) return;
         $hook_str = (string) $hook;
         
