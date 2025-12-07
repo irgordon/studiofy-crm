@@ -2,7 +2,7 @@
 /**
  * Invoice Controller
  * @package Studiofy\Admin
- * @version 2.2.31
+ * @version 2.2.34
  */
 
 declare(strict_types=1);
@@ -16,24 +16,17 @@ class InvoiceController {
 
     public function init(): void {
         add_action('admin_post_studiofy_save_invoice', [$this, 'handle_save']);
-        add_action('admin_post_studiofy_save_item', [$this, 'handle_save_item']); // New
-        add_action('admin_post_studiofy_delete_item', [$this, 'handle_delete_item']); // New
+        add_action('admin_post_studiofy_save_item', [$this, 'handle_save_item']);
+        add_action('admin_post_studiofy_delete_item', [$this, 'handle_delete_item']);
         add_action('admin_post_studiofy_print_invoice', [$this, 'handle_print']);
     }
 
     public function render_page(): void {
         $action = $_GET['action'] ?? 'list';
         
-        // Tab Navigation
-        $tabs = [
-            'list' => 'Invoices',
-            'items' => 'Item Library'
-        ];
-        $current_tab = ($action === 'items') ? 'items' : 'list';
-        
         if ($action === 'create' || $action === 'edit') {
             $this->render_builder();
-        } elseif ($action === 'items') {
+        } elseif ($action === 'items' || $action === 'edit_item') {
             $this->render_items_page();
         } else {
             $this->render_list();
@@ -72,26 +65,45 @@ class InvoiceController {
         global $wpdb;
         $items = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}studiofy_items ORDER BY title ASC");
         
+        // Handle Edit Mode
+        $edit_id = isset($_GET['id']) && $_GET['action'] === 'edit_item' ? (int)$_GET['id'] : 0;
+        $edit_data = null;
+        if ($edit_id) {
+            $edit_data = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_items WHERE id = %d", $edit_id));
+        }
+
+        $form_title = $edit_data ? 'Edit Item' : 'Add New Item';
+        $btn_text = $edit_data ? 'Update Item' : 'Add Item';
+
         echo '<div class="wrap"><h1 class="wp-heading-inline">Item Library</h1>';
         echo '<a href="?page=studiofy-invoices" class="page-title-action">Back to Invoices</a>';
+        if($edit_data) echo '<a href="?page=studiofy-invoices&action=items" class="page-title-action">Cancel Edit</a>';
         echo '<hr class="wp-header-end">';
         
-        // Add Item Form
-        echo '<div class="studiofy-panel" style="margin-bottom:20px;"><h3>Add New Item</h3>';
+        // Add/Edit Form
+        echo '<div class="studiofy-panel" style="margin-bottom:20px;"><h3>' . $form_title . '</h3>';
         echo '<form method="post" action="'.admin_url('admin-post.php').'">';
         echo '<input type="hidden" name="action" value="studiofy_save_item">';
+        if($edit_data) echo '<input type="hidden" name="id" value="'.$edit_data->id.'">';
         wp_nonce_field('save_item', 'studiofy_nonce');
+        
         echo '<div class="studiofy-form-row">';
-        echo '<div class="studiofy-col"><label for="i_title">Item Name</label><input type="text" name="title" id="i_title" required class="widefat" placeholder="e.g., Portrait Session"></div>';
-        echo '<div class="studiofy-col"><label for="i_rate">Rate ($)</label><input type="number" step="0.01" name="rate" id="i_rate" required class="widefat" placeholder="0.00"></div>';
-        echo '<div class="studiofy-col"><label for="i_type">Rate Type</label><select name="rate_type" id="i_type" class="widefat"><option value="Fixed">Fixed</option><option value="Hourly">Hourly</option><option value="Day">Day</option></select></div>';
+        echo '<div class="studiofy-col"><label for="i_title">Item Name</label><input type="text" name="title" id="i_title" required class="widefat" value="'.esc_attr($edit_data->title ?? '').'" placeholder="e.g., Portrait Session"></div>';
+        echo '<div class="studiofy-col"><label for="i_rate">Rate ($)</label><input type="number" step="0.01" name="rate" id="i_rate" required class="widefat" value="'.esc_attr($edit_data->rate ?? '').'" placeholder="0.00"></div>';
+        echo '<div class="studiofy-col"><label for="i_type">Rate Type</label><select name="rate_type" id="i_type" class="widefat">
+                <option value="Fixed" '.selected($edit_data->rate_type ?? '', 'Fixed', false).'>Fixed</option>
+                <option value="Hourly" '.selected($edit_data->rate_type ?? '', 'Hourly', false).'>Hourly</option>
+                <option value="Day" '.selected($edit_data->rate_type ?? '', 'Day', false).'>Day</option>
+              </select></div>';
         echo '</div>';
+        
         echo '<div class="studiofy-form-row">';
-        echo '<div class="studiofy-col"><label for="i_qty">Default Qty</label><input type="number" name="default_qty" id="i_qty" value="1" class="widefat"></div>';
-        echo '<div class="studiofy-col"><label for="i_tax">Tax Rate (%)</label><input type="number" step="0.01" name="tax_rate" id="i_tax" value="0.00" class="widefat"></div>';
-        echo '<div class="studiofy-col"><label for="i_desc">Description</label><input type="text" name="description" id="i_desc" class="widefat"></div>';
+        echo '<div class="studiofy-col"><label for="i_qty">Default Qty</label><input type="number" name="default_qty" id="i_qty" value="'.esc_attr($edit_data->default_qty ?? '1').'" class="widefat"></div>';
+        echo '<div class="studiofy-col"><label for="i_tax">Tax Rate (%)</label><input type="number" step="0.01" name="tax_rate" id="i_tax" value="'.esc_attr($edit_data->tax_rate ?? '0.00').'" class="widefat"></div>';
+        echo '<div class="studiofy-col"><label for="i_desc">Description</label><input type="text" name="description" id="i_desc" value="'.esc_attr($edit_data->description ?? '').'" class="widefat"></div>';
         echo '</div>';
-        echo '<p><button type="submit" class="button button-primary">Add Item</button></p>';
+        
+        echo '<p><button type="submit" class="button button-primary">' . $btn_text . '</button></p>';
         echo '</form></div>';
 
         // Items Table
@@ -100,14 +112,19 @@ class InvoiceController {
             echo '<tr><td colspan="6">No items in library. Add one above.</td></tr>';
         } else {
             foreach ($items as $item) {
+                $edit_link = "?page=studiofy-invoices&action=edit_item&id={$item->id}";
                 $del_url = wp_nonce_url(admin_url("admin-post.php?action=studiofy_delete_item&id={$item->id}"), 'delete_item_'.$item->id);
+                
                 echo "<tr>
-                    <td><strong>".esc_html($item->title)."</strong></td>
-                    <td>".esc_html($item->description)."</td>
+                    <td><strong><a href='$edit_link'>".esc_html($item->title)."</a></strong></td>
+                    <td><a href='$edit_link'>".esc_html($item->description)."</a></td>
                     <td>$".number_format((float)$item->rate, 2)." / ".esc_html($item->rate_type)."</td>
                     <td>".esc_html($item->default_qty)."</td>
                     <td>".esc_html($item->tax_rate)."%</td>
-                    <td><a href='$del_url' class='button button-small button-link-delete' onclick='return confirm(\"Delete item?\")'>Delete</a></td>
+                    <td>
+                        <a href='$edit_link' class='button button-small'>Edit</a>
+                        <a href='$del_url' class='button button-small button-link-delete' onclick='return confirm(\"Delete item?\")' style='color:#b32d2e;'>Delete</a>
+                    </td>
                 </tr>";
             }
         }
@@ -121,7 +138,7 @@ class InvoiceController {
         
         $customers = $wpdb->get_results("SELECT id, first_name, last_name FROM {$wpdb->prefix}studiofy_customers");
         $projects = $wpdb->get_results("SELECT id, title FROM {$wpdb->prefix}studiofy_projects");
-        $saved_items = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}studiofy_items ORDER BY title ASC"); // For dropdown
+        $saved_items = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}studiofy_items ORDER BY title ASC"); 
         
         $inv_num = $inv ? $inv->invoice_number : 'INV-' . strtoupper(uniqid());
         
@@ -133,7 +150,7 @@ class InvoiceController {
         
         $tax_amount = $inv ? (float)$inv->tax_amount : 0;
         $subtotal = $inv ? (float)$inv->amount - $tax_amount : 0;
-        $tax_rate = ($subtotal > 0) ? ($tax_amount / $subtotal) * 100 : 6.00; // Default to 6%
+        $tax_rate = ($subtotal > 0) ? ($tax_amount / $subtotal) * 100 : 6.00;
         
         require_once STUDIOFY_PATH . 'templates/admin/invoice-builder.php';
     }
@@ -180,14 +197,24 @@ class InvoiceController {
     public function handle_save_item(): void {
         check_admin_referer('save_item', 'studiofy_nonce');
         global $wpdb;
-        $wpdb->insert($wpdb->prefix.'studiofy_items', [
+        
+        $data = [
             'title' => sanitize_text_field($_POST['title']),
             'description' => sanitize_text_field($_POST['description']),
             'rate' => (float)$_POST['rate'],
             'rate_type' => sanitize_text_field($_POST['rate_type']),
             'default_qty' => (int)$_POST['default_qty'],
             'tax_rate' => (float)$_POST['tax_rate']
-        ]);
+        ];
+
+        if (!empty($_POST['id'])) {
+            // Update
+            $wpdb->update($wpdb->prefix.'studiofy_items', $data, ['id' => (int)$_POST['id']]);
+        } else {
+            // Insert
+            $wpdb->insert($wpdb->prefix.'studiofy_items', $data);
+        }
+        
         wp_redirect(admin_url('admin.php?page=studiofy-invoices&action=items')); exit;
     }
 
