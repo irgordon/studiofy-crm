@@ -2,7 +2,7 @@
 /**
  * Billing Controller (Unified Contract & Invoice)
  * @package Studiofy\Admin
- * @version 2.3.7
+ * @version 2.3.8
  */
 
 declare(strict_types=1);
@@ -39,7 +39,18 @@ class BillingController {
         $sql = "SELECT i.*, c.first_name, c.last_name, c.email FROM {$wpdb->prefix}studiofy_invoices i LEFT JOIN {$wpdb->prefix}studiofy_customers c ON i.customer_id = c.id ORDER BY i.$orderby $order";
         $rows = $wpdb->get_results($sql);
         
-        $sig_page = get_page_by_title('Signature');
+        // FIX: Replaced deprecated get_page_by_title with WP_Query
+        $sig_page_query = new \WP_Query([
+            'post_type' => 'page',
+            'title'     => 'Signature',
+            'post_status' => 'all',
+            'posts_per_page' => 1,
+            'no_found_rows' => true,
+            'update_post_term_cache' => false,
+            'update_post_meta_cache' => false,
+        ]);
+        $sig_page = $sig_page_query->have_posts() ? $sig_page_query->posts[0] : null;
+
         $base_sig_url = $sig_page ? get_permalink($sig_page->ID) : home_url('/signature/');
 
         echo '<div class="wrap"><h1 class="wp-heading-inline">Billing & Contracts</h1>';
@@ -86,7 +97,10 @@ class BillingController {
         
         if(!$row || empty($row->email)) wp_die('No email found.');
         
-        $sig_page = get_page_by_title('Signature');
+        // FIX: Using WP_Query here as well for consistency
+        $sig_page_query = new \WP_Query(['post_type'=>'page', 'title'=>'Signature', 'post_status'=>'all', 'posts_per_page'=>1]);
+        $sig_page = $sig_page_query->have_posts() ? $sig_page_query->posts[0] : null;
+        
         $url = add_query_arg('bid', $id, $sig_page ? get_permalink($sig_page->ID) : home_url('/signature/'));
         
         $subject = "Contract for Signature: " . $row->title;
@@ -106,7 +120,6 @@ class BillingController {
             $data = new \stdClass();
             $data->id = 0; $data->customer_id = 0; $data->title = ''; $data->service_type = 'Portrait'; $data->amount = 0.00; $data->tax_amount = 0.00; $data->service_fee = 0.00; $data->deposit_amount = 0.00; $data->status = 'Draft'; $data->contract_status = 'Unsigned'; 
             
-            // Default 10-point Boilerplate
             $data->contract_body = '
 <h3>1. Contact Information</h3>
 <p><strong>Photographer:</strong> [Your Name/Business]<br><strong>Client:</strong> [Client Name]<br>This identifies who is responsible for fulfilling the terms of the agreement.</p>
@@ -142,7 +155,6 @@ class BillingController {
 
             $data->payment_methods = '[]'; $data->memo = "Thank you for your business!"; $data->due_date = date('Y-m-d', strtotime('+30 days')); $data->line_items = '[]';
             
-            // Init signature fields
             $data->signed_name = ''; $data->signed_at = ''; $data->signature_serial = ''; $data->signature_data = '';
         }
 
@@ -249,14 +261,12 @@ class BillingController {
         include STUDIOFY_PATH . 'templates/admin/invoice-template.php';
         $html = ob_get_clean();
         
-        // Inject contract content
         if (!empty($invoice->contract_body)) {
             $contract_html = '<div class="contract-page" style="page-break-before: always; margin-top:40px; padding-top:40px; border-top:2px solid #eee;">';
             $contract_html .= '<h1 class="invoice-title">SERVICE AGREEMENT</h1>';
             $contract_html .= '<div class="contract-body">' . wp_kses_post($invoice->contract_body) . '</div>';
             
             if ($invoice->contract_status === 'Signed') {
-                 // FIX: Strictly cast signature data to string to avoid ltrim(null) errors
                  $signature_data = isset($invoice->signature_data) ? (string)$invoice->signature_data : '';
                  
                  $contract_html .= '<div class="signature-box" style="margin-top:40px; border:1px solid #ccc; padding:20px; text-align:center;">';
