@@ -1,10 +1,10 @@
 <?php
 /**
  * Invoice PDF Template
- * @version 2.2.51
+ * @version 2.2.57
  */
 if (!defined('ABSPATH')) exit;
-// $admin_email available here
+// $invoice, $customer, $branding variables available here
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -216,18 +216,12 @@ if (!defined('ABSPATH')) exit;
         </div>
         <div class="invoice-meta">
             <table>
-                <tr>
-                    <th>Invoice #</th>
-                    <td><?php echo esc_html($invoice->invoice_number); ?></td>
-                </tr>
-                <tr>
-                    <th>Date</th>
-                    <td><?php echo esc_html($invoice->issue_date_formatted); ?></td>
-                </tr>
-                <tr>
-                    <th>Due</th>
-                    <td><?php echo esc_html($invoice->due_date_formatted); ?></td>
-                </tr>
+                <tr><th>Invoice #</th><td><?php echo esc_html($invoice->invoice_number); ?></td></tr>
+                <tr><th>Date</th><td><?php echo esc_html($invoice->issue_date_formatted); ?></td></tr>
+                <tr><th>Due</th><td><?php echo esc_html($invoice->due_date_formatted); ?></td></tr>
+                <?php if(!empty($invoice->payment_method)): ?>
+                <tr><th>Method</th><td><?php echo esc_html($invoice->payment_method); ?></td></tr>
+                <?php endif; ?>
             </table>
         </div>
     </div>
@@ -235,22 +229,20 @@ if (!defined('ABSPATH')) exit;
     <table class="items-table">
         <thead>
             <tr>
-                <th class="col-qty">QTY</th>
+                <th class="col-qty" style="text-align:center;">QTY</th>
                 <th class="col-desc">Description</th>
-                <th class="col-price">Unit Price</th>
-                <th class="col-amount">Amount</th>
+                <th class="col-price" style="text-align:right;">Unit Price</th>
+                <th class="col-amount" style="text-align:right;">Amount</th>
             </tr>
         </thead>
         <tbody>
-            <?php foreach ($invoice->line_items_data as $item): 
-                $line_total = (float)$item['qty'] * (float)$item['rate'];
-            ?>
-                <tr>
-                    <td class="col-qty"><?php echo esc_html($item['qty']); ?></td>
-                    <td class="col-desc"><?php echo esc_html($item['desc']); ?></td>
-                    <td class="col-price"><?php echo number_format((float)$item['rate'], 2); ?></td>
-                    <td class="col-amount"><?php echo number_format($line_total, 2); ?></td>
-                </tr>
+            <?php foreach ($invoice->line_items_data as $item): $line_total = (float)$item['qty'] * (float)$item['rate']; ?>
+            <tr>
+                <td style="text-align:center;"><?php echo esc_html($item['qty']); ?></td>
+                <td><?php echo esc_html($item['desc']); ?></td>
+                <td style="text-align:right;"><?php echo number_format((float)$item['rate'], 2); ?></td>
+                <td style="text-align:right;"><?php echo number_format($line_total, 2); ?></td>
+            </tr>
             <?php endforeach; ?>
         </tbody>
     </table>
@@ -261,12 +253,17 @@ if (!defined('ABSPATH')) exit;
                 <th>Subtotal</th>
                 <td><?php echo number_format($invoice->subtotal, 2); ?></td>
             </tr>
+            
             <?php if((float)$invoice->tax_amount > 0): ?>
-            <tr>
-                <th>Tax</th>
-                <td><?php echo number_format((float)$invoice->tax_amount, 2); ?></td>
-            </tr>
+                <tr><th>Tax</th><td><?php echo number_format((float)$invoice->tax_amount, 2); ?></td></tr>
+            <?php else: ?>
+                <tr><th>Tax</th><td>Tax Exemption</td></tr>
             <?php endif; ?>
+
+            <?php if((float)$invoice->service_fee > 0): ?>
+                <tr><th>Service Fee (3%)</th><td><?php echo number_format((float)$invoice->service_fee, 2); ?></td></tr>
+            <?php endif; ?>
+
             <tr class="total-row">
                 <th>Total (<?php echo esc_html($invoice->currency); ?>)</th>
                 <td><?php echo number_format((float)$invoice->amount, 2); ?></td>
