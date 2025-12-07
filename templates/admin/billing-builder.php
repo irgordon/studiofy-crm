@@ -1,7 +1,7 @@
 <?php
 /**
  * Billing Builder (Unified)
- * @version 2.3.0
+ * @version 2.3.3
  */
 ?>
 <div class="wrap studiofy-billing-wrap">
@@ -27,12 +27,14 @@
                 </div>
                 <div class="studiofy-col">
                     <label>Service Type</label>
-                    <select name="service_type" class="widefat">
-                        <option <?php selected($data->service_type, 'Portrait'); ?>>Portrait</option>
-                        <option <?php selected($data->service_type, 'Wedding'); ?>>Wedding</option>
-                        <option <?php selected($data->service_type, 'Event'); ?>>Event</option>
-                        <option <?php selected($data->service_type, 'Commercial'); ?>>Commercial</option>
-                    </select>
+                    <input type="text" name="service_type" list="service_options" value="<?php echo esc_attr($data->service_type); ?>" class="widefat" placeholder="Type or select...">
+                    <datalist id="service_options">
+                        <option value="Portrait">
+                        <option value="Wedding">
+                        <option value="Event">
+                        <option value="Commercial">
+                        <option value="Lifestyle">
+                    </datalist>
                 </div>
                 <div class="studiofy-col">
                     <label>Payment Status</label>
@@ -56,7 +58,6 @@
         <div class="studiofy-panel">
             <h3>Contract Terms</h3>
             <?php 
-            // Use WP Native Editor
             wp_editor($data->contract_body, 'contract_body', [
                 'textarea_name' => 'contract_body',
                 'media_buttons' => false,
@@ -74,7 +75,16 @@
                     <div class="dropdown-menu" id="options-menu" style="display:none;">
                         <label><input type="checkbox" id="opt-deposit" <?php checked($data->deposit_amount > 0); ?>> Add Deposit</label>
                         <label><input type="checkbox" id="opt-discount"> Add Discount</label>
-                        <label><input type="checkbox" name="enable_tipping" value="1" <?php checked($data->service_fee > 0); ?>> Enable Tipping / Service Fee</label>
+                        
+                        <hr style="margin:5px 0;">
+                        <strong style="display:block; margin-bottom:5px; font-size:11px;">Tipping / Fees</strong>
+                        <label><input type="radio" name="tip_option" value="0" checked> None</label>
+                        <label><input type="radio" name="tip_option" value="5"> 5% Tip</label>
+                        <label><input type="radio" name="tip_option" value="10"> 10% Tip</label>
+                        <label><input type="radio" name="tip_option" value="20"> 20% Tip</label>
+                        <label><input type="checkbox" name="apply_service_fee" id="opt-service-fee" value="1" <?php checked($data->service_fee > 0); ?>> Service Fee (3%)</label>
+                        
+                        <hr style="margin:5px 0;">
                         <label><input type="checkbox" name="make_recurring"> Make Recurring</label>
                     </div>
                 </div>
@@ -98,8 +108,17 @@
             
             <div class="billing-totals">
                 <div class="total-row"><span>Subtotal:</span> <span id="disp-subtotal">0.00</span></div>
+                
+                <div id="discount-row" style="display:none;" class="total-row">
+                    <span>Discount (%): <input type="number" step="1" name="discount_percent" id="discount_percent" value="0" style="width:60px;"></span> 
+                    <span id="disp-discount" style="color:red;">-0.00</span>
+                </div>
+
                 <div class="total-row"><span>Tax (6%):</span> <span id="disp-tax">0.00</span><input type="hidden" name="tax_rate" value="6"></div>
                 
+                <div id="service-fee-row" style="display:none;" class="total-row"><span>Service Fee (3%):</span> <span id="disp-service-fee">0.00</span></div>
+                <div id="tip-row" style="display:none;" class="total-row"><span>Tip:</span> <span id="disp-tip">0.00</span><input type="hidden" name="tip_amount" id="input_tip_amount" value="0"></div>
+
                 <div id="deposit-row" style="display:none; border-top:1px dashed #ccc; padding-top:10px; margin-top:10px;">
                     <label>Deposit Amount: $<input type="number" step="0.01" name="deposit_amount" value="<?php echo esc_attr($data->deposit_amount); ?>" style="width:100px;"></label>
                     <label style="margin-left:10px;">Final Due: <input type="date" name="final_due_date" value="<?php echo esc_attr($data->due_date); ?>"></label>
