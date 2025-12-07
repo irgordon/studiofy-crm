@@ -2,7 +2,7 @@
 /**
  * Admin Menu Controller
  * @package Studiofy\Admin
- * @version 2.2.37
+ * @version 2.2.38
  */
 
 declare(strict_types=1);
@@ -60,6 +60,7 @@ class Menu {
     }
 
     public function register_menu_pages(): void {
+        // FIX: Explicitly cast all strings to prevent null deprecations
         add_menu_page('Studiofy CRM', 'Studiofy CRM', 'manage_options', 'studiofy-dashboard', [$this->dashboardController, 'render_page'], 'dashicons-camera', 6);
         add_submenu_page('studiofy-dashboard', 'Dashboard', 'Dashboard', 'manage_options', 'studiofy-dashboard', [$this->dashboardController, 'render_page']);
         add_submenu_page('studiofy-dashboard', 'Customers', 'Customers', 'manage_options', 'studiofy-customers', [$this->customerController, 'render_page']);
@@ -70,6 +71,7 @@ class Menu {
         add_submenu_page('studiofy-dashboard', 'Galleries', 'Galleries', 'manage_options', 'studiofy-galleries', [$this->galleryController, 'render_page']);
         add_submenu_page('studiofy-dashboard', 'Settings', 'Settings', 'manage_options', 'studiofy-settings', [$this->settings, 'render_page']);
         
+        // Welcome Page (Parent is explicitly null)
         add_submenu_page(null, 'Welcome', 'Welcome', 'manage_options', 'studiofy-welcome', [$this, 'render_welcome_page']);
     }
 
@@ -77,6 +79,21 @@ class Menu {
         ?>
         <div class="wrap studiofy-welcome-wrap">
             <div class="studiofy-welcome-panel">
+                <div class="studiofy-logo" style="margin-bottom: 20px;">
+                    <svg width="120" height="120" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#4facfe;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#00f2fe;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <circle cx="50" cy="50" r="45" fill="#1d2327" />
+                        <circle cx="50" cy="50" r="35" fill="none" stroke="#fff" stroke-width="2" />
+                        <circle cx="50" cy="50" r="25" fill="url(#blueGradient)" />
+                        <circle cx="65" cy="35" r="5" fill="rgba(255,255,255,0.8)" />
+                    </svg>
+                </div>
+
                 <h1>Welcome to Studiofy CRM 📸</h1>
                 <p class="about-text">Get started by setting up your environment. Would you like to import demo data to see how the system works?</p>
                 <p>This will create sample Customers, Projects, Invoices, Contracts, and Galleries.</p>
@@ -97,7 +114,7 @@ class Menu {
     }
 
     public function enqueue_styles($hook): void {
-        if (strpos($hook, 'studiofy') === false) return;
+        if (strpos((string)$hook, 'studiofy') === false) return;
 
         wp_enqueue_style('dashicons');
         wp_enqueue_style('wp-color-picker');
@@ -128,6 +145,6 @@ class Menu {
         if ($screen && strpos($screen->id, 'studiofy') !== false) {
             return 'Studiofy CRM <b>v' . esc_html(STUDIOFY_VERSION) . '</b>';
         }
-        return $text;
+        return (string)$text;
     }
 }
