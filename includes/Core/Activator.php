@@ -2,7 +2,7 @@
 /**
  * Activator
  * @package Studiofy\Core
- * @version 2.2.57
+ * @version 2.2.58
  */
 
 declare(strict_types=1);
@@ -28,30 +28,7 @@ class Activator {
             'studiofy_tasks' => "CREATE TABLE {$wpdb->prefix}studiofy_tasks (id mediumint(9) NOT NULL AUTO_INCREMENT, milestone_id mediumint(9) NOT NULL, title varchar(255) NOT NULL, group_name varchar(100) DEFAULT 'General', priority varchar(20) DEFAULT 'Medium' NOT NULL, status varchar(20) DEFAULT 'created', assignee_id bigint(20) UNSIGNED DEFAULT 0, start_date date NULL, due_date date NULL, description longtext NULL, checklist_json longtext NULL, created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL, PRIMARY KEY (id)) $charset_collate;",
             'studiofy_galleries' => "CREATE TABLE {$wpdb->prefix}studiofy_galleries (id mediumint(9) NOT NULL AUTO_INCREMENT, title varchar(255) NOT NULL, customer_id mediumint(9) NULL, description longtext NULL, wp_page_id bigint(20) UNSIGNED NULL, password varchar(100) NULL, status varchar(20) DEFAULT 'draft' NOT NULL, created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL, PRIMARY KEY (id)) $charset_collate;",
             'studiofy_gallery_files' => "CREATE TABLE {$wpdb->prefix}studiofy_gallery_files (id mediumint(9) NOT NULL AUTO_INCREMENT, gallery_id mediumint(9) NOT NULL, uploaded_by bigint(20) NOT NULL, file_name varchar(255) NOT NULL, file_path text NOT NULL, file_url text NOT NULL, file_type varchar(50) NOT NULL, dimensions varchar(50) NULL, file_size varchar(50) NULL, meta_title varchar(255) NULL, meta_photographer varchar(100) NULL, meta_project varchar(100) NULL, is_watermarked boolean DEFAULT 0, created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL, PRIMARY KEY (id)) $charset_collate;",
-            
-            // UPDATED: Added payment_method and service_fee
-            'studiofy_invoices' => "CREATE TABLE {$wpdb->prefix}studiofy_invoices (
-                id mediumint(9) NOT NULL AUTO_INCREMENT, 
-                invoice_number varchar(50) NULL, 
-                customer_id mediumint(9) NOT NULL, 
-                project_id mediumint(9) NULL, 
-                title varchar(255) NOT NULL, 
-                amount decimal(10,2) NOT NULL, 
-                tax_amount decimal(10,2) DEFAULT 0.00, 
-                service_fee decimal(10,2) DEFAULT 0.00,
-                payment_method varchar(50) NULL,
-                line_items longtext NULL, 
-                issue_date date NULL, 
-                due_date date NOT NULL, 
-                status varchar(20) DEFAULT 'Draft' NOT NULL, 
-                payment_link text NULL, 
-                external_id varchar(100) NULL, 
-                order_id varchar(100) NULL, 
-                currency varchar(3) DEFAULT 'USD', 
-                created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL, 
-                PRIMARY KEY (id)
-            ) $charset_collate;",
-            
+            'studiofy_invoices' => "CREATE TABLE {$wpdb->prefix}studiofy_invoices (id mediumint(9) NOT NULL AUTO_INCREMENT, invoice_number varchar(50) NULL, customer_id mediumint(9) NOT NULL, project_id mediumint(9) NULL, title varchar(255) NOT NULL, amount decimal(10,2) NOT NULL, tax_amount decimal(10,2) DEFAULT 0.00, service_fee decimal(10,2) DEFAULT 0.00, payment_method varchar(50) NULL, line_items longtext NULL, issue_date date NULL, due_date date NOT NULL, status varchar(20) DEFAULT 'Draft' NOT NULL, payment_link text NULL, external_id varchar(100) NULL, order_id varchar(100) NULL, currency varchar(3) DEFAULT 'USD', created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL, PRIMARY KEY (id)) $charset_collate;",
             'studiofy_contracts' => "CREATE TABLE {$wpdb->prefix}studiofy_contracts (id mediumint(9) NOT NULL AUTO_INCREMENT, customer_id mediumint(9) NOT NULL, project_id mediumint(9) NULL, linked_post_id bigint(20) UNSIGNED NULL, title varchar(255) NOT NULL, amount decimal(10,2) DEFAULT 0.00, start_date date NULL, end_date date NULL, body_content longtext NOT NULL, signature_data longtext NULL, signed_name varchar(100) NULL, signed_at datetime NULL, status varchar(20) DEFAULT 'draft' NOT NULL, created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL, PRIMARY KEY (id)) $charset_collate;",
             'studiofy_bookings' => "CREATE TABLE {$wpdb->prefix}studiofy_bookings (id mediumint(9) NOT NULL AUTO_INCREMENT, customer_id mediumint(9) NULL, guest_name varchar(100) NULL, guest_email varchar(100) NULL, title varchar(255) NOT NULL, location varchar(255) NULL, notes longtext NULL, booking_date date NOT NULL, booking_time time NOT NULL, status varchar(20) DEFAULT 'Scheduled' NOT NULL, created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL, PRIMARY KEY (id)) $charset_collate;",
             'studiofy_gallery_selections' => "CREATE TABLE {$wpdb->prefix}studiofy_gallery_selections (id mediumint(9) NOT NULL AUTO_INCREMENT, gallery_id bigint(20) UNSIGNED NOT NULL, attachment_id bigint(20) UNSIGNED NOT NULL, status varchar(20) DEFAULT 'selected' NOT NULL, created_at datetime DEFAULT CURRENT_TIMESTAMP NOT NULL, PRIMARY KEY (id)) $charset_collate;",
@@ -70,9 +47,18 @@ class Activator {
             file_put_contents($dir . '/.htaccess', 'Options -Indexes');
         }
 
-        // Payment Page Logic
-        $payment_page_query = new \WP_Query(['post_type' => 'page', 'post_status' => 'publish', 's' => '[studiofy_payment]']);
-        if (!$payment_page_query->have_posts()) {
+        // FIX: Replaced deprecated get_page_by_title with WP_Query
+        $query = new \WP_Query([
+            'post_type' => 'page',
+            'title'     => 'Payment',
+            'post_status' => 'all',
+            'posts_per_page' => 1,
+            'no_found_rows' => true,
+            'update_post_term_cache' => false,
+            'update_post_meta_cache' => false,
+        ]);
+
+        if (!$query->have_posts()) {
             wp_insert_post([
                 'post_title'    => 'Payment',
                 'post_content'  => '[studiofy_payment]',
