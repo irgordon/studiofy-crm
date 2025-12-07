@@ -38,7 +38,7 @@
                     <div class="signed-box">
                         <img src="<?php echo esc_url($contract->signature_data); ?>" style="max-width:250px;">
                         <p>Signed by: <strong><?php echo esc_html($contract->signed_name); ?></strong><br>
-                        Date: <?php echo esc_html($contract->signed_at); ?></p>
+                        Date: <?php echo esc_html($contract->signed_at ?? 'N/A'); ?></p>
                     </div>
                 <?php else: ?>
                     <div class="unsigned-box">
