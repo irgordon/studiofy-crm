@@ -11,7 +11,7 @@ namespace Studiofy\Core;
 
 class Activator {
     public static function activate(): void {
-        // Prevent output buffering issues that might cause "Access Not Allowed"
+        // Prevent output buffering issues that might cause "Access Not Allowed" on some hosts
         ob_start();
 
         if (!current_user_can('activate_plugins')) {
@@ -48,8 +48,9 @@ class Activator {
             file_put_contents($dir . '/.htaccess', 'Options -Indexes');
         }
 
-        // Set Activation Redirect Flag
+        // Set Activation Redirect Flag safely using add_option (fails if exists, which is good for updates)
         add_option('studiofy_do_activation_redirect', true);
+        
         update_option('studiofy_db_version', STUDIOFY_DB_VERSION);
         
         ob_end_clean();
