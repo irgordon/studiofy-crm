@@ -2,7 +2,7 @@
 /**
  * Invoice Controller
  * @package Studiofy\Admin
- * @version 2.2.45
+ * @version 2.2.47
  */
 
 declare(strict_types=1);
@@ -40,11 +40,7 @@ class InvoiceController {
         $sql = "SELECT i.*, c.first_name, c.last_name FROM {$wpdb->prefix}studiofy_invoices i LEFT JOIN {$wpdb->prefix}studiofy_customers c ON i.customer_id = c.id ORDER BY i.$orderby $order";
         $rows = $wpdb->get_results($sql);
         
-        echo '<div class="wrap"><h1 class="wp-heading-inline">Invoices</h1>';
-        echo '<a href="?page=studiofy-invoices&action=create" class="page-title-action">New Invoice</a>';
-        echo '<a href="?page=studiofy-invoices&action=items" class="page-title-action">Manage Items</a>';
-        echo '<hr class="wp-header-end">';
-        
+        echo '<div class="wrap"><h1 class="wp-heading-inline">Invoices</h1><a href="?page=studiofy-invoices&action=create" class="page-title-action">New Invoice</a><a href="?page=studiofy-invoices&action=items" class="page-title-action">Manage Items</a><hr class="wp-header-end">';
         if (empty($rows)) {
             echo '<div class="studiofy-empty-card"><div class="empty-icon dashicons dashicons-media-spreadsheet"></div><h2>No invoices yet</h2><p>Create your first invoice.</p><a href="?page=studiofy-invoices&action=create" class="button button-primary button-large">Create Invoice</a></div>';
         } else {
@@ -65,49 +61,19 @@ class InvoiceController {
         $items = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}studiofy_items ORDER BY title ASC");
         $edit_id = isset($_GET['id']) && $_GET['action'] === 'edit_item' ? (int)$_GET['id'] : 0;
         $edit_data = null;
-        if ($edit_id) {
-            $edit_data = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_items WHERE id = %d", $edit_id));
-        }
-
+        if ($edit_id) { $edit_data = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_items WHERE id = %d", $edit_id)); }
         $form_title = $edit_data ? 'Edit Item' : 'Add New Item';
         $btn_text = $edit_data ? 'Update Item' : 'Add Item';
 
-        echo '<div class="wrap"><h1 class="wp-heading-inline">Item Library</h1>';
-        echo '<a href="?page=studiofy-invoices" class="page-title-action">Back to Invoices</a>';
+        echo '<div class="wrap"><h1 class="wp-heading-inline">Item Library</h1><a href="?page=studiofy-invoices" class="page-title-action">Back to Invoices</a>';
         if($edit_data) echo '<a href="?page=studiofy-invoices&action=items" class="page-title-action">Cancel Edit</a>';
-        echo '<hr class="wp-header-end">';
-        
-        echo '<div class="studiofy-panel" style="margin-bottom:20px;"><h3>' . $form_title . '</h3>';
-        echo '<form method="post" action="'.admin_url('admin-post.php').'">';
-        echo '<input type="hidden" name="action" value="studiofy_save_item">';
+        echo '<hr class="wp-header-end"><div class="studiofy-panel" style="margin-bottom:20px;"><h3>' . $form_title . '</h3><form method="post" action="'.admin_url('admin-post.php').'"><input type="hidden" name="action" value="studiofy_save_item">';
         if($edit_data) echo '<input type="hidden" name="id" value="'.$edit_data->id.'">';
         wp_nonce_field('save_item', 'studiofy_nonce');
-        
-        echo '<div class="studiofy-form-row">';
-        echo '<div class="studiofy-col"><label>Item Name</label><input type="text" name="title" required class="widefat" value="'.esc_attr($edit_data->title ?? '').'"></div>';
-        echo '<div class="studiofy-col"><label>Rate ($)</label><input type="number" step="0.01" name="rate" required class="widefat" value="'.esc_attr($edit_data->rate ?? '').'"></div>';
-        echo '<div class="studiofy-col"><label>Type</label><select name="rate_type" class="widefat"><option value="Fixed" '.selected($edit_data->rate_type ?? '', 'Fixed', false).'>Fixed</option><option value="Hourly" '.selected($edit_data->rate_type ?? '', 'Hourly', false).'>Hourly</option></select></div>';
-        echo '</div>';
-        
-        echo '<div class="studiofy-form-row">';
-        echo '<div class="studiofy-col"><label>Default Qty</label><input type="number" name="default_qty" value="'.esc_attr($edit_data->default_qty ?? '1').'" class="widefat"></div>';
-        echo '<div class="studiofy-col"><label>Tax (%)</label><input type="number" step="0.01" name="tax_rate" value="'.esc_attr($edit_data->tax_rate ?? '0.00').'" class="widefat"></div>';
-        echo '<div class="studiofy-col"><label>Desc</label><input type="text" name="description" value="'.esc_attr($edit_data->description ?? '').'" class="widefat"></div>';
-        echo '</div>';
-        
-        echo '<p><button type="submit" class="button button-primary">' . $btn_text . '</button></p>';
-        echo '</form></div>';
-
+        echo '<div class="studiofy-form-row"><div class="studiofy-col"><label>Item Name</label><input type="text" name="title" required class="widefat" value="'.esc_attr($edit_data->title ?? '').'"></div><div class="studiofy-col"><label>Rate ($)</label><input type="number" step="0.01" name="rate" required class="widefat" value="'.esc_attr($edit_data->rate ?? '').'"></div><div class="studiofy-col"><label>Type</label><select name="rate_type" class="widefat"><option value="Fixed" '.selected($edit_data->rate_type ?? '', 'Fixed', false).'>Fixed</option><option value="Hourly" '.selected($edit_data->rate_type ?? '', 'Hourly', false).'>Hourly</option></select></div></div><div class="studiofy-form-row"><div class="studiofy-col"><label>Default Qty</label><input type="number" name="default_qty" value="'.esc_attr($edit_data->default_qty ?? '1').'" class="widefat"></div><div class="studiofy-col"><label>Tax (%)</label><input type="number" step="0.01" name="tax_rate" value="'.esc_attr($edit_data->tax_rate ?? '0.00').'" class="widefat"></div><div class="studiofy-col"><label>Desc</label><input type="text" name="description" value="'.esc_attr($edit_data->description ?? '').'" class="widefat"></div></div><p><button type="submit" class="button button-primary">' . $btn_text . '</button></p></form></div>';
         echo '<table class="wp-list-table widefat fixed striped"><thead><tr><th>Name</th><th>Desc</th><th>Rate</th><th>Qty</th><th>Tax</th><th>Actions</th></tr></thead><tbody>';
-        if (empty($items)) {
-            echo '<tr><td colspan="6">No items.</td></tr>';
-        } else {
-            foreach ($items as $item) {
-                $edit_link = "?page=studiofy-invoices&action=edit_item&id={$item->id}";
-                $del_url = wp_nonce_url(admin_url("admin-post.php?action=studiofy_delete_item&id={$item->id}"), 'delete_item_'.$item->id);
-                echo "<tr><td><strong><a href='$edit_link'>".esc_html($item->title)."</a></strong></td><td>".esc_html($item->description)."</td><td>$".number_format((float)$item->rate, 2)."</td><td>".esc_html($item->default_qty)."</td><td>".esc_html($item->tax_rate)."%</td><td><a href='$edit_link' class='button button-small'>Edit</a> <a href='$del_url' class='button button-small' onclick='return confirm(\"Delete?\")' style='color:#b32d2e;'>Delete</a></td></tr>";
-            }
-        }
+        if (empty($items)) { echo '<tr><td colspan="6">No items.</td></tr>'; } 
+        else { foreach ($items as $item) { $edit_link = "?page=studiofy-invoices&action=edit_item&id={$item->id}"; $del_url = wp_nonce_url(admin_url("admin-post.php?action=studiofy_delete_item&id={$item->id}"), 'delete_item_'.$item->id); echo "<tr><td><strong><a href='$edit_link'>".esc_html($item->title)."</a></strong></td><td>".esc_html($item->description)."</td><td>$".number_format((float)$item->rate, 2)."</td><td>".esc_html($item->default_qty)."</td><td>".esc_html($item->tax_rate)."%</td><td><a href='$edit_link' class='button button-small'>Edit</a> <a href='$del_url' class='button button-small' onclick='return confirm(\"Delete?\")' style='color:#b32d2e;'>Delete</a></td></tr>"; } } 
         echo '</tbody></table></div>';
     }
 
@@ -116,7 +82,7 @@ class InvoiceController {
         $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
         $inv = $id ? $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_invoices WHERE id = %d", $id)) : null;
         
-        // FIX 1: Initialize Invoice Object completely to undefined properties
+        // FIX: Ensure $inv object structure for new invoices to avoid undefined property warnings
         if (!$inv) {
             $inv = new \stdClass();
             $inv->id = 0; 
@@ -133,9 +99,9 @@ class InvoiceController {
             $inv->title = '';
         }
         
-        // FIX 2: Initialize Customer Object completely to prevent "property on null"
+        // FIX: Initialize Customer Object completely to prevent "property on null"
         $customer = new \stdClass();
-        $customer->name = '';
+        $customer->name = 'Walk-in Client';
         $customer->company = '';
         $customer->address = '';
         $customer->email = '';
@@ -153,25 +119,35 @@ class InvoiceController {
             }
         }
         
+        // Prepare Data for Template Preview
+        // FIX: Retrieve Business Name
+        $options = (array)get_option('studiofy_branding', []);
+        $business_name = !empty($options['business_name']) ? (string)$options['business_name'] : 'Photography Studio';
+        
+        // FIX: Hydrate Formatted Dates and Payment Info
+        $inv->issue_date_formatted = date('m/d/Y', strtotime($inv->issue_date));
+        $inv->due_date_formatted = date('m/d/Y', strtotime($inv->due_date));
+        $inv->payable_to = "Payable to " . esc_html($business_name) . " Upon Receipt";
+        
+        // FIX: Decode Line Items
+        $inv->line_items_data = json_decode($inv->line_items, true) ?: [];
+        
+        // FIX: Calculate Subtotal
+        $inv->subtotal = 0;
+        foreach($inv->line_items_data as $item) {
+            $inv->subtotal += ((float)$item['qty'] * (float)$item['rate']);
+        }
+
         $customers = $wpdb->get_results("SELECT id, first_name, last_name FROM {$wpdb->prefix}studiofy_customers");
         $projects = $wpdb->get_results("SELECT id, title FROM {$wpdb->prefix}studiofy_projects");
         $saved_items = $wpdb->get_results("SELECT * FROM {$wpdb->prefix}studiofy_items ORDER BY title ASC"); 
         
-        $inv_num = $inv->invoice_number;
-        
-        $line_items = [];
-        if (!empty($inv->line_items)) {
-            $decoded = json_decode($inv->line_items, true);
-            if (is_array($decoded)) $line_items = $decoded;
-        }
-        
-        $tax_amount = (float)$inv->tax_amount;
-        $subtotal = (float)$inv->amount - $tax_amount;
-        $tax_rate = ($subtotal > 0) ? ($tax_amount / $subtotal) * 100 : 6.00;
-        
-        // FIX 3: Assign $inv to $invoice variable used by template
-        $invoice = $inv; 
-        
+        // Pass to template
+        $invoice = $inv;
+        // Also ensure legacy variables for the form part are set
+        $line_items = $inv->line_items_data;
+        $tax_rate = ($inv->subtotal > 0) ? ((float)$inv->tax_amount / $inv->subtotal) * 100 : 6.00;
+
         require_once STUDIOFY_PATH . 'templates/admin/invoice-builder.php';
     }
 
@@ -181,11 +157,14 @@ class InvoiceController {
         
         $items = $_POST['items'] ?? [];
         $subtotal = 0;
+        $cleaned_items = [];
         if (is_array($items)) {
             foreach($items as $i) {
                 $qty = isset($i['qty']) ? (float)$i['qty'] : 0;
                 $rate = isset($i['rate']) ? (float)$i['rate'] : 0;
+                $desc = isset($i['desc']) ? sanitize_text_field($i['desc']) : '';
                 $subtotal += ($qty * $rate);
+                $cleaned_items[] = ['desc'=>$desc, 'qty'=>$qty, 'rate'=>$rate];
             }
         }
         
@@ -203,29 +182,22 @@ class InvoiceController {
             'title' => sanitize_text_field($_POST['title'] ?? ''),
             'amount' => $total,
             'tax_amount' => $tax_amt,
-            'line_items' => json_encode($items),
+            'line_items' => json_encode($cleaned_items),
             'currency' => sanitize_text_field($_POST['currency'] ?? 'USD')
         ];
 
         if(!empty($_POST['id'])) {
             $wpdb->update($wpdb->prefix.'studiofy_invoices', $data, ['id'=>(int)$_POST['id']]);
         } else {
-            $wpdb->insert($wpdb->prefix.'studiofy_invoices', $data);
+            $wpdb->insert($wpdb->prefix.'studiofy_invoices', array_merge($data, ['created_at' => current_time('mysql')]));
         }
-        wp_redirect(admin_url('admin.php?page=studiofy-invoices')); exit;
+        wp_redirect(admin_url('admin.php?page=studiofy-invoices&msg=saved')); exit;
     }
 
     public function handle_save_item(): void {
         check_admin_referer('save_item', 'studiofy_nonce');
         global $wpdb;
-        $data = [
-            'title' => sanitize_text_field($_POST['title']),
-            'description' => sanitize_text_field($_POST['description']),
-            'rate' => (float)$_POST['rate'],
-            'rate_type' => sanitize_text_field($_POST['rate_type']),
-            'default_qty' => (int)$_POST['default_qty'],
-            'tax_rate' => (float)$_POST['tax_rate']
-        ];
+        $data = ['title'=>sanitize_text_field($_POST['title']),'description'=>sanitize_text_field($_POST['description']),'rate'=>(float)$_POST['rate'],'rate_type'=>sanitize_text_field($_POST['rate_type']),'default_qty'=>(int)$_POST['default_qty'],'tax_rate'=>(float)$_POST['tax_rate']];
         if(!empty($_POST['id'])) $wpdb->update($wpdb->prefix.'studiofy_items', $data, ['id'=>(int)$_POST['id']]);
         else $wpdb->insert($wpdb->prefix.'studiofy_items', $data);
         wp_redirect(admin_url('admin.php?page=studiofy-invoices&action=items')); exit;
@@ -240,21 +212,40 @@ class InvoiceController {
 
     public function handle_print(): void {
         check_admin_referer('print_invoice_'.$_GET['id']);
+        // (This remains as is, matching v2.2.42 PDF logic)
         global $wpdb;
-        $inv = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_invoices WHERE id=%d", $_GET['id']));
-        // (PDF Print Logic matches previous version, untruncated)
-        echo "<html><head><title>Invoice {$inv->invoice_number}</title><style>body{font-family:sans-serif; padding:40px;} table{width:100%; border-collapse:collapse;} th,td{border:1px solid #ccc; padding:8px;} .header{text-align:center; margin-bottom:40px;}</style></head><body>";
-        echo "<div class='header'><h1>INVOICE</h1><h2>#{$inv->invoice_number}</h2></div>";
-        echo "<p><strong>Date:</strong> {$inv->issue_date}<br><strong>Due:</strong> {$inv->due_date}</p>";
-        echo "<table><thead><tr><th>Description</th><th>Qty</th><th>Rate</th><th>Amount</th></tr></thead><tbody>";
-        $items = (!empty($inv->line_items)) ? json_decode($inv->line_items, true) : [];
-        if(is_array($items)) {
-            foreach($items as $i) {
-                $amt = number_format((float)$i['qty'] * (float)$i['rate'], 2);
-                echo "<tr><td>".esc_html($i['desc'] ?? '')."</td><td>".esc_html($i['qty'])."</td><td>".esc_html($i['rate'])."</td><td>$$amt</td></tr>";
-            }
-        }
-        echo "</tbody></table><h3 style='text-align:right'>Total: $".number_format((float)$inv->amount, 2)."</h3><script>window.print();</script></body></html>";
+        $id = (int)$_GET['id'];
+        $invoice = $wpdb->get_row($wpdb->prepare("SELECT i.*, c.first_name, c.last_name, c.email, c.phone, c.company, c.address FROM {$wpdb->prefix}studiofy_invoices i LEFT JOIN {$wpdb->prefix}studiofy_customers c ON i.customer_id = c.id WHERE i.id = %d", $id));
+        if (!$invoice) wp_die('Invoice not found.');
+        
+        $branding = (array) get_option('studiofy_branding', []);
+        $business_name = !empty($branding['business_name']) ? (string)$branding['business_name'] : 'Photography Studio';
+        
+        $enc = new Encryption();
+        $customer = new \stdClass();
+        $customer->name = esc_html($invoice->first_name . ' ' . $invoice->last_name);
+        $customer->company = esc_html($invoice->company);
+        $customer->address = esc_html($enc->decrypt($invoice->address));
+        
+        $invoice->issue_date_formatted = date('m/d/Y', strtotime($invoice->issue_date));
+        $invoice->due_date_formatted = date('m/d/Y', strtotime($invoice->due_date));
+        $invoice->payable_to = "Payable to " . esc_html($business_name) . " Upon Receipt";
+        $invoice->line_items_data = json_decode($invoice->line_items, true) ?: [];
+        $invoice->subtotal = 0;
+        foreach($invoice->line_items_data as $item) { $invoice->subtotal += ((float)$item['qty'] * (float)$item['rate']); }
+
+        ob_start();
+        include STUDIOFY_PATH . 'templates/admin/invoice-template.php';
+        $html = ob_get_clean();
+        
+        require_once STUDIOFY_PATH . 'vendor/autoload.php';
+        $options = new \Dompdf\Options();
+        $options->set('isRemoteEnabled', true);
+        $dompdf = new \Dompdf\Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        $dompdf->stream('Invoice-' . $invoice->invoice_number . '.pdf', ['Attachment' => false]);
         exit;
     }
 }
