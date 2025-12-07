@@ -2,14 +2,14 @@
 /**
  * Plugin Name: Studiofy CRM
  * Description: A comprehensive Elementor Addon and CRM for Photographers.
- * Version: 2.2.44
+ * Version: 2.2.45
  * Author: Ian R. Gordon
  * Text Domain: studiofy
  * Requires PHP: 8.1
  * Requires at least: 6.6
  * Elementor tested up to: 3.25.0
  * @package Studiofy
- * @version 2.2.44
+ * @version 2.2.45
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ add_action('send_headers', function() {
     }
 });
 
-define('STUDIOFY_VERSION', '2.2.44');
+define('STUDIOFY_VERSION', '2.2.45');
 define('STUDIOFY_DB_VERSION', '2.16');
 define('STUDIOFY_PATH', plugin_dir_path(__FILE__));
 define('STUDIOFY_URL', plugin_dir_url(__FILE__));
@@ -109,7 +109,7 @@ function studiofy_register_cpt(): void {
         'map_meta_cap' => true,
     ]);
 
-    // 2. Private Galleries (FIX: Renamed to 'studiofy_gal' to fit 20-char limit)
+    // 2. Private Galleries
     register_post_type('studiofy_gal', [
         'labels' => ['name' => 'Client Galleries', 'singular_name' => 'Client Gallery'],
         'public' => true, 
