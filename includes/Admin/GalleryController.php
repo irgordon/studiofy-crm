@@ -2,7 +2,7 @@
 /**
  * Gallery Controller
  * @package Studiofy\Admin
- * @version 2.2.42
+ * @version 2.2.43
  */
 
 declare(strict_types=1);
@@ -192,12 +192,12 @@ class GalleryController {
         
         $pass = !empty($gallery->password) ? $gallery->password : wp_generate_password(8, false);
         
-        // FIXED: Create 'studiofy_gallery_page' CPT instead of 'page'
+        // FIXED: Using studiofy_gal CPT to avoid menu length issue
         $pid = wp_insert_post([
             'post_title'   => $gallery->title . ' - Proofing',
             'post_content' => '[studiofy_proof_gallery id="' . $id . '"]',
             'post_status'  => 'publish',
-            'post_type'    => 'studiofy_gallery_page', // Use new CPT to hide from menus
+            'post_type'    => 'studiofy_gal', 
             'post_password'=> $pass
         ]);
         
