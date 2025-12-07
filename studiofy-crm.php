@@ -2,14 +2,14 @@
 /**
  * Plugin Name: Studiofy CRM
  * Description: A comprehensive Elementor Addon and CRM for Photographers.
- * Version: 2.3.2
+ * Version: 2.3.5
  * Author: Ian R. Gordon
  * Text Domain: studiofy
  * Requires PHP: 8.1
  * Requires at least: 6.6
  * Elementor tested up to: 3.25.0
  * @package Studiofy
- * @version 2.3.2
+ * @version 2.3.5
  */
 
 declare(strict_types=1);
@@ -30,8 +30,8 @@ add_action('send_headers', function() {
     }
 });
 
-define('STUDIOFY_VERSION', '2.3.2');
-define('STUDIOFY_DB_VERSION', '2.19');
+define('STUDIOFY_VERSION', '2.3.5');
+define('STUDIOFY_DB_VERSION', '2.20'); // Bumped for Signature Columns
 define('STUDIOFY_PATH', plugin_dir_path(__FILE__));
 define('STUDIOFY_URL', plugin_dir_url(__FILE__));
 
@@ -78,11 +78,10 @@ function studiofy_check_dependencies(): void {
 
         $plugin = 'elementor/elementor.php';
         $installed = get_plugins();
-        $is_installed = isset($installed[$plugin]);
-        $url = $is_installed 
+        $url = isset($installed[$plugin]) 
             ? wp_nonce_url('plugins.php?action=activate&plugin='.$plugin, 'activate-plugin_'.$plugin)
             : wp_nonce_url(self_admin_url('update.php?action=install-plugin&plugin=elementor'), 'install-plugin_elementor');
-        $text = $is_installed ? 'Activate Elementor' : 'Install Elementor Now';
+        $text = isset($installed[$plugin]) ? 'Activate Elementor' : 'Install Elementor Now';
 
         echo '<div class="notice notice-error"><p><strong>Studiofy CRM</strong> requires <strong>Elementor</strong> for frontend features.</p><p><a href="'.$url.'" class="button button-primary">'.$text.'</a></p></div>';
     });
@@ -98,7 +97,6 @@ function studiofy_update_db_check(): void {
 add_action('plugins_loaded', 'Studiofy\\studiofy_update_db_check');
 
 function studiofy_register_cpt(): void {
-    // 1. Billing Docs (Contracts/Invoices Combined)
     register_post_type('studiofy_doc', [
         'labels' => ['name' => 'Billing Docs', 'singular_name' => 'Billing Doc'],
         'public' => true, 
@@ -109,7 +107,6 @@ function studiofy_register_cpt(): void {
         'map_meta_cap' => true,
     ]);
 
-    // 2. Private Galleries
     register_post_type('studiofy_gal', [
         'labels' => ['name' => 'Client Galleries', 'singular_name' => 'Client Gallery'],
         'public' => true, 
@@ -125,7 +122,6 @@ function studiofy_register_cpt(): void {
 }
 add_action('init', 'Studiofy\\studiofy_register_cpt');
 
-// Force Elementor support
 add_action('elementor/init', function() {
     add_post_type_support('studiofy_doc', 'elementor');
     add_post_type_support('studiofy_gal', 'elementor');
