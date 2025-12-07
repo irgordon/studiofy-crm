@@ -2,7 +2,7 @@
 /**
  * Invoice Controller
  * @package Studiofy\Admin
- * @version 2.2.11
+ * @version 2.2.28
  */
 
 declare(strict_types=1);
@@ -52,7 +52,6 @@ class InvoiceController {
         echo '<hr class="wp-header-end">';
         
         if ($count == 0) {
-            // Corrected Empty State UI
             echo '<div class="studiofy-empty-card">';
             echo '<div class="empty-icon dashicons dashicons-media-spreadsheet"></div>';
             echo '<h2>No invoices yet</h2>';
@@ -104,7 +103,6 @@ class InvoiceController {
         $projects = $wpdb->get_results("SELECT id, title FROM {$wpdb->prefix}studiofy_projects");
         $inv_num = $inv ? $inv->invoice_number : 'INV-' . strtoupper(uniqid());
         
-        // FIX: Check if line_items is not empty before decoding
         $line_items = [];
         if ($inv && !empty($inv->line_items)) {
             $decoded = json_decode($inv->line_items, true);
@@ -115,8 +113,6 @@ class InvoiceController {
         
         $tax_amount = $inv ? (float)$inv->tax_amount : 0;
         $subtotal = $inv ? (float)$inv->amount - $tax_amount : 0;
-        
-        // Calculate rate based on stored amount for display if needed, or default to 0
         $tax_rate = ($subtotal > 0) ? ($tax_amount / $subtotal) * 100 : 0;
         
         require_once STUDIOFY_PATH . 'templates/admin/invoice-builder.php';
@@ -126,7 +122,6 @@ class InvoiceController {
         check_admin_referer('save_invoice', 'studiofy_nonce');
         global $wpdb;
         
-        // FIX: Use Null Coalescing (??) for ALL POST inputs to prevent ltrim(null) warnings
         $items = $_POST['items'] ?? [];
         $subtotal = 0;
         if (is_array($items)) {
@@ -179,12 +174,16 @@ class InvoiceController {
             foreach($items as $i) {
                 $qty = isset($i['qty']) ? (float)$i['qty'] : 0;
                 $rate = isset($i['rate']) ? (float)$i['rate'] : 0;
-                $amt = number_format($qty * $rate, 2);
+                $amt = number_format($qty * $rate, 2); // Calculated safely
                 echo "<tr><td>".esc_html($i['desc'] ?? '')."</td><td>".esc_html($qty)."</td><td>".esc_html($rate)."</td><td>$$amt</td></tr>";
             }
         }
         echo "</tbody></table>";
-        echo "<h3 style='text-align:right'>Total: $".number_format($inv->amount, 2)."</h3>";
+        
+        // FIX: Cast to float for number_format
+        $total = (float)$inv->amount;
+        echo "<h3 style='text-align:right'>Total: $".number_format($total, 2)."</h3>";
+        
         echo "<script>window.print();</script></body></html>";
         exit;
     }
