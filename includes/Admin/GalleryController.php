@@ -2,7 +2,7 @@
 /**
  * Gallery Controller
  * @package Studiofy\Admin
- * @version 2.2.34
+ * @version 2.2.42
  */
 
 declare(strict_types=1);
@@ -19,12 +19,100 @@ class GalleryController {
         add_action('rest_api_init', [$this, 'register_routes']);
     }
 
-    // ... (routes, API handlers remain unchanged, skipping for brevity but they are included in full) ...
-    public function register_routes(): void { register_rest_route('studiofy/v1', '/galleries/(?P<id>\d+)/files', ['methods' => 'GET', 'callback' => [$this, 'get_gallery_files'], 'permission_callback' => fn() => current_user_can('upload_files')]); register_rest_route('studiofy/v1', '/galleries/files/(?P<id>\d+)', ['methods' => 'DELETE', 'callback' => [$this, 'delete_file'], 'permission_callback' => fn() => current_user_can('upload_files')]); register_rest_route('studiofy/v1', '/galleries/files/(?P<id>\d+)', ['methods' => 'POST', 'callback' => [$this, 'update_file_meta'], 'permission_callback' => fn() => current_user_can('upload_files')]); }
-    public function get_gallery_files(\WP_REST_Request $request): \WP_REST_Response { global $wpdb; $id = $request->get_param('id'); $files = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_gallery_files WHERE gallery_id = %d ORDER BY created_at DESC", $id)); return new \WP_REST_Response($files, 200); }
-    public function delete_file(\WP_REST_Request $request): \WP_REST_Response { global $wpdb; $id = $request->get_param('id'); $file = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_gallery_files WHERE id = %d", $id)); if ($file) { if(file_exists($file->file_path)) unlink($file->file_path); $wpdb->delete($wpdb->prefix.'studiofy_gallery_files', ['id'=>$id]); return new \WP_REST_Response(['success'=>true],200); } return new \WP_REST_Response(['success'=>false],404); }
-    public function update_file_meta(\WP_REST_Request $request): \WP_REST_Response { global $wpdb; $id = $request->get_param('id'); $p = $request->get_json_params(); $u = $wpdb->update($wpdb->prefix.'studiofy_gallery_files', ['meta_title'=>sanitize_text_field($p['meta_title']),'meta_photographer'=>sanitize_text_field($p['meta_photographer']),'meta_project'=>sanitize_text_field($p['meta_project'])], ['id'=>$id]); return new \WP_REST_Response(['success'=>(bool)$u],200); }
-    public function handle_chunk_upload(): void { /* ... Same Chunk Logic as v2.2.27 ... */ check_ajax_referer('studiofy_upload_chunk', 'nonce'); if (!current_user_can('upload_files')) wp_send_json_error('Unauthorized'); $gallery_id = (int)$_POST['gallery_id']; $file_name  = sanitize_file_name($_POST['file_name']); $chunk_idx  = (int)$_POST['chunk_index']; $total_chunks = (int)$_POST['total_chunks']; $ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION)); $allowed = ['jpg', 'jpeg', 'png', 'gif', 'cr2', 'nef', 'arw', 'dng', 'orf', 'raf']; if (!in_array($ext, $allowed)) wp_send_json_error('Invalid file type.'); $upload_dir = wp_upload_dir(); $target_dir = $upload_dir['basedir'] . '/studiofy_galleries/' . $gallery_id; if (!file_exists($target_dir)) mkdir($target_dir, 0755, true); $temp_file = $target_dir . '/' . $file_name . '.part'; $final_file = $target_dir . '/' . $file_name; if (!empty($_FILES['file_chunk']['tmp_name'])) { $in = fopen($_FILES['file_chunk']['tmp_name'], 'rb'); $out = fopen($temp_file, $chunk_idx === 0 ? 'wb' : 'ab'); if ($in && $out) { while (!feof($in)) { fwrite($out, fread($in, 8192)); } fclose($in); fclose($out); } else { wp_send_json_error('Server Write Error'); } unlink($_FILES['file_chunk']['tmp_name']); } if ($chunk_idx === ($total_chunks - 1)) { rename($temp_file, $final_file); $filesize = size_format(filesize($final_file)); $dims = ''; if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) { $info = getimagesize($final_file); $dims = $info ? $info[0] . 'x' . $info[1] : ''; } global $wpdb; $wpdb->insert($wpdb->prefix . 'studiofy_gallery_files', [ 'gallery_id' => $gallery_id, 'uploaded_by' => get_current_user_id(), 'file_name' => $file_name, 'file_path' => $final_file, 'file_url'  => $upload_dir['baseurl'] . '/studiofy_galleries/' . $gallery_id . '/' . $file_name, 'file_type' => $ext, 'dimensions' => $dims, 'file_size' => $filesize, 'created_at' => current_time('mysql') ]); wp_send_json_success(['status' => 'complete']); } else { wp_send_json_success(['status' => 'chunk_uploaded']); } }
+    public function register_routes(): void {
+        register_rest_route('studiofy/v1', '/galleries/(?P<id>\d+)/files', ['methods' => 'GET', 'callback' => [$this, 'get_gallery_files'], 'permission_callback' => fn() => current_user_can('upload_files')]);
+        register_rest_route('studiofy/v1', '/galleries/files/(?P<id>\d+)', ['methods' => 'DELETE', 'callback' => [$this, 'delete_file'], 'permission_callback' => fn() => current_user_can('upload_files')]);
+        register_rest_route('studiofy/v1', '/galleries/files/(?P<id>\d+)', ['methods' => 'POST', 'callback' => [$this, 'update_file_meta'], 'permission_callback' => fn() => current_user_can('upload_files')]);
+    }
+
+    public function get_gallery_files(\WP_REST_Request $request): \WP_REST_Response {
+        global $wpdb;
+        $id = $request->get_param('id');
+        $files = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_gallery_files WHERE gallery_id = %d ORDER BY created_at DESC", $id));
+        return new \WP_REST_Response($files, 200);
+    }
+
+    public function delete_file(\WP_REST_Request $request): \WP_REST_Response {
+        global $wpdb;
+        $id = $request->get_param('id');
+        $file = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_gallery_files WHERE id = %d", $id));
+        if ($file) {
+            if (file_exists($file->file_path)) unlink($file->file_path);
+            $wpdb->delete($wpdb->prefix . 'studiofy_gallery_files', ['id' => $id]);
+            return new \WP_REST_Response(['success' => true], 200);
+        }
+        return new \WP_REST_Response(['success' => false], 404);
+    }
+
+    public function update_file_meta(\WP_REST_Request $request): \WP_REST_Response {
+        global $wpdb;
+        $id = $request->get_param('id');
+        $params = $request->get_json_params();
+        $updated = $wpdb->update($wpdb->prefix.'studiofy_gallery_files', [
+            'meta_title' => sanitize_text_field($params['meta_title']),
+            'meta_photographer' => sanitize_text_field($params['meta_photographer']),
+            'meta_project' => sanitize_text_field($params['meta_project']),
+        ], ['id' => $id]);
+        return new \WP_REST_Response(['success' => (bool)$updated], 200);
+    }
+
+    public function handle_chunk_upload(): void {
+        check_ajax_referer('studiofy_upload_chunk', 'nonce');
+        if (!current_user_can('upload_files')) wp_send_json_error('Unauthorized');
+
+        $gallery_id = (int)$_POST['gallery_id'];
+        $file_name  = sanitize_file_name($_POST['file_name']);
+        $chunk_idx  = (int)$_POST['chunk_index'];
+        $total_chunks = (int)$_POST['total_chunks'];
+
+        $ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+        $allowed = ['jpg', 'jpeg', 'png', 'gif', 'cr2', 'nef', 'arw', 'dng', 'orf', 'raf'];
+        if (!in_array($ext, $allowed)) wp_send_json_error('Invalid file type.');
+
+        $upload_dir = wp_upload_dir();
+        $target_dir = $upload_dir['basedir'] . '/studiofy_galleries/' . $gallery_id;
+        if (!file_exists($target_dir)) mkdir($target_dir, 0755, true);
+
+        $temp_file = $target_dir . '/' . $file_name . '.part';
+        $final_file = $target_dir . '/' . $file_name;
+
+        if (!empty($_FILES['file_chunk']['tmp_name'])) {
+            $in = fopen($_FILES['file_chunk']['tmp_name'], 'rb');
+            $out = fopen($temp_file, $chunk_idx === 0 ? 'wb' : 'ab'); 
+            if ($in && $out) {
+                while (!feof($in)) fwrite($out, fread($in, 8192)); 
+                fclose($in); fclose($out);
+            } else {
+                wp_send_json_error('Server Write Error');
+            }
+            unlink($_FILES['file_chunk']['tmp_name']);
+        }
+
+        if ($chunk_idx === ($total_chunks - 1)) {
+            rename($temp_file, $final_file);
+            $filesize = size_format(filesize($final_file));
+            $dims = '';
+            if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) {
+                $info = getimagesize($final_file);
+                $dims = $info ? $info[0] . 'x' . $info[1] : '';
+            }
+            global $wpdb;
+            $wpdb->insert($wpdb->prefix . 'studiofy_gallery_files', [
+                'gallery_id' => $gallery_id,
+                'uploaded_by' => get_current_user_id(),
+                'file_name' => $file_name,
+                'file_path' => $final_file,
+                'file_url'  => $upload_dir['baseurl'] . '/studiofy_galleries/' . $gallery_id . '/' . $file_name,
+                'file_type' => $ext,
+                'dimensions' => $dims,
+                'file_size' => $filesize,
+                'created_at' => current_time('mysql')
+            ]);
+            wp_send_json_success(['status' => 'complete']);
+        } else {
+            wp_send_json_success(['status' => 'chunk_uploaded']);
+        }
+    }
 
     public function render_page(): void {
         global $wpdb;
@@ -83,8 +171,43 @@ class GalleryController {
         <script>jQuery(document).ready(function($){ $('#btn-create-gallery').click(function(){ $('#modal-new-gallery').show().removeClass('studiofy-hidden'); }); $('.close-modal').click(function(){ $(this).closest('.studiofy-modal-overlay').hide().addClass('studiofy-hidden'); }); });</script>
         <?php
     }
-    // ... handle_save, handle_delete_gallery, ajax_create_page same as v2.2.27 ...
+
     public function handle_save(): void { check_admin_referer('save_gallery', 'studiofy_nonce_create'); global $wpdb; $title = sanitize_text_field($_POST['title']); $desc  = sanitize_textarea_field($_POST['description']); $pass  = sanitize_text_field($_POST['password']); $wpdb->insert($wpdb->prefix.'studiofy_galleries', ['title' => $title, 'description' => $desc, 'password' => $pass, 'status' => 'active']); wp_redirect(admin_url('admin.php?page=studiofy-galleries')); exit; }
     public function handle_delete_gallery(): void { check_admin_referer('del_gal_' . $_GET['id']); global $wpdb; $id = (int)$_GET['id']; $page_id = $wpdb->get_var($wpdb->prepare("SELECT wp_page_id FROM {$wpdb->prefix}studiofy_galleries WHERE id = %d", $id)); if ($page_id) wp_delete_post($page_id, true); $wpdb->delete($wpdb->prefix.'studiofy_galleries', ['id' => $id]); $wpdb->delete($wpdb->prefix.'studiofy_gallery_files', ['gallery_id' => $id]); $upload = wp_upload_dir(); $dir = $upload['basedir'] . '/studiofy_galleries/' . $id; if(is_dir($dir)) { array_map('unlink', glob("$dir/*.*")); rmdir($dir); } wp_redirect(admin_url('admin.php?page=studiofy-galleries')); exit; }
-    public function ajax_create_page(): void { check_ajax_referer('wp_rest', 'nonce'); if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized'); global $wpdb; $id = (int)$_POST['id']; $gallery = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_galleries WHERE id = %d", $id)); if ($gallery->wp_page_id) { $link = get_edit_post_link($gallery->wp_page_id, ''); header('Content-Type: application/json'); wp_send_json_success(['message' => 'Exists', 'redirect_url' => html_entity_decode($link)]); return; } $pass = !empty($gallery->password) ? $gallery->password : wp_generate_password(8, false); $pid = wp_insert_post(['post_title'=>$gallery->title.' - Proofing','post_content'=>'[studiofy_proof_gallery id="'.$id.'"]','post_status'=>'publish','post_type'=>'page','post_password'=>$pass]); if ($pid) { $wpdb->update($wpdb->prefix.'studiofy_galleries', ['wp_page_id'=>$pid, 'password'=>$pass], ['id'=>$id]); header('Content-Type: application/json'); wp_send_json_success(['message'=>'Created','redirect_url'=>html_entity_decode(get_edit_post_link($pid, ''))]); } else { header('Content-Type: application/json'); wp_send_json_error('Failed'); } }
+
+    public function ajax_create_page(): void {
+        check_ajax_referer('wp_rest', 'nonce');
+        if (!current_user_can('manage_options')) wp_send_json_error('Unauthorized');
+        
+        global $wpdb;
+        $id = (int)$_POST['id'];
+        $gallery = $wpdb->get_row($wpdb->prepare("SELECT * FROM {$wpdb->prefix}studiofy_galleries WHERE id = %d", $id));
+        
+        if ($gallery->wp_page_id) {
+            $link = get_edit_post_link($gallery->wp_page_id, '');
+            header('Content-Type: application/json'); 
+            wp_send_json_success(['message' => 'Exists', 'redirect_url' => html_entity_decode($link)]); 
+            return;
+        }
+        
+        $pass = !empty($gallery->password) ? $gallery->password : wp_generate_password(8, false);
+        
+        // FIXED: Create 'studiofy_gallery_page' CPT instead of 'page'
+        $pid = wp_insert_post([
+            'post_title'   => $gallery->title . ' - Proofing',
+            'post_content' => '[studiofy_proof_gallery id="' . $id . '"]',
+            'post_status'  => 'publish',
+            'post_type'    => 'studiofy_gallery_page', // Use new CPT to hide from menus
+            'post_password'=> $pass
+        ]);
+        
+        if ($pid) {
+            $wpdb->update($wpdb->prefix.'studiofy_galleries', ['wp_page_id'=>$pid, 'password'=>$pass], ['id'=>$id]);
+            header('Content-Type: application/json'); 
+            wp_send_json_success(['message'=>'Created','redirect_url'=>html_entity_decode(get_edit_post_link($pid, ''))]);
+        } else { 
+            header('Content-Type: application/json'); 
+            wp_send_json_error('Failed'); 
+        }
+    }
 }
