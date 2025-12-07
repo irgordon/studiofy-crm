@@ -4,7 +4,7 @@ Tags: crm, photography, elementor, invoicing, scheduling, kanban, gallery, proof
 Requires at least: 6.6
 Tested up to: 6.7
 Requires PHP: 8.1
-Stable tag: 2.2.27
+Stable tag: 2.2.49
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,189 +12,109 @@ A comprehensive business suite for photographers. Manage clients, contracts, inv
 
 == Description ==
 
-**Studiofy CRM** is the ultimate operating system for professional photographers. Stop paying monthly fees for external SaaS platforms—Studiofy brings your entire business workflow directly into your WordPress dashboard.
+**Studiofy CRM** is the modern operating system for professional photography studios. Stop paying monthly fees for external platforms—Studiofy brings your entire workflow inside WordPress.
 
-Designed with a **"Performance & Privacy First"** architecture, Studiofy v2.2+ features a rewritten Gallery engine optimized for speed, ensuring your client proofing pages load instantly even with hundreds of images.
+Designed to leverage the power of **Elementor**, Studiofy allows you to build custom Client Portals, Booking Forms, and Contract pages without touching code.
 
-### 🎨 Native Elementor Integration
-We believe in design freedom. Studiofy adds custom **Widgets** to Elementor, allowing you to build your Client Portal exactly how you want it.
+### 🚀 Key Modules
 
-* **Lead Capture Forms:** Drag-and-drop forms that auto-populate your CRM database.
-* **Booking Calendar:** Real-time session scheduling with availability checks.
-* **Proofing Galleries:** Beautiful, responsive, and secure image grids.
+* **Customer CRM:** Securely store client details with AES-256 encryption.
+* **Project Kanban:** Visual workflow management (To Do / In Progress / Done) with drag-and-drop cards.
+* **Invoicing:** Professional PDF invoices with an "Items Library" for saving your standard packages and rates.
+* **Digital Contracts:** Legal agreements with eSignature capture, fully editable via Elementor.
+* **Proofing Galleries:** Private, password-protected galleries where clients can select their favorite images.
 
-### 🚀 Core Modules
+### ⚡ Modern Features
 
-* **Customer Management:** Securely store client details with AES-256 encryption.
-* **Project Kanban:** Visual workflow management (To Do / In Progress / Done) combined with a detailed list view.
-* **Invoicing:** Square API integration (Sandbox/Production support) with tax calculations and dynamic line items.
-* **Digital Contracts:** eSignature capture and PDF generation. Now supports Elementor for template design.
-* **File Management:** A dedicated "Windows Explorer" style interface for organizing client shoots. Supports RAW files via Chunked Uploads.
-
-### ⚡ High-Speed Performance
-The latest updates introduce advanced optimization techniques:
-* **DOM Batching:** Zero-lag rendering for large gallery grids.
-* **Chunked Uploads:** Stream large files in 2MB chunks to bypass server limits.
-* **Lazy Loading:** Native browser optimization for image delivery.
+* **High-Speed Uploads:** Our custom Chunked Uploader handles large RAW files that normally crash WordPress.
+* **Automated Workflow:** Client proof selections automatically create tasks in your Project Manager.
+* **One-Click Setup:** Includes a robust "Demo Data" importer to get you started in seconds.
 
 == Installation ==
 
-1.  Upload the `studiofy-crm` folder to the `/wp-content/plugins/` directory.
+1.  Upload `studiofy-crm` to the `/wp-content/plugins/` directory.
 2.  Activate the plugin through the 'Plugins' menu in WordPress.
-3.  **Requirement:** This plugin requires **Elementor** to display frontend widgets. A notice with an install link will appear if it is missing.
-4.  Navigate to **Studiofy CRM > Settings** to configure your Business Branding, Logo, and Square API keys.
-5.  (Optional) Use the "Demo Data" section in Settings to import sample content for testing.
+3.  **Elementor is Required:** You will be prompted to install it if missing.
+4.  Follow the **Welcome Screen** prompts to import demo data.
+5.  Navigate to **Studiofy CRM > Settings** to configure your branding.
 
 == Frequently Asked Questions ==
 
-= Does this replace WooCommerce? =
-Studiofy is designed for service-based photography businesses (Invoices, Contracts, Bookings). It does not replace WooCommerce for selling physical products, but handles the service workflow much better.
+= Can I use this for non-photography businesses? =
+While optimized for photographers (Galleries, Shoot Projects), the Invoicing and Contract modules are powerful enough for any creative freelancer.
 
 = Is my client data secure? =
 Yes. We use OpenSSL AES-256-CBC encryption for sensitive fields (Phone Numbers, Addresses) in the database to ensure privacy at rest.
 
-= Can I upload RAW files? =
-Yes! The Gallery module supports RAW file uploads (.CR2, .NEF, .ARW) for storage and delivery, in addition to standard JPG/PNG/GIFs.
+= How do clients sign contracts? =
+You create a page with the `[studiofy_contract_portal]` shortcode. Clients receive a link where they can view the contract and sign digitally using a touchscreen or mouse.
 
 == Screenshots ==
 
 1.  **Dashboard** - Real-time business overview with revenue stats.
-2.  **Gallery Explorer** - Split-pane folder view for managing client photos.
-3.  **Kanban Board** - Visual project tracking with List View fallback.
-4.  **Invoice Builder** - Create professional invoices with tax and line items.
-5.  **Appointment Calendar** - Monthly/Weekly view of your shoot schedule.
-6.  **Customer List** - Sortable, searchable client database.
+2.  **Kanban Board** - Visual project tracking with financial data.
+3.  **Invoice Builder** - Modern interface for creating and managing invoices.
+4.  **Gallery Proofing** - Frontend view where clients approve/reject images.
+5.  **Contract Editor** - Manage legal terms directly in WordPress.
 
 == Changelog ==
 
-= 2.2.27 =
-* **Fix:** Resolved 403 Forbidden error during chunked uploads by implementing a dedicated `upload_nonce`.
-* **Feature:** Added Frontend Proofing UI (Approve/Reject buttons) to Gallery Shortcode.
-* **Automation:** Submitting gallery proofing now auto-creates a "Review" task in the Project Kanban.
+= 2.2.49 =
+* **Fix:** Resolved `stdClass` property warning in Project creation logic.
+* **Fix:** Fixed `ltrim()` deprecation warning in Invoice creation logic by enforcing string casting.
 
-= 2.2.26 =
-* **UI:** Overhauled Kanban Board to enforce horizontal scrolling layout matching visual designs.
-* **UI:** Redesigned Project Cards to include Task Count and Budget metadata.
+= 2.2.48 =
+* **UI:** Redesigned Invoice Builder to be a clear editing form.
+* **Feature:** Added "Image ID" (#0100) and Toolbar to Gallery Proofing view.
+* **Fix:** Solved "Access Denied" error on Welcome Page.
 
-= 2.2.25 =
-* **Data:** Updated Demo Data XML with 60 randomized high-res images and 5 distinct galleries.
-* **Data:** Added detailed sub-tasks (Pre-production, Scouting) to Demo Projects.
+= 2.2.47 =
+* **Fix:** Hydrated Invoice Builder object to prevent undefined variable errors.
+* **Visual:** Highlighted "Proofs Approved" tasks in Red on the Kanban board.
 
-= 2.2.24 =
-* **Fix:** Fixed Gallery Shortcode registration logic (was missing init call).
-* **Frontend:** Added responsive CSS grid for Gallery Shortcode display.
+= 2.2.46 =
+* **Fix:** Changed Welcome Page registration strategy to use CSS hiding, fixing permissions.
 
-= 2.2.23 =
-* **Performance:** Implemented Chunked File Uploads (2MB slices) for handling large RAW files.
-* **Feature:** Added visual progress bar for uploads.
-* **Validation:** Enforced strict file type checking on the server side.
+= 2.2.45 =
+* **Fix:** Resolved Fatal Errors in Invoice Builder for new invoices.
+* **Update:** Improved Demo Data Import permission checks.
 
-= 2.2.22 =
-* **Cleanup:** Added `uninstall.php` for complete data removal (Dropping tables, deleting files) on plugin deletion.
+= 2.2.44 =
+* **Fix:** Renamed Gallery CPT to `studiofy_gal` (12 chars) to comply with WordPress limits.
+* **Fix:** Updated Gallery Metadata JS to prevent undefined property errors.
 
-= 2.2.21 =
-* **Fix:** Renamed Contract CPT to `studiofy_doc` to comply with WordPress 20-char limit warning.
+= 2.2.43 =
+* **Fix:** Renamed Contract CPT to `studiofy_doc`.
+* **Fix:** Implemented `get_safe_option` to prevent `str_replace` on null errors in Settings.
 
-= 2.2.20 =
+= 2.2.42 =
+* **Feature:** New PDF Invoice Template with SVG Logo support.
+* **Feature:** Registered `studiofy_gallery_page` (later renamed) to hide galleries from site menus.
+
+= 2.2.41 =
+* **Fix:** Gallery Proofing now clears Dashboard Cache to update counts immediately.
+* **Logic:** Proofing submission now finds *any* active project if "In Progress" is missing.
+
+= 2.2.40 =
+* **Fix:** Aggressive type casting in `Menu.php` to stop `strpos` deprecation warnings.
+
+= 2.2.30 - 2.2.39 =
+* **Feature:** Added Studiofy SVG Logo to Welcome Screen.
+* **Feature:** Added "Items Library" to Invoices module.
+* **Data:** Updated Demo Data XML with 10 random customers and 60+ images.
+
+= 2.2.20 - 2.2.29 =
 * **Feature:** Added "Contract Section" Elementor Widget.
-* **Architecture:** Registered `studiofy_doc` CPT to bridge Contracts with Elementor Editor.
-* **UI:** Added "Back to Contracts" navigation button.
+* **Feature:** Added Frontend Contract Signing Portal.
+* **Fix:** Database schema updates for `signed_at` column.
 
-= 2.2.19 =
-* **Data:** Updated Demo Data Manager to parse and insert Tasks from XML.
-* **Fix:** Corrected address concatenation logic in Demo Importer.
-
-= 2.2.18 =
-* **Feature:** Added Google Maps API Key field to Settings.
-* **Feature:** Implemented Address Autocomplete on Customer Forms.
-* **Data:** Updated Demo XML schema to split address fields (Street, City, State, Zip).
-
-= 2.2.17 =
-* **Fix:** Resolved nested HTML form issue in Settings page preventing Demo Data import.
-* **Fix:** Corrected Gallery creation logic to return existing Private Page URL if one already exists.
-* **Cleanup:** Implemented full data cleanup (files and tables) upon plugin deletion.
-
-= 2.2.16 =
-* **Fix:** Resolved duplicate DOM ID `#studiofy_nonce` in Gallery Module.
-* **Update:** Updated Deactivator to clean up Private Gallery pages.
-
-= 2.2.15 =
-* **UI:** Expanded Gallery Meta Sidebar width to prevent content compression.
-* **CSS:** Fixed Flexbox layout for Gallery Explorer on smaller screens.
-
-= 2.2.14 =
-* **Accessibility:** Added explicit `<label>` tags and `id` attributes to all form inputs in Projects, Contracts, and Invoices.
-* **Security:** Implemented HTTP Security Headers (X-Content-Type-Options, Referrer-Policy).
-* **Fix:** Removed deprecated CSS properties (`speak`, `-ms-filter`).
-
-= 2.2.13 =
-* **Accessibility:** Fixed ARIA attribute warnings in Settings module.
-* **Fix:** Ensured correct `application/json` content-type headers for all AJAX responses.
-
-= 2.2.12 =
-* **Fix:** Resolved 404 Error in Gallery AJAX calls by localizing `admin_url`.
-* **Database:** Corrected `dbDelta` schema definition for `wp_page_id`.
-
-= 2.2.11 =
-* **Fix:** Resolved fatal error in Invoice Builder when line items are empty (`json_decode` on null).
-* **Fix:** Fixed PHP 8.1 deprecation warning in Invoice Controller (`ltrim`).
-* **UI:** Standardized Invoice Empty State to match other modules.
-
-= 2.2.10 =
-* **Fix:** Resolved Task creation bug in Project Modal preventing form submission.
-* **Feature:** Added visual strike-through for completed tasks in Kanban view.
-* **Update:** Added error logging for API task failures.
-
-= 2.2.9 =
-* **Feature:** Overhauled Project Module to display both Kanban Board and Detailed List Table.
-* **Feature:** Added "Private Galleries" list table to Gallery Module with Edit/View/Delete actions.
-* **Fix:** Corrected redirection logic after creating a Private Gallery Page.
-* **Update:** Added "Payment Status" column to Project List (derived from Invoice status).
-
-= 2.2.8 =
-* **Fix:** Fixed fatal error in Project Controller regarding `number_format` types.
-* **Fix:** Fixed Gallery Page creation AJAX response to return valid permalink.
-
-= 2.2.7 =
-* **Fix:** Corrected XML attribute parsing in Demo Data Manager.
-* **Update:** Added automatic Dashboard stats cache clearing after Demo Import/Delete.
-
-= 2.2.6 =
-* **Fix:** Refactored Settings page architecture to separate Demo Import form from main Options form.
-
-= 2.2.5 =
-* **Feature:** Refactored Demo Data to use XML File Upload instead of hardcoded data.
-* **UI:** Added "Settings Saved" confirmation notice.
-
-= 2.2.4 =
-* **Feature:** Added "Import Demo Data" functionality to Settings (Customers, Projects, Invoices, Contracts).
-* **Feature:** Added "Delete Demo Data" cleanup tool.
-
-= 2.2.3 =
-* **Dashboard:** Fixed real-time counters to count all rows regardless of status.
-* **Dashboard:** Added dynamic Revenue calculation based on Paid invoices.
-* **Project:** Added "Tax Status" (Taxed/Exempt) toggle and Budget currency formatting.
-* **Gallery:** Added "Create Private Gallery Page" button to Folder Explorer.
-
-= 2.2.2 =
-* **Fix:** Resolved CSS regressions in Dashboard Grid and Calendar layout.
-* **Fix:** Fixed Gallery Explorer flexbox layout.
-
-= 2.2.1 =
-* **Performance:** Implemented DocumentFragment batching for gallery JS to eliminate render blocking.
-* **Optimization:** Added CSS `content-visibility` and `will-change` properties.
-* **Caching:** Added transient caching for frontend shortcodes.
-
-= 2.2.0 =
-* **UI:** Updated Empty States for Projects, Contracts, and Invoices to match modern dark-mode aesthetic.
-* **Fix:** Resolved JS syntax error in Gallery Admin script.
-* **Style:** Refined table layouts to match WP Core standards.
-
-= 2.0.0 =
-* **Major Release:** Full refactor to Elementor Addon architecture.
-* **Added:** Lead Form Widget, Gallery Widget, Scheduler Widget.
+= 2.2.0 - 2.2.19 =
+* **Performance:** Implemented Chunked File Uploads.
+* **Feature:** Added Google Maps Address Validation.
+* **Feature:** Kanban Board overhaul.
+* **Security:** Added AES-256 encryption for client data.
 
 == Upgrade Notice ==
 
-= 2.2.27 =
-Major update featuring Client Proofing workflow and High-Performance File Uploads. Recommended for all users.
+= 2.2.49 =
+Maintenance release fixing PHP warnings in Project and Invoice modules. Recommended for all users.
